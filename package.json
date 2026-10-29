@@ -1,0 +1,11 @@
+{
+  "name": "stoora-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Runs the Stoora app in ./stoora-app from this folder.",
+  "scripts": {
+    "dev": "npm --prefix stoora-app run dev",
+    "start": "npm --prefix stoora-app start",
+    "test": "npm --prefix stoora-app test"
+  }
+}

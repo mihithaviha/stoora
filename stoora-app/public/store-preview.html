@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Storefront preview · Stoora</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Lexend:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/storefront.css">
+  <style>
+    body { margin: 0; background: #FFFFFF; }
+    .note { position: sticky; top: 0; z-index: 10; background: #171C3C; color: #FFFFFF; font: 500 13px Lexend, sans-serif; padding: 8px 16px; text-align: center; }
+    .note a { color: #FFB407; }
+    .message { font: 16px Lexend, sans-serif; color: #171C3C; padding: 80px 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="note"></div>
+  <div id="root"></div>
+
+<script src="/js/storefront/shared.js"></script>
+<script src="/js/storefront/templates.js"></script>
+<script src="/js/storefront/sample.js"></script>
+<script>
+/**
+ * Draws a storefront template without any buying controls. Used three ways:
+ *   ?sample=boutique      the gallery thumbnails and "Preview template" (clearly labelled sample content)
+ *   ?draft=1              the seller's own draft with their real products (needs their login; nobody else can see it)
+ *   postMessage           the editor sends the configuration as it changes, so the preview updates instantly
+ */
+const root = document.getElementById('root');
+const note = document.getElementById('note');
+const params = new URLSearchParams(location.search);
+const inFrame = window.top !== window;
+let lastKey = '';
+
+function paint(config, data, extras) {
+  const key = config.template + config.theme;
+  root.innerHTML = StoreTemplates.render(config.template, { config, data, extras: extras || {}, preview: true, cart: {} });
+  StoreTemplates.bind(root);
+  if (key !== lastKey && lastKey) root.firstElementChild.classList.add('sf-animate'); // a gentle fade when the template or theme changes
+  lastKey = key;
+}
+
+function showNote(html) { if (!inFrame || params.get('banner')) note.innerHTML = `<div class="note">${html}</div>`; }
+
+/* In a small preview frame, links and buttons do nothing (the page stays where it is). */
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a[href]');
+  if (!link) return;
+  const href = link.getAttribute('href');
+  if (inFrame && !href.startsWith('#')) event.preventDefault();
+});
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== location.origin || !event.data || event.data.type !== 'render') return;
+  paint(event.data.config, event.data.data, event.data.extras);
+});
+
+(async () => {
+  if (params.get('sample')) {
+    const sample = StoreSample.sampleData(params.get('sample'));
+    if (params.get('theme')) sample.config.theme = params.get('theme');
+    paint(sample.config, sample.data);
+    showNote('Sample preview. Your own products and details will appear here.');
+  } else if (params.get('draft')) {
+    try {
+      const response = await fetch('/api/storefront', { credentials: 'same-origin' });
+      if (response.status === 401 || response.status === 403) throw new Error('login');
+      const state = await response.json();
+      paint(state.config, StoreShared.visibleData(state.data, state.config));
+      showNote('Draft preview. Only you can see this page. <a href="/dashboard#storefront">Back to the editor</a>');
+    } catch (_) {
+      root.innerHTML = '<div class="message"><h2>Log in to see your draft</h2><p>Drafts are private to the shop owner.</p><p><a href="/#login">Log in</a></p></div>';
+    }
+  }
+  if (inFrame) parent.postMessage({ type: 'ready' }, location.origin);
+})();
+</script>
+</body>
+</html>
