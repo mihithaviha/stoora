@@ -1,11 +1,19 @@
 {
-  "name": "stoora-workspace",
+  "name": "stoora",
   "version": "1.0.0",
   "private": true,
-  "description": "Runs the Stoora app in ./stoora-app from this folder.",
+  "description": "Stoora: public site, shop dashboard, public shop pages, JSON API and SQLite database. No npm packages.",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
-    "dev": "npm --prefix stoora-app run dev",
-    "start": "npm --prefix stoora-app start",
-    "test": "npm --prefix stoora-app test"
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "dev": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning server/test-api.js",
+    "format": "prettier --write \"server/**/*.js\" \"public/js/dashboard/*.js\" \"public/shop.html\"",
+    "web:install": "npm --prefix web install",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:start": "npm --prefix web start"
   }
 }

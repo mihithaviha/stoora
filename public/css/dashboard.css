@@ -1,0 +1,175 @@
+/*
+ * Dashboard spacing and layout polish, shared by dashboard.html and dashboard-phone.html.
+ * Loaded after the page's own styles, so these tokens and rules are the single place to tune spacing.
+ * Brand colours, fonts and component styles are untouched: only space, alignment and proportions change.
+ */
+
+:root {
+  /* spacing scale (4px base) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* layout */
+  --page-max: 1120px;
+  --page-gutter: var(--sp-6);
+  --card-pad: var(--sp-5);
+  --card-gap: var(--sp-4);
+  --radius-card: 16px;
+}
+
+/* ---------- page header and content rhythm ---------- */
+
+.top { padding: var(--sp-4) var(--page-gutter) var(--sp-3); }
+.top + .pad { padding-top: var(--sp-4); }           /* content no longer touches the header bar */
+.pad { padding-left: var(--page-gutter); padding-right: var(--page-gutter); }
+.pad > .box, .pad > .card, .pad > .mstrip, .pad > .kpis, .pad > .banner { margin-bottom: var(--card-gap); }
+.pad > .banner + .kpis { margin-top: 0; }
+.h1 { margin-bottom: var(--sp-2); }
+
+/* ---------- cards: one padding, one gap, one radius ---------- */
+
+.card, .box { padding: var(--card-pad); border-radius: var(--radius-card); }
+.card + .card, .box + .box, .card + .box, .box + .card { margin-top: var(--card-gap); }
+.tbox { padding: 0; }                                /* tables sit edge to edge inside their card */
+.box-h { margin-bottom: var(--sp-3); }
+.cols { gap: var(--card-gap); }
+.cols > div > .card + .card { margin-top: var(--card-gap); }
+
+/* ---------- Home: lighter and more even ---------- */
+
+.hgrid { gap: var(--card-gap); margin-top: var(--card-gap); }
+.hgrid > * { min-height: 176px; }
+.hero { padding: var(--sp-6) var(--sp-5); }
+.hero .h1.big { margin-bottom: var(--sp-1); }
+.hero-ask { margin-top: var(--sp-4); }
+.sugg { margin-top: var(--sp-3); }
+
+/* ---------- tables: steady rows ---------- */
+
+.tbl th, .tbl td { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+.tbar { padding: var(--sp-3) var(--sp-4); gap: var(--sp-2); }
+.kpis { gap: var(--sp-3); }
+
+/* ---------- forms ---------- */
+
+.field { margin-bottom: var(--sp-4); }
+.field label { margin-bottom: var(--sp-1); }
+.sec-t { margin: var(--sp-5) 0 var(--sp-2); }
+.sec-t:first-child { margin-top: var(--sp-2); }
+
+/* ---------- dialogs: centred with room to breathe ---------- */
+
+.sheet { padding-bottom: var(--sp-5); }
+.sheet-h { margin-bottom: var(--sp-4); }
+
+/* ---------- tablets and small laptops ---------- */
+
+@media (max-width: 1100px) {
+  :root { --page-gutter: var(--sp-4); --card-pad: var(--sp-4); }
+  .hgrid > * { min-height: 0; }
+}
+
+/* ---------- phones: tighter gutters, same rhythm ---------- */
+
+@media (max-width: 760px) {
+  :root { --page-gutter: var(--sp-4); --card-pad: var(--sp-4); --card-gap: var(--sp-3); }
+  .top { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+  .row:has(> .btn) { flex-wrap: wrap; gap: var(--sp-2); }   /* several buttons in one row wrap instead of overflowing */
+}
+
+/* ---------- motion: calm, and off when the person asks for less ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Home cards sit in a grid that already has its own gap: no extra top margin */
+.hgrid > .box, .hgrid > .card { margin-top: 0; margin-bottom: 0; }
+
+/* ---------- typography: one scale for the whole dashboard ----------
+   Same fonts as before (Bricolage Grotesque headings, Lexend text). Sizes, weights and spacing are only evened out. */
+:root {
+  --type-title: 26px;      /* page title */
+  --type-section: 20px;    /* section heading */
+  --type-card: 16px;       /* card title */
+  --type-body: 15px;
+  --type-support: 13px;    /* hints, captions */
+  --type-meta: 12px;       /* tags, counts, column groups */
+  --type-metric: 22px;     /* numbers on cards */
+}
+body { font-synthesis: none; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+p { text-wrap: pretty; }
+
+.h1 { font-size: var(--type-title); line-height: 1.2; letter-spacing: -.015em; text-wrap: balance; overflow-wrap: break-word; }
+.h2 { font-size: var(--type-section); line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; overflow-wrap: break-word; }
+.ct, .setup .body b { line-height: 1.35; overflow-wrap: break-word; }
+
+/* small caps-style labels share one look */
+.sec-t, .side .lbl, .list-t, .aibox .who, .label { font-size: var(--type-meta); font-weight: 600; letter-spacing: .06em; line-height: 1.3; }
+
+/* numbers: even digits, steady line height */
+.kpi .v, .stat .v, .tile .v, .big, .money, .sum .r { font-variant-numeric: tabular-nums; line-height: 1.2; }
+.kpi .v, .tile .v { letter-spacing: -.01em; }
+.kpi .k, .stat .k { line-height: 1.35; }
+
+/* buttons and tags: same weight and tracking everywhere */
+.btn { font-weight: 600; letter-spacing: .005em; line-height: 1; }
+.tag, .chip, .seg button { letter-spacing: .005em; }
+
+/* forms: label, text and hint line up */
+.field label, .flabel { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--ink); }
+.field .hint, .field .small { line-height: 1.45; }
+.input, input.input, select.input { line-height: 1.3; }
+textarea.input { height: auto; line-height: 1.5; padding-top: 12px; padding-bottom: 12px; }
+.input::placeholder { color: color-mix(in srgb, var(--ink-65) 80%, var(--inner)); opacity: 1; }
+.field .err, .banner { line-height: 1.45; }
+
+/* tables */
+.tbl th { font-size: var(--type-meta); font-weight: 600; letter-spacing: .02em; color: var(--ink-65); }
+.tbl td { line-height: 1.4; font-variant-numeric: tabular-nums; }
+.tbl td b { font-weight: 600; }
+
+/* long names wrap instead of pushing the layout */
+.top .title, .row .sp b, .box-h b { overflow-wrap: anywhere; }
+
+/* Ask Stoora is not switched on yet: the card is shown blurred with a "Coming soon" button over it */
+.ask-lock { position: relative; border-radius: 16px; min-width: 0; max-width: 100%; }
+.ask-ghost { filter: blur(5px); opacity: .7; pointer-events: none; user-select: none; -webkit-user-select: none; min-width: 0; overflow: hidden; }
+.ask-ghost .sugg { flex-wrap: wrap; overflow: hidden; max-height: 34px; }
+.ask-ghost .sugg span {
+  flex: none; display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--inner); color: var(--ink-soft); font-size: 13px; font-weight: 500; white-space: nowrap;
+}
+.ask-soon {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .01em;
+  box-shadow: var(--float); cursor: default; opacity: 1; white-space: nowrap;
+}
+.ask-soon:disabled { opacity: 1; }
+
+/* moving between sections: the old screen fades out while the new one fades and slides in */
+@keyframes screen-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes screen-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-8px); } }
+#screen.xfade-in { animation: screen-in .38s var(--ease, cubic-bezier(.2, .7, .2, 1)) both; }
+.screen-ghost {
+  position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; background: var(--surface);
+  animation: screen-out .22s var(--ease, ease) both;
+}
+.screen-ghost * { transition: none !important; animation: none !important; }
+.nrow, .nsub, .bar .pill button { transition: background .25s ease, color .25s ease, transform .25s ease; }
+.nrow:active { transform: scale(.98); }
+@keyframes nav-arrive { from { background-color: transparent; transform: translateX(-4px); } }
+.nrow.nav-arrive, .nsub.nav-arrive { animation: nav-arrive .35s var(--ease, ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  #screen.xfade-in, .screen-ghost { animation: none !important; }
+  .screen-ghost { display: none; }
+}
+
+/* the setup list has four cards: two rows of two on laptops, one row of four on wide screens */
+.grid3.setup-grid { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 1500px) { .grid3.setup-grid { grid-template-columns: repeat(4, 1fr); } }
