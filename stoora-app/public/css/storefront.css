@@ -311,3 +311,17 @@
 .sf-empty { text-align: center; padding: 36px 0 12px; border: 1px dashed var(--store-border); border-radius: var(--sf-radius); background: var(--store-surface); }
 .sf-empty h3 { margin: 0 0 6px; font-size: 18px; }
 .sf-empty .sf-sub { margin: 0 auto; max-width: 46ch; padding: 0 16px 24px; }
+
+/* ---------- typography refinements (every template) ----------
+   Fonts and sizes per template are unchanged. These rules only make long names wrap, keep digits even and loosen cramped lines. */
+.sf { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-synthesis: none; }
+.sf h1, .sf h2, .sf h3 { text-wrap: balance; overflow-wrap: break-word; }
+.sf p, .sf-lede { text-wrap: pretty; line-height: 1.6; }
+.sf-card h3 { line-height: 1.25; overflow-wrap: anywhere; }
+.sf-card-body p { overflow-wrap: break-word; }
+.sf-price, .sf-glance dd, .sf-step span { font-variant-numeric: tabular-nums; }
+.sf-wordmark { max-width: 100%; overflow-wrap: anywhere; line-height: 1.15; }
+.sf-nav a, .sf-btn, .sf-chip { letter-spacing: .005em; }
+.sf-btn { line-height: 1.25; text-align: center; }
+.sf-search input::placeholder { color: var(--store-muted); opacity: 1; }
+.sf-hero h1 { line-height: 1.08; }

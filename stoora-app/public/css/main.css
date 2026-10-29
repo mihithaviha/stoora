@@ -1180,3 +1180,20 @@ body.lmenu-open{overflow:hidden}
 .sfoot li a,.sfoot li button{color:#171C3C;text-decoration:none;font-size:clamp(16px,1.15vw,20px);min-height:44px;display:inline-flex;align-items:center;background:none;border:0;padding:0;font-family:inherit;cursor:pointer}
 .sfoot li a:hover,.sfoot li button:hover{color:#EA5B1E}
 .sfoot .sf-bt{margin-top:clamp(28px,3.5vw,48px);padding-top:clamp(22px,2.4vw,34px);border-top:1px solid #EBE3DA;font-size:clamp(15px,1.1vw,19px);color:#725F54}
+
+/* ---------- typography system (public site) ----------
+   Fonts are the Brand Kit v2 pair: Bricolage Grotesque for headings, Lexend for text (Fraunces stays the logo only).
+   These tokens name the sizes the site already uses; they change nothing on their own. dashboard.css reads the same names. */
+:root{
+  --fw-text:400; --fw-ui:500; --fw-strong:600; --fw-head:800;
+  --track-head:-.025em; --track-sub:-.015em; --track-caps:.12em;
+  --fs-body:15px; --fs-support:13px; --fs-meta:12px; --fs-label:14px; --fs-button:15px;
+  --lh-head:1.1; --lh-text:1.6; --lh-tight:1.35;
+}
+body{font-synthesis:none;font-kerning:normal}
+p,.lede,.cap{text-wrap:pretty}
+h1,h2,h3,h4{overflow-wrap:break-word}
+.btn,.lnav .links button,.nav{letter-spacing:.005em}
+.input::placeholder,.askbox textarea::placeholder{color:color-mix(in srgb,var(--ink-65) 80%,var(--inner))}
+.field .hint{line-height:1.45}
+.tbl td,.tbl th{font-variant-numeric:tabular-nums}

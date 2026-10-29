@@ -132,3 +132,12 @@ body.sfed-open { overflow: hidden; }
 .sf-table table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 14px; }
 .sf-table th, .sf-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); }
 @media (max-width: 860px) { .sfin { grid-template-columns: minmax(0, 1fr); } .sfin .sfed-panel { max-height: none; } }
+
+/* ---------- typography refinements ---------- */
+.sfg-body h3, .sf-how h3 { line-height: 1.25; overflow-wrap: break-word; letter-spacing: -.01em; }
+.sfg-blurb, .sfg-suits, .sf-lede { line-height: 1.5; text-wrap: pretty; }
+.sfg-pill { letter-spacing: .05em; line-height: 1.5; white-space: nowrap; }
+.sfed-sec > summary { line-height: 1.35; }
+.sfed-save { line-height: 1.3; font-variant-numeric: tabular-nums; }
+.sfed-tpl small, .sfed-theme small { line-height: 1.4; }
+.sf-table th, .sf-table td { line-height: 1.4; }

@@ -50,8 +50,8 @@
     const total = cards.length;
     if (total < 3) return;
     const live = $('[data-orbit-live]');
-    const INTERVAL = 3000; // time each story rests in the middle
-    const DURATION = 1300; // time one turn takes: long and gentle, so the fan glides
+    const INTERVAL = 300; // pause on each story
+    const DURATION = 700; // time one turn takes (pause + turn = 1 second per story)
 
     let position = 0; // where the wheel is right now (continuous)
     let target = 0; // where it is heading (a whole number)
@@ -59,8 +59,6 @@
     let startedAt = 0;
     let frame = 0;
     let timer = 0;
-    let hovering = false;
-    let focusInside = false;
     let pointerDown = false;
     let onScreen = true;
     let shown = 0; // the story currently marked as the active one
@@ -76,15 +74,12 @@
     function measure() {
       const width = root.clientWidth;
       let cw, ch, base, degrees;
-      if (width >= 1000) [cw, ch, base, degrees] = [270, 340, 312, 12];
-      else if (width >= 640) [cw, ch, base, degrees] = [232, 292, 262, 12];
-      else
-        [cw, ch, base, degrees] = [
-          Math.min(212, width * 0.56),
-          Math.min(212, width * 0.56) * 1.27,
-          Math.min(212, width * 0.56) * 0.62,
-          14,
-        ];
+      if (width >= 1000) [cw, ch, base, degrees] = [430, 500, 400, 7];
+      else if (width >= 640) [cw, ch, base, degrees] = [340, 430, 318, 8];
+      else {
+        const w = Math.min(300, width * 0.74);
+        [cw, ch, base, degrees] = [w, w * 1.5, w * 0.6, 9];
+      }
       // The card that wraps round (three steps out) must be completely off-screen, however wide the screen is.
       const spacing = Math.max(base, (width / 2 + cw / 2 + 24) / (total / 2));
       const step = (degrees * Math.PI) / 180;
@@ -103,8 +98,8 @@
         const x = geo.wheel * Math.sin(angle);
         const y = geo.wheel * (1 - Math.cos(angle));
         const away = Math.abs(d);
-        const scale = 1 - 0.05 * Math.min(away, 2);
-        card.style.transform = `translate3d(${(geo.cx + x - geo.cw / 2).toFixed(1)}px, ${(geo.top + y).toFixed(1)}px, 0) rotate(${((angle * 180) / Math.PI).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+        const scale = 1 - 0.06 * Math.min(away, 2);
+        card.style.transform = `translate3d(${(geo.cx + x - geo.cw / 2).toFixed(1)}px, ${(geo.top + y).toFixed(1)}px, 0) rotate(${((angle * 180) / Math.PI * 0.12).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
         // Cards stay solid and darken a little the further they are from the middle.
         card.style.setProperty('--veil', (0.5 * Math.pow(Math.min(1, away / 2.4), 1.2)).toFixed(3));
         // The card that wraps round the back fades out well beyond the screen edge, so the loop cannot flicker.
@@ -155,8 +150,6 @@
 
     /** It turns by itself unless the visitor asks for less motion, is pointing at it, or is not looking at the page. */
     const mayAutoplay = () =>
-      !hovering &&
-      !focusInside &&
       !pointerDown &&
       onScreen &&
       document.visibilityState === 'visible' &&
@@ -225,23 +218,7 @@
     // A swipe must not also count as a tap on a story.
     root.addEventListener('click', (event) => moved && ((moved = false), event.preventDefault()), true);
 
-    /* ---- when the wheel rests ---- */
-    [root].forEach((area) => {
-      area.addEventListener('mouseenter', () => ((hovering = true), clearTimeout(timer)));
-      area.addEventListener('mouseleave', () => ((hovering = false), schedule()));
-      // Only keyboard focus pauses it. After a mouse click a button keeps focus, and that must not stop it for good.
-      area.addEventListener('focusin', (event) => {
-        if (!event.target.matches(':focus-visible')) return;
-        focusInside = true;
-        clearTimeout(timer);
-      });
-      area.addEventListener('focusout', (event) => {
-        if (!area.contains(event.relatedTarget)) {
-          focusInside = false;
-          schedule();
-        }
-      });
-    });
+    /* ---- it keeps turning by itself: only a hidden tab, an off-screen carousel or reduced motion stops it ---- */
     const visibility = () => (document.visibilityState === 'visible' ? schedule() : clearTimeout(timer));
     document.addEventListener('visibilitychange', visibility);
     const observer =

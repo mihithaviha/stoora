@@ -180,7 +180,7 @@ function orbitCard(article, n, total) {
   const topic = topicOf(article.topic);
   return `<li class="jr-ocard" data-i="${n}" role="group" aria-roledescription="slide" aria-label="Story ${n + 1} of ${total}">
     <a class="jr-ocard-link" href="/journal/${article.slug}">
-      <span class="jr-ocard-img">${picture(article.photo, { sizes: '(min-width: 900px) 360px, 74vw', eager: n === 0, soon: true })}</span>
+      <span class="jr-ocard-img">${picture(article.photo, { sizes: '(min-width: 1000px) 430px, 80vw', eager: n < 2, soon: n >= 2 })}</span>
       <span class="jr-ocard-body">
         ${tag(topic)}
         <h3 class="jr-ocard-title">${esc(article.title)}</h3>
