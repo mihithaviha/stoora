@@ -22,7 +22,7 @@ export default function ProductsPage() {
   return (
     <>
       <DemoBar />
-      <PageHeader title="Products" lede={`${plural(live, 'product')} live on your shop.${out ? ` ${out} sold out.` : ''}`} actions={<ButtonLink href="/products/new" kind="primary" icon="add">Add product</ButtonLink>} />
+      <PageHeader title="Products" lede={`${plural(live, 'product')} live on your shop.${out ? ` ${out} sold out.` : ''}`} actions={<><ButtonLink href="/products/import" icon="upload_file">Import</ButtonLink><ButtonLink href="/products/new" kind="primary" icon="add">Add product</ButtonLink></>} />
       <div className="stack">
         <Card className="stack tight">
           <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)' }}>

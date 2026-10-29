@@ -5,16 +5,10 @@ export interface NavItem { href: string; icon: string; label: string; desc: stri
 
 export const NAV: [string, NavItem[]][] = [
   ['My business', [
-    { href: '/', icon: 'home', label: 'Home', desc: 'Today’s summary and what needs you', match: (p) => p === '/' },
-    { href: '/assistant', icon: 'auto_awesome', label: 'Ask Stoora', desc: 'Ask questions about your shop' },
+    { href: '/dashboard', icon: 'home', label: 'Home', desc: 'Today’s summary and what needs you', match: (p) => p === '/dashboard' },
     { href: '/orders', icon: 'inbox', label: 'Orders', desc: 'Orders and bookings from every place', count: (db) => db.orders.filter(orderFilters['To ship']).length, sub: [{ href: '/orders/new', label: 'Create order' }] },
-    { href: '/products', icon: 'sell', label: 'Products', desc: 'What you sell and how much stock is left' },
+    { href: '/products', icon: 'sell', label: 'Products', desc: 'What you sell and how much stock is left', sub: [{ href: '/products/import', label: 'Import products' }] },
     { href: '/customers', icon: 'group', label: 'Customers', desc: 'People who bought or booked with you' },
-  ]],
-  ['Customer connections', [
-    { href: '/chats', icon: 'forum', label: 'Chats', desc: 'All buyer messages, sorted for you', count: (db) => db.chats.filter((c) => c.unread).length, hot: true },
-    { href: '/whatsapp', icon: 'chat', label: 'WhatsApp', desc: 'Connection and WhatsApp chats' },
-    { href: '/instagram', icon: 'photo_camera', label: 'Instagram', desc: 'Connection and Instagram DMs' },
   ]],
   ['Selling', [
     { href: '/storefront', icon: 'storefront', label: 'Storefront', desc: 'Your shop page and its link' },
@@ -38,8 +32,8 @@ export function isOn(item: NavItem, path: string, src: string | null) {
 
 /** Page titles + breadcrumbs, worked out from the URL. */
 const TITLES: Record<string, string> = {
-  '': 'Home', assistant: 'Ask Stoora', orders: 'Orders', new: 'Create order', manual: 'Add it yourself', ai: 'Create with AI', products: 'Products', customers: 'Customers',
-  chats: 'Chats', whatsapp: 'WhatsApp', instagram: 'Instagram', storefront: 'Storefront', discounts: 'Discounts', money: 'Money', analytics: 'Analytics',
+  '': 'Home', dashboard: 'Home', import: 'Import products', orders: 'Orders', new: 'Create order', manual: 'Add it yourself', ai: 'Create with AI', products: 'Products', customers: 'Customers',
+  storefront: 'Storefront', discounts: 'Discounts', money: 'Money', analytics: 'Analytics',
   notifications: 'Notifications', settings: 'Settings', account: 'Account',
 };
 export function crumbsFor(path: string, label?: (seg: string, i: number, parts: string[]) => string | undefined) {

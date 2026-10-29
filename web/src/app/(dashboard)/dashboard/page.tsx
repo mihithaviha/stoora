@@ -3,29 +3,25 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useStore, moneyWaiting, orderFilters } from '@/lib/store';
-import { useAssistant, useGreeting } from '@/components/Assistant';
 import { Badge, Card, DemoBar, Icon, LineChart, Avatar, Skeleton, Button, useToast } from '@/components/ui';
 import { MessageDialog } from '@/components/MessageDialog';
 import { plural, rs } from '@/lib/format';
 
 const SUGG = ['Give me today’s shop update', 'Show my pending payments', 'Which products need attention?', 'What should I do first today?'];
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 
 export default function Home() {
   const { db, ready, dismissedIdeas, dismissIdea, restoreIdea } = useStore();
-  const a = useAssistant(); const greet = useGreeting(); const toast = useToast();
-  const [q, setQ] = useState('');
+  const toast = useToast(); const greet = greeting();
   const [msg, setMsg] = useState<null | { to: string; text: string; phone?: string }>(null);
   if (!ready) return <><Skeleton rows={1} height={90} /><div style={{ height: 16 }} /><Skeleton rows={3} height={120} /></>;
 
   const w = moneyWaiting(db); const wt = w.reduce((s, x) => s + x.amount, 0);
   const toShip = db.orders.filter(orderFilters['To ship']);
-  const ready2 = db.chats.filter((c) => c.mood === 'ready' && c.unread); const upset = db.chats.filter((c) => c.mood === 'upset' && c.unread);
   const unpaid = db.orders.find((o) => !o.paid && o.method === 'upi');
   const low = db.products.filter((p) => p.status === 'Active' && p.stock > 0 && p.stock <= 3).sort((x, y) => (y.viewsYesterday ?? 0) - (x.viewsYesterday ?? 0))[0];
   const att: { icon: string; k: string; text: string; cta: React.ReactNode }[] = [];
   if (unpaid) att.push({ icon: 'currency_rupee', k: 'pay', text: `${unpaid.buyer.split(' ')[0]} hasn’t paid ${rs(unpaid.total)} for order #${unpaid.id} yet.`, cta: <Button small onClick={() => setMsg({ to: unpaid.buyer, phone: unpaid.phone, text: `Hi ${unpaid.buyer.split(' ')[0]}, a gentle reminder about your ${db.shop.name} order #${unpaid.id} for ${rs(unpaid.total)}. You can pay by UPI whenever it suits you. Thank you.` })}>Send reminder</Button> });
-  if (ready2.length) att.push({ icon: 'forum', k: 'chat', text: `${plural(ready2.length, 'buyer is', 'buyers are')} ready to buy. Replies are drafted for you.`, cta: <Link className="btn line sm" href="/chats">Review messages</Link> });
-  if (upset.length) att.push({ icon: 'sentiment_dissatisfied', k: 'chat', text: `${upset[0].buyer.split(' ')[0]} is upset: “${upset[0].last}”`, cta: <Link className="btn line sm" href={`/chats?c=${upset[0].id}`}>Reply now</Link> });
   if (toShip.length) att.push({ icon: 'local_shipping', k: 'shop', text: `${plural(toShip.length, 'order is', 'orders are')} waiting to be shipped.`, cta: <Link className="btn line sm" href="/orders?filter=To%20ship">Ship it</Link> });
   if (low) att.push({ icon: 'inventory_2', k: 'reel', text: `${low.name}: ${low.viewsYesterday ? low.viewsYesterday + ' people looked yesterday and ' : ''}only ${low.stock} left.`, cta: <Link className="btn line sm" href={`/products/${low.id}`}>See product</Link> });
 
@@ -51,13 +47,13 @@ export default function Home() {
               : <p className="t-soft">Nothing needs you right now.</p>}
           </div>
           <div className="as-r">
-            <form className="askbox" onSubmit={(e) => { e.preventDefault(); if (q.trim()) { a.open(q); setQ(''); } }}>
-              <label className="flabel" htmlFor="home-q" style={{ display: 'block', marginBottom: 'var(--s1)' }}>Ask Stoora anything about your shop</label>
-              <textarea id="home-q" rows={2} placeholder="How did I do this week?" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} />
-              <div className="tools"><span className="cap grow">Answers come from your shop’s numbers</span><button className="go" type="submit" aria-label="Ask" disabled={!q.trim()}><Icon name="arrow_upward" size="sm" /></button></div>
-            </form>
-            <div className="sugg2">{SUGG.map((s) => <button key={s} onClick={() => a.open(s)}>{s}</button>)}</div>
-            <p className="cap as-note"><Icon name="verified_user" size="xs" />Stoora suggests. Nothing is sent, posted or changed until you tap.</p>
+            <div className="ask-lock" aria-label="Ask Stoora is coming soon">
+              <div className="ask-ghost" aria-hidden="true">
+                <div className="askbox"><span className="flabel" style={{ display: 'block', marginBottom: 'var(--s1)' }}>Ask Stoora anything about your shop</span><div style={{ minHeight: 48, color: 'var(--ink-45)' }}>How did I do this week?</div><div className="tools"><span className="cap grow">Answers come from your shop’s numbers</span><span className="go"><Icon name="arrow_upward" size="sm" /></span></div></div>
+                <div className="sugg2" style={{ marginTop: 'var(--s2)' }}>{SUGG.map((x) => <span key={x} className="chip">{x}</span>)}</div>
+              </div>
+              <button type="button" className="ask-soon" disabled aria-disabled="true"><Icon name="auto_awesome" size="sm" />Coming soon</button>
+            </div>
           </div>
         </div>
       </section>
@@ -108,7 +104,7 @@ export default function Home() {
             </Link>))}</div> : <p className="t-soft">No bookings coming up.</p>}
         </Card>
       </div>
-      {msg && <MessageDialog open onClose={() => setMsg(null)} title="Message ready to send" to={msg.to} phone={msg.phone} text={msg.text} channel={msg.to.includes('Instagram') ? 'Instagram' : 'WhatsApp'} />}
+      {msg && <MessageDialog open onClose={() => setMsg(null)} title="Message ready to send" to={msg.to} phone={msg.phone} text={msg.text} channel="WhatsApp" />}
     </>
   );
 }

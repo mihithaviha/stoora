@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stoora">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbe0a8"/><stop offset=".14" stop-color="#f4a24a"/><stop offset=".28" stop-color="#ef7f3d"/>
+      <stop offset=".42" stop-color="#dc4a3a"/><stop offset=".56" stop-color="#d13a5b"/><stop offset=".7" stop-color="#8b3a9e"/>
+      <stop offset=".84" stop-color="#5f3ba8"/><stop offset="1" stop-color="#262a7a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#g)"/>
+  <text x="32" y="45" text-anchor="middle" font-family="Bricolage Grotesque, Arial, sans-serif" font-weight="800" font-size="38" fill="#fff">S</text>
+</svg>

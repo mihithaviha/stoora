@@ -24,7 +24,7 @@ export default function OrdersPage() { const searchParams = Object.fromEntries(u
   return (
     <>
       <DemoBar />
-      <PageHeader title="Orders" lede="From WhatsApp, Instagram, your shop link and in person — all in one list." actions={<ButtonLink href="/orders/new" kind="primary" icon="add">Create order</ButtonLink>} />
+      <PageHeader title="Orders" lede="From your shop link, phone calls and in person — all in one list." actions={<ButtonLink href="/orders/new" kind="primary" icon="add">Create order</ButtonLink>} />
       <div className="stack">
         <Card className="stack tight">
           <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)' }}>
@@ -36,7 +36,7 @@ export default function OrdersPage() { const searchParams = Object.fromEntries(u
         {!ready ? <Skeleton rows={4} /> : tab === 'bookings' ? <Bookings /> : list.length === 0 ? (
           <Card>{t ? <EmptyState icon="search_off" title={`No orders match “${q}”`} text="Try a buyer’s first name, or an order number like 1012." action={<Button small onClick={() => setQ('')}>Clear search</Button>} />
             : filter === 'To ship' ? <EmptyState icon="done" title="Nothing to ship" text="Every ready order has left. New ones will show up here." />
-            : <EmptyState icon="inbox" title="No orders here yet" text="When a buyer orders on WhatsApp, Instagram or your shop link, it lands in this list." action={<ButtonLink href="/orders/new" small>Add an order yourself</ButtonLink>} />}</Card>
+            : <EmptyState icon="inbox" title="No orders here yet" text="When a buyer orders from your shop link, it lands in this list." action={<ButtonLink href="/orders/new" small>Add an order yourself</ButtonLink>} />}</Card>
         ) : (
           <>
             <div className="tbl-wrap only-wide">

@@ -32,7 +32,7 @@ export default function StorefrontPage() {
         <div>
           <Card className="stack tight" title="Your shop link"><div className="row"><span className="grow t-ink" style={{ fontWeight: 500, overflowWrap: 'anywhere' }}>stoora.in/{s.handle}</span><CopyButton small text={link} done="Shop link copied." /></div><p className="cap">Put it in your Instagram bio and WhatsApp status.</p></Card>
           <Card title="Shop settings">
-            {([['open', 'Shop is open', 'Buyers can order right now'], ['showPrices', 'Show prices', 'Turn off to take orders on chat only'], ['cod', 'Cash on delivery', 'Let buyers pay when the parcel arrives']] as const).map(([k, l, sub]) => (
+            {([['open', 'Shop is open', 'Buyers can order right now'], ['showPrices', 'Show prices', 'Turn off to show products without prices'], ['cod', 'Cash on delivery', 'Let buyers pay when the parcel arrives']] as const).map(([k, l, sub]) => (
               <div key={k} className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{l}</span><span className="cap">{sub}</span></span><Switch checked={s[k]} onChange={toggle(k, l)} label={l} /></div>))}
           </Card>
           <Card className="stack tight" title="Look"><Chips label="Shop look" value={s.look} onChange={(v) => setShop({ look: v })} options={(['Warm', 'Indigo', 'Plain'] as const).map((v) => ({ value: v, label: v }))} /><p className="cap">Changes the top of your shop. Products stay the same.</p></Card>

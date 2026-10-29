@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Stoora: your shop, your link, your money">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFAEF"/><stop offset="1" stop-color="#FFE9B0"/></linearGradient>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe0a8"/><stop offset=".28" stop-color="#ef7f3d"/><stop offset=".56" stop-color="#d13a5b"/><stop offset=".84" stop-color="#5f3ba8"/><stop offset="1" stop-color="#262a7a"/></linearGradient>
+    <linearGradient id="act" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb347"/><stop offset=".55" stop-color="#ff6b2c"/><stop offset="1" stop-color="#c13fa8"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1030" cy="120" r="260" fill="url(#g)" opacity=".9"/>
+  <circle cx="900" cy="470" r="120" fill="#171C3C"/>
+  <rect x="80" y="80" width="84" height="84" rx="24" fill="url(#g)"/>
+  <text x="122" y="140" text-anchor="middle" font-family="Bricolage Grotesque, Arial, sans-serif" font-weight="800" font-size="56" fill="#fff">S</text>
+  <text x="184" y="140" font-family="Fraunces, Georgia, serif" font-weight="900" font-size="52" fill="#171C3C">stoora<tspan fill="#EA5B1E">.in</tspan></text>
+  <text x="80" y="300" font-family="Bricolage Grotesque, Arial, sans-serif" font-weight="800" font-size="84" fill="#171C3C" letter-spacing="-3">Your shop, your link,</text>
+  <text x="80" y="392" font-family="Bricolage Grotesque, Arial, sans-serif" font-weight="800" font-size="84" fill="url(#act)" letter-spacing="-3">your money.</text>
+  <text x="80" y="470" font-family="Lexend, Arial, sans-serif" font-size="30" fill="#725F54">A shop page, an order book and UPI payments for small sellers in India.</text>
+</svg>

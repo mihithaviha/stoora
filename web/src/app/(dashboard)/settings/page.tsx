@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Icon, PageHeader } from '@/components/ui';
 import { SETTINGS, slug } from '@/lib/settings';
 
-const BUILT = ['General', 'Notifications', 'Sales channels'];
+const BUILT = ['General', 'Order-taking', 'WhatsApp verification', 'Notifications', 'Sales channels'];
 export default function SettingsPage() {
   return (
     <>

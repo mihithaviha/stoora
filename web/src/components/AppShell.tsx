@@ -1,13 +1,12 @@
 'use client';
 // App frame: dark sidebar (desktop), breadcrumb bar, phone top bar + floating bottom bar + menu drawer,
-// search (Ctrl K), alerts and the assistant panel.
+// search (Ctrl K) and alerts. Used by every seller page (see app/(dashboard)/layout.tsx).
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { NAV, crumbsFor, isOn } from '@/lib/nav';
 import { rs } from '@/lib/format';
-import { AssistantPanel, useAssistant } from './Assistant';
 import { Dialog, Icon, SearchBox } from './ui';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,7 +14,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sp = useSearchParams();
   const src = sp.get('src');
   const { db } = useStore();
-  const a = useAssistant();
   const [menu, setMenu] = useState(false);
   const [search, setSearch] = useState(false);
   const [alerts, setAlerts] = useState(false);
@@ -28,8 +26,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => { if (!menu) return; const k = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(false); document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [menu]);
 
-  if (path === '/login') return <>{children}</>;
-
   const { trail, title } = crumbsFor(path, (s, i, parts) => {
     if (parts[0] === 'orders' && i === 1 && /^\d+$/.test(s)) return '#' + s;
     if (parts[0] === 'products' && i === 1) return s === 'new' ? 'New product' : db.products.find((p) => p.id === s)?.name;
@@ -38,19 +34,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
   const back = trail.length ? trail[trail.length - 1] : null;
   const unreadAlerts = db.alerts.length;
-  const unreadChats = db.chats.some((c) => c.unread);
-  const tab = (href: string, icon: string, label: string, dot?: boolean) => {
-    const on = href === '/' ? path === '/' : path.startsWith(href);
-    return <Link href={href} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}><Icon name={icon} /><span>{label}</span>{dot && <i className="bd" aria-label="new" />}</Link>;
+  const tab = (href: string, icon: string, label: string) => {
+    const on = path.startsWith(href);
+    return <Link href={href} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}><Icon name={icon} /><span>{label}</span></Link>;
   };
-  const onAssistantPage = path === '/assistant';
 
   return (
     <>
       <div className="app">
         <aside className="side" aria-label="Main menu">
           <div className="side-in">
-            <Link className="brand" href="/" aria-label="stoora.in home"><span className="appicon" aria-hidden="true">S</span><span className="wordmark">stoora<i>.in</i></span></Link>
+            <Link className="brand" href="/dashboard" aria-label="Stoora home"><span className="appicon" aria-hidden="true">S</span><span className="wordmark">stoora<i>.in</i></span></Link>
             <button className="sbtn-search" onClick={() => setSearch(true)} title="Search"><Icon name="search" size="sm" /><span className="txt">Search</span><kbd>Ctrl K</kbd></button>
             {NAV.map(([g, items]) => (
               <React.Fragment key={g}>
@@ -86,18 +80,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
           <header className="dbar">
             <nav className="crumb" aria-label="Breadcrumb">{trail.map(([l, h]) => <React.Fragment key={h}><Link href={h}>{l}</Link><Icon name="chevron_right" size="xs" className="t-cap" /></React.Fragment>)}<b>{title}</b></nav>
-            {!onAssistantPage && <button className="dask" onClick={() => a.open()} aria-label="Ask Stoora"><span className="smark xs" aria-hidden="true">S</span>Ask Stoora anything<kbd>Ctrl J</kbd></button>}
             <button className="ibtn flat" onClick={() => setAlerts(true)} aria-label={`Alerts, ${unreadAlerts} new`}><Icon name="notifications" size="sm" />{unreadAlerts > 0 && <span className="dotn">{unreadAlerts}</span>}</button>
           </header>
           <div className="page" key={path}>{children}</div>
         </main>
-        <AssistantPanel onPage={onAssistantPage} />
       </div>
 
-      <nav className={`bbar ${path.startsWith('/orders/new') ? 'hide' : ''}`} aria-label="Quick menu">
+      <nav className={`bbar ${path.startsWith('/orders/new') || path.startsWith('/products/') ? 'hide' : ''}`} aria-label="Quick menu">
         <button className="round" onClick={() => setMenu(true)} aria-label="Open menu"><Icon name="menu" /></button>
-        <div className="pill" role="navigation" aria-label="Main">{tab('/', 'home', 'Home')}{tab('/orders', 'inbox', 'Orders')}{tab('/products', 'sell', 'Products')}{tab('/chats', 'forum', 'Chats', unreadChats)}</div>
-        <button className="round" onClick={() => a.open()} aria-label="Ask Stoora"><span className="smark" aria-hidden="true">S</span></button>
+        <div className="pill" role="navigation" aria-label="Main">{tab('/dashboard', 'home', 'Home')}{tab('/orders', 'inbox', 'Orders')}{tab('/products', 'sell', 'Products')}</div>
       </nav>
 
       {menu && (

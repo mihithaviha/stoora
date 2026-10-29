@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { avatarTone, initials, rs } from '@/lib/format';
-import type { Order, Source, Chat } from '@/lib/types';
+import type { Order, Source } from '@/lib/types';
 
 /* ---------- icon (Material Symbols Rounded, brand rule R7) ---------- */
 export function Icon({ name, size, className = '' }: { name: string; size?: 'xs' | 'sm' | 'lg'; className?: string }) {
@@ -41,8 +41,6 @@ export function PayBadge({ o }: { o: Order }) {
 export function ShipBadge({ o }: { o: Order }) {
   return o.shipped ? <Badge tone="neutral" icon="done_all">Shipped</Badge> : <Badge tone="warn" icon="local_shipping">To ship</Badge>;
 }
-export const MOOD: Record<Chat['mood'], [Tone, string, string]> = { ready: ['ok', 'shopping_bag', 'Ready to buy'], upset: ['bad', 'sentiment_dissatisfied', 'Upset'], look: ['neutral', 'visibility', 'Just looking'] };
-export function MoodBadge({ mood }: { mood: Chat['mood'] }) { const [t, i, l] = MOOD[mood]; return <Badge tone={t} icon={i}>{l}</Badge>; }
 
 export function Avatar({ name, size }: { name: string; size?: number }) {
   return <span className={`av ${avatarTone(name)}`} aria-hidden="true" style={size ? { width: size, height: size, fontSize: size * 0.32 } : undefined}>{initials(name)}</span>;

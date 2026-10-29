@@ -9,11 +9,11 @@ export default function CustomerPage({ params }: { params: { id: string } }) {
   if (!ready) return <Skeleton rows={3} height={100} />;
   const c = db.customers.find((x) => x.id === params.id);
   if (!c) return <Card><EmptyState icon="person_off" title="We couldn’t find that customer" text="They may have been removed." action={<ButtonLink href="/customers" small>Back to customers</ButtonLink>} /></Card>;
-  const orders = db.orders.filter((o) => o.buyer === c.name); const chat = db.chats.find((x) => x.buyer === c.name);
+  const orders = db.orders.filter((o) => o.buyer === c.name);
   return (
     <>
       <PageHeader title={<span className="row" style={{ gap: 'var(--s3)' }}><Avatar name={c.name} size={56} />{c.name}</span>} lede={<span className="row" style={{ gap: 'var(--s1)', flexWrap: 'wrap' }}>{c.city} · first came from <SourceTag source={c.source} /></span>}
-        actions={chat && <ButtonLink href={`/chats?c=${chat.id}`} kind="primary" icon="forum">Open chat</ButtonLink>} />
+        />
       <div className="detail">
         <div>
           <Card><div className="tiles four">

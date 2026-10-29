@@ -1,16 +1,19 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Avatar, Badge, Button, ButtonLink, Card, ConfirmDialog, Dialog, EmptyState, Field, Icon, PageHeader, PayBadge, ShipBadge, Skeleton, SourceTag, useToast } from '@/components/ui';
 import { MessageDialog } from '@/components/MessageDialog';
+import { RefundDialog } from '@/components/RefundDialog';
 import { plural, rs } from '@/lib/format';
 
 const COURIERS = ['Delhivery', 'India Post', 'Blue Dart', 'DTDC', 'Shiprocket', 'Hand delivered'];
 
 export default function OrderPage({ params }: { params: { id: string } }) {
-  const { db, ready, updateOrder, product } = useStore(); const toast = useToast();
-  const [dlg, setDlg] = useState<null | 'paid' | 'ship' | 'edit' | 'msg'>(null);
+  const { db, ready, updateOrder, refundOrder, product } = useStore(); const toast = useToast();
+  const first = useSearchParams().get('dialog');
+  const [dlg, setDlg] = useState<null | 'paid' | 'ship' | 'edit' | 'msg' | 'refund'>(first === 'refund' ? 'refund' : null);
   const [ship, setShip] = useState({ courier: 'Delhivery', tracking: '' });
   const [edit, setEdit] = useState({ address: '', city: '', notes: '' });
   const [err, setErr] = useState('');
@@ -21,9 +24,10 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const n = o.lines.reduce((a, l) => a + l.qty, 0);
   const sub = o.lines.reduce((a, l) => a + l.price * l.qty, 0);
   const cust = db.customers.find((c) => c.name === o.buyer);
-  const chat = db.chats.find((c) => c.buyer === o.buyer);
+  const refunded = (o.refunds ?? []).reduce((a, r) => a + r.amount, 0);
   const ev: [string, string][] = [[o.createdBy === 'ai' ? 'Order added from an AI draft you approved' : o.createdBy === 'manual' ? 'Order added by you' : 'Order placed by buyer', `${o.createdAt} · from ${o.source}`]];
   if (o.paid) ev.push([o.method === 'cash' ? 'Marked paid in cash' : 'Marked as paid', rs(o.total)]);
+  (o.refunds ?? []).forEach((r) => ev.push([`Refunded ${rs(r.amount)}`, `${r.reason} · ${r.when}`]));
   if (o.shipped) ev.push([o.courier && o.courier !== 'Hand delivered' ? `Shipped with ${o.courier}` : 'Handed over', o.tracking ? `Tracking ${o.tracking}` : 'No tracking number']);
 
   const primary = !o.paid && o.method !== 'cod'
@@ -34,7 +38,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     <>
       <PageHeader title={`Order #${o.id}`}
         lede={<span className="row" style={{ flexWrap: 'wrap', gap: 'var(--s1)' }}><PayBadge o={o} /><ShipBadge o={o} /><SourceTag source={o.source} /><span className="cap">{o.createdAt}</span></span>}
-        actions={<><Button icon={o.paid ? 'forum' : 'send'} onClick={() => setDlg('msg')}>{o.paid ? 'Message buyer' : 'Payment reminder'}</Button>{primary}</>} />
+        actions={<><Button icon={o.paid ? 'forum' : 'send'} onClick={() => setDlg('msg')}>{o.paid ? 'Message buyer' : 'Payment reminder'}</Button>{o.paid && o.method !== 'cash' && refunded < o.total && <Button icon="undo" onClick={() => setDlg('refund')}>Refund</Button>}{primary}</>} />
       <div className="detail">
         <div>
           <Card title={plural(n, 'item')} icon="shopping_bag">
@@ -48,6 +52,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
               <div className="r"><span>Subtotal</span><span>{rs(sub)}</span></div>
               <div className="r"><span>Shipping</span><span>{o.shipping ? rs(o.shipping) : 'Free'}</span></div>
               <div className="r t"><span>Total</span><span>{rs(o.total)}</span></div>
+              {refunded > 0 && <div className="r"><span>Refunded</span><span>− {rs(refunded)}</span></div>}
               <div className="r"><span>{o.paid ? (o.method === 'cash' ? 'Paid in cash' : 'Paid') : o.method === 'cod' ? 'Collect on delivery' : 'Buyer still owes'}</span><span>{rs(o.total)}</span></div>
             </div>
           </Card>
@@ -59,7 +64,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           <Card title="Buyer" icon="person" aside={cust && <Link className="link cap" href={`/customers/${cust.id}`}>View<Icon name="chevron_right" size="xs" /></Link>}>
             <div className="row"><Avatar name={o.buyer} /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>{o.buyer}</div><div className="cap">{o.phone || 'No phone saved'}{o.city ? ' · ' + o.city : ''}</div></div></div>
             {cust && <p className="cap" style={{ marginTop: 'var(--s2)' }}>{plural(cust.orders, 'order')} · {rs(cust.spent)} spent with you</p>}
-            {chat && <Link className="btn line sm" style={{ marginTop: 'var(--s2)' }} href={`/chats?c=${chat.id}`}><Icon name="forum" />Open chat</Link>}
           </Card>
           <Card title="Delivery" icon="local_shipping" aside={<Button kind="quiet" small icon="edit" onClick={() => { setEdit({ address: o.address ?? '', city: o.city ?? '', notes: o.notes ?? '' }); setDlg('edit'); }}>Edit</Button>}>
             {o.shipped ? <p className="t-soft">{o.courier ?? 'Handed over'}{o.tracking ? <> · <span className="num">{o.tracking}</span></> : ''}</p>
@@ -69,6 +73,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </Card>
         </div>
       </div>
+
+      <RefundDialog open={dlg === 'refund'} onClose={() => setDlg(null)} order={o} alreadyRefunded={refunded} onRefund={(r) => { refundOrder(o.id, r); toast(`Refund of ${rs(r.amount)} started for ${o.buyer}.`, { icon: 'undo' }); }} />
 
       <ConfirmDialog open={dlg === 'paid'} onClose={() => setDlg(null)} title="Mark this order as paid?" yes="Yes, I received it"
         body={`Only do this if you can see ${rs(o.total)} from ${o.buyer} in your UPI app or bank. Stoora can’t check payments for you yet.`}

@@ -2,11 +2,10 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { BarChart, Card, DemoBar, HBars, LineChart, PageHeader, Segmented, Skeleton } from '@/components/ui';
-import { useAssistant } from '@/components/Assistant';
 import { rs } from '@/lib/format';
 
 export default function AnalyticsPage() {
-  const { db, ready } = useStore(); const a = useAssistant();
+  const { db, ready } = useStore();
   const [range, setRange] = useState<'7' | '30'>('7');
   if (!ready) return <Skeleton rows={4} height={110} />;
   const d = db.stats.salesByDay; const w = db.stats.salesByWeek;
@@ -35,7 +34,6 @@ export default function AnalyticsPage() {
           <Card title="Where orders came from" aside={<span className="cap">Share of orders, 30 days</span>}><HBars rows={Object.entries(db.stats.sourcesPercent)} fmt={(v) => v + '%'} /></Card>
         </div>
         <Card title="Orders per day" aside={<span className="cap">Last 7 days</span>}><BarChart labels={d.map((x) => x.day)} values={d.map((x) => x.orders)} label="Orders per day" money={false} /></Card>
-        <div className="sugg2"><button onClick={() => a.open('Which products are selling best?')}>Ask Stoora: which products sell best?</button><button onClick={() => a.open('How is my shop performing today?')}>Ask Stoora: how am I doing today?</button></div>
       </div>
     </>
   );

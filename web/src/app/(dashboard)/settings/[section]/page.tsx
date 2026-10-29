@@ -5,6 +5,9 @@ import { useStore } from '@/lib/store';
 import { Button, ButtonLink, Card, EmptyState, Field, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
 import { SETTINGS, slug } from '@/lib/settings';
 import { cleanHandle } from '@/lib/format';
+import { OrderTaking } from '@/components/OrderTaking';
+import { WhatsAppVerify } from '@/components/WhatsAppVerify';
+import { useSearchParams } from 'next/navigation';
 
 export default function SettingSection({ params }: { params: { section: string } }) {
   const s = SETTINGS.find(([n]) => slug(n) === params.section);
@@ -13,7 +16,7 @@ export default function SettingSection({ params }: { params: { section: string }
   return (
     <>
       <PageHeader title={name} lede={desc} />
-      {name === 'General' ? <General /> : name === 'Notifications' ? <NotifySettings /> : name === 'Sales channels' ? <Channels /> : (
+      {name === 'General' ? <General /> : name === 'Order-taking' ? <OrderTaking /> : name === 'WhatsApp verification' ? <WaPanel /> : name === 'Notifications' ? <NotifySettings /> : name === 'Sales channels' ? <Channels /> : (
         <Card><EmptyState icon={icon} title={`${name} isn’t built yet`} text="This part of Stoora is planned but not in this version. Nothing here is saved." action={<ButtonLink href="/settings" small>Back to settings</ButtonLink>} /></Card>
       )}
     </>
@@ -54,15 +57,15 @@ function General() {
 }
 
 const NOTIFY_KEY = 'stoora.notify.v1';
-const NOTIFY = [['orders', 'New orders', 'When a buyer orders'], ['payments', 'Payments', 'When an order is marked paid'], ['stock', 'Low stock', 'When a product has 3 or fewer left'], ['chats', 'Buyer messages', 'When a buyer is ready to buy'], ['brief', 'Morning summary', 'A short shop update at 7:30 am']] as const;
+const NOTIFY = [['orders', 'New orders', 'When a buyer orders'], ['payments', 'Payments', 'When an order is marked paid'], ['stock', 'Low stock', 'When a product has 3 or fewer left'], ['brief', 'Morning summary', 'A short shop update at 7:30 am']] as const;
 function NotifySettings() {
-  const toast = useToast(); const [on, setOn] = useState<Record<string, boolean>>({ orders: true, payments: true, stock: true, chats: true, brief: false });
+  const toast = useToast(); const [on, setOn] = useState<Record<string, boolean>>({ orders: true, payments: true, stock: true, brief: false });
   useEffect(() => { try { const s = localStorage.getItem(NOTIFY_KEY); if (s) setOn(JSON.parse(s)); } catch { /* ignore */ } }, []);
   const set = (k: string, v: boolean) => { const n = { ...on, [k]: v }; setOn(n); try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(n)); } catch { /* ignore */ } toast('Saved.'); };
   return (
     <Card title="Alerts in Stoora">
       {NOTIFY.map(([k, l, s]) => <div key={k} className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{l}</span><span className="cap">{s}</span></span><Switch checked={!!on[k]} onChange={(v) => set(k, v)} label={l} /></div>)}
-      <p className="cap" style={{ marginTop: 'var(--s2)' }}>Push, email and WhatsApp alerts aren’t connected yet. These choices apply to the alerts inside Stoora.</p>
+      <p className="cap" style={{ marginTop: 'var(--s2)' }}>Push and email alerts aren’t connected yet. These choices apply to the alerts inside Stoora.</p>
     </Card>
   );
 }
@@ -71,8 +74,18 @@ function Channels() {
   return (
     <div className="rows">
       <div className="li"><span className="thumb"><Icon name="link" /></span><span className="grow"><span className="t">Shop link</span><span className="s">stoora.in/{db.shop.handle}</span></span><Link className="btn line sm" href="/storefront">Open</Link></div>
-      <div className="li"><span className="thumb"><Icon name="chat" /></span><span className="grow"><span className="t">WhatsApp</span><span className="s">Not connected</span></span><Link className="btn line sm" href="/whatsapp">Open</Link></div>
-      <div className="li"><span className="thumb"><Icon name="photo_camera" /></span><span className="grow"><span className="t">Instagram</span><span className="s">Not connected</span></span><Link className="btn line sm" href="/instagram">Open</Link></div>
+    </div>
+  );
+}
+
+function WaPanel() {
+  const preview = useSearchParams().get('state') as 'sent' | 'wrong' | 'verified' | null;
+  return (
+    <div className="form2">
+      <div>
+        <Card title="WhatsApp number for buyers" icon="verified"><WhatsAppVerify preview={preview ?? undefined} /></Card>
+      </div>
+      <div><Card title="Why verify?" icon="help" className="stack tight"><ul className="notes" style={{ margin: 0, paddingLeft: 18 }}><li>Buyers know the number on your shop page is really yours.</li><li>The “Chat on WhatsApp” button opens a normal WhatsApp chat on their phone.</li><li>Stoora never reads or stores your chats.</li></ul></Card></div>
     </div>
   );
 }

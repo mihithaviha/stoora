@@ -1,0 +1,373 @@
+[
+  {
+    "group": "Landing page",
+    "name": "Landing page",
+    "path": "/"
+  },
+  {
+    "group": "Landing page",
+    "name": "Mobile menu",
+    "path": "/?menu=1",
+    "mobileOnly": true
+  },
+  {
+    "group": "Landing page",
+    "name": "Enquiry dialog",
+    "path": "/?dialog=enquiry"
+  },
+  {
+    "group": "Landing page",
+    "name": "Demo page",
+    "path": "/demo"
+  },
+  {
+    "group": "Login",
+    "name": "Seller login",
+    "path": "/login"
+  },
+  {
+    "group": "Login",
+    "name": "Seller code entry",
+    "path": "/login/verify?phone=9876543210"
+  },
+  {
+    "group": "Login",
+    "name": "Seller code entry, wrong code",
+    "path": "/login/verify?phone=9876543210&demo=error"
+  },
+  {
+    "group": "Login",
+    "name": "Buyer login",
+    "path": "/buyer/login"
+  },
+  {
+    "group": "Login",
+    "name": "Buyer code entry",
+    "path": "/buyer/login/verify?phone=9876543210"
+  },
+  {
+    "group": "Login",
+    "name": "Buyer code entry, wrong code",
+    "path": "/buyer/login/verify?phone=9876543210&demo=error"
+  },
+  {
+    "group": "Store setup",
+    "name": "Step 1: your shop",
+    "path": "/onboarding?step=1"
+  },
+  {
+    "group": "Store setup",
+    "name": "Step 2: first product",
+    "path": "/onboarding?step=2"
+  },
+  {
+    "group": "Store setup",
+    "name": "Step 3: get paid",
+    "path": "/onboarding?step=3"
+  },
+  {
+    "group": "Store setup",
+    "name": "Step 4: orders and WhatsApp",
+    "path": "/onboarding?step=4"
+  },
+  {
+    "group": "Store setup",
+    "name": "Step 5: look",
+    "path": "/onboarding?step=5"
+  },
+  {
+    "group": "Store setup",
+    "name": "Shop is live",
+    "path": "/onboarding?step=6"
+  },
+  {
+    "group": "Seller dashboard",
+    "name": "Dashboard home",
+    "path": "/dashboard",
+    "auth": "seller"
+  },
+  {
+    "group": "Seller dashboard",
+    "name": "Search and navigation",
+    "path": "/customers",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Product list",
+    "path": "/products",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Add product",
+    "path": "/products/new",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Edit product",
+    "path": "/products/p1",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Import: upload",
+    "path": "/products/import",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Import: match columns",
+    "path": "/products/import?step=2",
+    "auth": "seller"
+  },
+  {
+    "group": "Products",
+    "name": "Import: review",
+    "path": "/products/import?step=3",
+    "auth": "seller"
+  },
+  {
+    "group": "Orders",
+    "name": "Order list",
+    "path": "/orders",
+    "auth": "seller"
+  },
+  {
+    "group": "Orders",
+    "name": "Order details",
+    "path": "/orders/1012",
+    "auth": "seller"
+  },
+  {
+    "group": "Orders",
+    "name": "Refund dialog",
+    "path": "/orders/1012?dialog=refund",
+    "auth": "seller"
+  },
+  {
+    "group": "Orders",
+    "name": "Create order",
+    "path": "/orders/new",
+    "auth": "seller"
+  },
+  {
+    "group": "Money",
+    "name": "Money overview",
+    "path": "/money",
+    "auth": "seller"
+  },
+  {
+    "group": "Money",
+    "name": "Analytics",
+    "path": "/analytics",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "Settings list",
+    "path": "/settings",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "General",
+    "path": "/settings/general",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "Order-taking",
+    "path": "/settings/order-taking",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "WhatsApp verification",
+    "path": "/settings/whatsapp-verification",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "WhatsApp: code sent",
+    "path": "/settings/whatsapp-verification?state=sent",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "WhatsApp: wrong code",
+    "path": "/settings/whatsapp-verification?state=wrong",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "WhatsApp: verified",
+    "path": "/settings/whatsapp-verification?state=verified",
+    "auth": "seller"
+  },
+  {
+    "group": "Storefront",
+    "name": "Storefront",
+    "path": "/s/meera"
+  },
+  {
+    "group": "Storefront",
+    "name": "Product quick view",
+    "path": "/s/meera?quick=p3"
+  },
+  {
+    "group": "Storefront",
+    "name": "Shop mobile menu",
+    "path": "/s/meera?menu=1",
+    "mobileOnly": true
+  },
+  {
+    "group": "Storefront",
+    "name": "Product details",
+    "path": "/s/meera/p/p3"
+  },
+  {
+    "group": "Bag and wishlist",
+    "name": "Bag",
+    "path": "/s/meera/bag",
+    "auth": "bag"
+  },
+  {
+    "group": "Bag and wishlist",
+    "name": "Bag drawer",
+    "path": "/s/meera?bag=1",
+    "auth": "bag"
+  },
+  {
+    "group": "Bag and wishlist",
+    "name": "Wishlist",
+    "path": "/s/meera/wishlist",
+    "auth": "bag"
+  },
+  {
+    "group": "Bag and wishlist",
+    "name": "Empty bag",
+    "path": "/s/meera/bag"
+  },
+  {
+    "group": "Checkout and payment",
+    "name": "Checkout",
+    "path": "/s/meera/checkout?demo=filled",
+    "auth": "bag"
+  },
+  {
+    "group": "Checkout and payment",
+    "name": "Payment successful",
+    "path": "/s/meera/payment/success?order=1012&method=upi"
+  },
+  {
+    "group": "Checkout and payment",
+    "name": "Payment failed",
+    "path": "/s/meera/payment/failed?order=1011&method=upi"
+  },
+  {
+    "group": "Checkout and payment",
+    "name": "Payment pending",
+    "path": "/s/meera/payment/pending?order=1011&method=upi"
+  },
+  {
+    "group": "Buyer account",
+    "name": "My orders",
+    "path": "/buyer/orders",
+    "auth": "buyer"
+  },
+  {
+    "group": "Buyer account",
+    "name": "Order tracking",
+    "path": "/buyer/orders/1012",
+    "auth": "buyer"
+  },
+  {
+    "group": "Buyer account",
+    "name": "Account and addresses",
+    "path": "/buyer/account",
+    "auth": "buyer"
+  },
+  {
+    "group": "Legal",
+    "name": "Privacy policy",
+    "path": "/privacy"
+  },
+  {
+    "group": "Legal",
+    "name": "Terms of use",
+    "path": "/terms"
+  },
+  {
+    "group": "Legal",
+    "name": "Seller consent",
+    "path": "/seller-consent"
+  },
+  {
+    "group": "Legal",
+    "name": "Data requests",
+    "path": "/data-requests"
+  },
+  {
+    "group": "Admin",
+    "name": "Admin dashboard",
+    "path": "/admin"
+  },
+  {
+    "group": "Admin",
+    "name": "Enquiry inbox",
+    "path": "/admin/enquiries"
+  },
+  {
+    "group": "Admin",
+    "name": "Enquiry open",
+    "path": "/admin/enquiries/e1"
+  },
+  {
+    "group": "States",
+    "name": "Loading",
+    "path": "/design/states/loading"
+  },
+  {
+    "group": "States",
+    "name": "Empty",
+    "path": "/design/states/empty"
+  },
+  {
+    "group": "States",
+    "name": "Error",
+    "path": "/design/states/error"
+  },
+  {
+    "group": "States",
+    "name": "Not found",
+    "path": "/this-page-does-not-exist"
+  },
+  {
+    "group": "States",
+    "name": "Signed out (seller and buyer)",
+    "path": "/signed-out"
+  },
+  {
+    "group": "States",
+    "name": "Buyer signed out",
+    "path": "/buyer/orders"
+  },
+  {
+    "group": "States",
+    "name": "Shop not found",
+    "path": "/s/nobody"
+  },
+  {
+    "group": "Design preview",
+    "name": "All screens index",
+    "path": "/design"
+  },
+  {
+    "group": "Design preview",
+    "name": "Phone frame preview",
+    "path": "/design/preview?path=%2Fs%2Fmeera&device=mobile",
+    "mobileOnly": false
+  }
+]

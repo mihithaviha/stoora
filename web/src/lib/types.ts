@@ -50,21 +50,14 @@ export interface Order {
   createdAt: string; // display string in demo mode; ISO in production
   notes?: string;
   createdBy: 'buyer' | 'manual' | 'ai';
+  refunds?: Refund[];
+  createdIso?: string; // live mode: the real timestamp behind createdAt
+  shopName?: string; shopHandle?: string; // live mode, buyer view: which shop it was bought from
 }
+
+export interface Refund { amount: number; reason: string; when: string; notified: boolean; createdIso?: string }
 
 export interface Booking { id: string; buyer: string; serviceId: string; when: string; day: string; paid: boolean; status: 'Upcoming' | 'Done' }
-
-export interface Chat {
-  id: string;
-  buyer: string;
-  source: 'WhatsApp' | 'Instagram';
-  mood: 'ready' | 'upset' | 'look';
-  last: string;
-  time: string;
-  unread: boolean;
-  messages: { from: 'them' | 'me'; text: string; time: string }[];
-  draft?: string;
-}
 
 export interface Customer { id: string; name: string; phone: string; city: string; source: Source; orders: number; spent: number; lastOrder: string }
 
@@ -74,7 +67,12 @@ export interface Idea { id: string; text: string; earn: number; cost: number; ac
 
 export interface Alert { id: string; icon: string; title: string; detail: string; when: string; href: string }
 
-export interface Shop { name: string; owner: string; handle: string; email: string; phone: string; city: string; open: boolean; showPrices: boolean; cod: boolean; look: 'Warm' | 'Indigo' | 'Plain' }
+export interface Shop {
+  name: string; owner: string; handle: string; email: string; phone: string; city: string; open: boolean; showPrices: boolean; cod: boolean; look: 'Warm' | 'Indigo' | 'Plain';
+  // live mode only
+  id?: string; online?: boolean; tagline?: string; orderSettings?: Record<string, string>;
+  whatsappNumber?: string; whatsappVerified?: boolean; showWhatsapp?: boolean;
+}
 
 export interface Stats {
   salesToday: number; salesYesterday: number; ordersYesterday: number;
@@ -90,7 +88,7 @@ export interface Stats {
 
 export interface Db {
   shop: Shop; products: Product[]; services: Service[]; orders: Order[]; bookings: Booking[];
-  chats: Chat[]; customers: Customer[]; offers: Offer[]; ideas: Idea[]; alerts: Alert[]; stats: Stats;
+  customers: Customer[]; offers: Offer[]; ideas: Idea[]; alerts: Alert[]; stats: Stats;
   nextOrderId: number;
 }
 
