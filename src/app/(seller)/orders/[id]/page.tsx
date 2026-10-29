@@ -44,7 +44,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   const canShip = !o.shipped && (o.paid || o.method === 'cod');
   const prev = db.orders[index - 1];
   const nextOrder = db.orders[index + 1];
-  const ev: [string, string][] = [[o.createdBy === 'ai' ? 'Order added from an AI draft you approved' : o.createdBy === 'manual' ? 'Order added by you' : 'Order placed by the buyer', `${o.createdAt} · from ${o.source}`]];
+  const ev: [string, string][] = [[o.createdBy === 'ai' ? 'Order added from an AI draft you approved' : o.createdBy === 'manual' ? 'Order added by you' : 'Order placed by buyer', `${o.createdAt} · from ${o.source}`]];
   if (o.paid) ev.push([o.method === 'cash' ? 'Marked paid in cash' : 'Marked as paid', rs(o.total)]);
   (o.refunds ?? []).forEach((r) => ev.push([`Refunded ${rs(r.amount)}`, `${r.reason} · ${r.when}`]));
   if (o.shipped) ev.push([o.courier && o.courier !== 'Hand delivered' ? `Shipped with ${o.courier}` : 'Handed over', o.tracking ? `Tracking ${o.tracking}` : 'No tracking number']);

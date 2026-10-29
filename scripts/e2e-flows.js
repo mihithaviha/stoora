@@ -103,7 +103,7 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     });
 
     await flow('Import products from a CSV', async (t) => {
-      await t.goto('/products/import'); await t.click('Try a sample file'); expect(await t.has('Match the columns'), 'no column step');
+      await t.goto('/products/import'); await t.click('Try a sample file'); expect(await t.waitFor('MATCH THE COLUMNS'), 'no column step');
       await t.click('Review products'); expect(await t.has('4 products ready') && await t.has('2 rows need fixing'), 'review counts are wrong');
       await t.click('Import 4 products'); expect(await t.waitFor('4 products imported'), 'import did not finish');
       await t.goto('/products'); expect(await t.has('Chanderi silk kurta'), 'imported product is not in the list');
