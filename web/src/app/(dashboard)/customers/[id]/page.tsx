@@ -1,13 +1,15 @@
 'use client';
+import { use } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/store';
 import { Avatar, ButtonLink, Card, EmptyState, Icon, PageHeader, PayBadge, Skeleton, SourceTag } from '@/components/ui';
 import { rs } from '@/lib/format';
 
-export default function CustomerPage({ params }: { params: { id: string } }) {
+export default function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { db, ready } = useStore();
   if (!ready) return <Skeleton rows={3} height={100} />;
-  const c = db.customers.find((x) => x.id === params.id);
+  const c = db.customers.find((x) => x.id === id);
   if (!c) return <Card><EmptyState icon="person_off" title="We couldn’t find that customer" text="They may have been removed." action={<ButtonLink href="/customers" small>Back to customers</ButtonLink>} /></Card>;
   const orders = db.orders.filter((o) => o.buyer === c.name);
   return (

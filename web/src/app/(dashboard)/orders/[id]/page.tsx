@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Avatar, Badge, Button, ButtonLink, Card, ConfirmDialog, Dialog, EmptyState, Field, Icon, PageHeader, PayBadge, ShipBadge, Skeleton, SourceTag, useToast } from '@/components/ui';
@@ -10,7 +10,8 @@ import { plural, rs } from '@/lib/format';
 
 const COURIERS = ['Delhivery', 'India Post', 'Blue Dart', 'DTDC', 'Shiprocket', 'Hand delivered'];
 
-export default function OrderPage({ params }: { params: { id: string } }) {
+export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { db, ready, updateOrder, refundOrder, product } = useStore(); const toast = useToast();
   const first = useSearchParams().get('dialog');
   const [dlg, setDlg] = useState<null | 'paid' | 'ship' | 'edit' | 'msg' | 'refund'>(first === 'refund' ? 'refund' : null);
@@ -18,8 +19,8 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [edit, setEdit] = useState({ address: '', city: '', notes: '' });
   const [err, setErr] = useState('');
   if (!ready) return <Skeleton rows={4} height={100} />;
-  const o = db.orders.find((x) => String(x.id) === params.id);
-  if (!o) return <Card><EmptyState icon="search_off" title="We couldn’t find that order" text={`There is no order #${params.id} in this shop.`} action={<ButtonLink href="/orders" small>Back to orders</ButtonLink>} /></Card>;
+  const o = db.orders.find((x) => String(x.id) === id);
+  if (!o) return <Card><EmptyState icon="search_off" title="We couldn’t find that order" text={`There is no order #${id} in this shop.`} action={<ButtonLink href="/orders" small>Back to orders</ButtonLink>} /></Card>;
 
   const n = o.lines.reduce((a, l) => a + l.qty, 0);
   const sub = o.lines.reduce((a, l) => a + l.price * l.qty, 0);

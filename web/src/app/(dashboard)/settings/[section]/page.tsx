@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useStore } from '@/lib/store';
 import { Button, ButtonLink, Card, EmptyState, Field, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
 import { SETTINGS, slug } from '@/lib/settings';
@@ -9,8 +9,9 @@ import { OrderTaking } from '@/components/OrderTaking';
 import { WhatsAppVerify } from '@/components/WhatsAppVerify';
 import { useSearchParams } from 'next/navigation';
 
-export default function SettingSection({ params }: { params: { section: string } }) {
-  const s = SETTINGS.find(([n]) => slug(n) === params.section);
+export default function SettingSection({ params }: { params: Promise<{ section: string }> }) {
+  const { section } = use(params);
+  const s = SETTINGS.find(([n]) => slug(n) === section);
   if (!s) return <Card><EmptyState icon="search_off" title="That setting doesn’t exist" text="Pick one from the list." action={<ButtonLink href="/settings" small>All settings</ButtonLink>} /></Card>;
   const [name, icon, desc] = s;
   return (

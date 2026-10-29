@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   if (failed || !code) return NextResponse.redirect(`${origin}${login}?error=${encodeURIComponent(failed || 'missing_code')}`);
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) return NextResponse.redirect(`${origin}${login}?error=${encodeURIComponent(error.message)}`);
 

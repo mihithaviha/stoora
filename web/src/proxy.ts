@@ -1,10 +1,10 @@
-// Keeps the Supabase login fresh and sends signed-out people to the right login page.
+// (Next 16 calls this file "proxy"; it was "middleware" before.) Keeps the Supabase login fresh and sends signed-out people to the right login page.
 // In demo mode (no Supabase keys) it does nothing, so every page opens without logging in.
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { ADMIN_PATHS, BUYER_PATHS, SELLER_PATHS, SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured, startsWithAny } from '@/lib/supabase/config';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured) return NextResponse.next();
 
   let response = NextResponse.next({ request });

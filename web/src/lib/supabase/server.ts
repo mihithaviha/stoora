@@ -4,8 +4,8 @@ import { cookies } from 'next/headers';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from './config';
 
 /** A Supabase client for server code (route handlers). It reads and writes the login cookie. */
-export function createServerSupabase() {
-  const store = cookies();
+export async function createServerSupabase() {
+  const store = await cookies();
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => store.getAll(),

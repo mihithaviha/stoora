@@ -151,7 +151,7 @@ type ToastT = { msg: string; icon: string; undo?: () => void; id: number };
 const ToastCtx = createContext<(msg: string, opts?: { icon?: string; undo?: () => void }) => void>(() => {});
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [t, setT] = useState<ToastT | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const show = useCallback((msg: string, opts?: { icon?: string; undo?: () => void }) => {
     clearTimeout(timer.current); const id = Date.now();
     setT({ msg, icon: opts?.icon ?? 'check_circle', undo: opts?.undo, id });

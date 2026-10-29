@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import { useStore } from '@/lib/store';
 import { Button, ButtonLink, Card, ConfirmDialog, EmptyState, Field, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
 import { StatusBadge, StockText } from '@/components/ProductBits';
@@ -20,10 +20,11 @@ function shrink(file: File): Promise<string> {
   });
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { db, ready, saveProduct, deleteProduct, restoreProduct } = useStore(); const router = useRouter(); const toast = useToast();
-  const isNew = params.id === 'new';
-  const p = db.products.find((x) => x.id === params.id);
+  const isNew = id === 'new';
+  const p = db.products.find((x) => x.id === id);
   const [f, setF] = useState<Form>(() => toForm(p));
   const [loaded, setLoaded] = useState(false);
   const [tried, setTried] = useState(false); const [busy, setBusy] = useState(false); const [del, setDel] = useState(false); const [photoErr, setPhotoErr] = useState('');
