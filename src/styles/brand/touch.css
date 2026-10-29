@@ -1,0 +1,60 @@
+/*
+ * Touch screens and small windows. Loaded after each page's own styles, so it only adds to them:
+ * bigger tap areas, no "stuck" hover states after a tap, a pressed state that answers a finger at once,
+ * and a few layouts that need a different shape on a phone.
+ */
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* no 300ms wait or double-tap zoom on controls, and no grey flash when one is tapped */
+a, button, summary, select, label, input, textarea, [role="button"], [role="tab"], [data-act], [data-go] { touch-action: manipulation; }
+
+@media (hover: none), (pointer: coarse) {
+  a, button, [role="button"], [role="tab"], [data-act], [data-go], label { -webkit-tap-highlight-color: transparent; }
+
+  /* hover has no meaning for a finger: nothing should stay lifted or zoomed after a tap */
+  .jr-card:hover .jr-card-img img,
+  .jr-pick-in:hover .jr-pick-img img { transform: none; }
+  .jr-topic:hover, .choice:hover, .aud-tab:hover, .btn.cta:hover,
+  button.li:hover, .tapbox:hover, .tile:not(.static):hover, .trow:hover, .sf-card:hover { transform: none; }
+  .lnav .logo:hover .appicon { transform: none; }
+
+  /* instead, a quick press */
+  .btn:active, .ibtn:active, .mini:active, .chip:active, .seg button:active,
+  button.li:active, .tapbox:active, .tile:not(.static):active, .trow:active, .choice:active,
+  .jr-topic:active, .sf-card:active, .bbar .pill a:active { transform: scale(.97); }
+
+  /* comfortable targets: at least 44 x 44 */
+  .btn.sm, .mini, .seg button, .chip, button.link { min-height: 44px; }
+  .ibtn { min-width: 44px; min-height: 44px; }
+  button.link { display: inline-flex; align-items: center; padding-inline: 6px; }
+  .switch::before, .chk::before { content: ""; position: absolute; inset: -10px -6px; } /* a bigger hit area, same look */
+  .chk { position: relative; }
+  .lnav .links button { min-height: 44px; }
+  footer a, .foot a { display: inline-block; padding-block: 8px; }
+}
+
+/* ---------- phones ---------- */
+
+/* the website's top bar must fit 360px: logo, "Get started" and the menu button */
+@media (max-width: 380px) {
+  .lnav .in { gap: var(--s1); }
+  .lnav .logo { gap: 6px; }
+  .lnav .acts .btn { padding-inline: 14px; font-size: 14px; }
+  .lnav .menu-btn { width: 40px; margin-right: -4px; }
+}
+
+/* shop pages: two products across, the way people expect to browse on a phone */
+@media (max-width: 560px) {
+  .sf-grid, .sf-grid-3, .sf-grid-4, html .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+
+/* form fields may shrink below their default width, so three of them wrap instead of running off the card */
+.field, .money-in, .money-in input, .cv-in { min-width: 0; }
+.money-in input { width: 100%; }
+
+/* the sticky bag / saved bar stays above the home indicator */
+.cm-bar, .sf-cartbar, .cartbar { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+
+/* full-height screens use the visible height, not the height behind the browser's address bar */
+.sf { min-height: 100svh; }

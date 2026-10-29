@@ -2,18 +2,33 @@
   "name": "stoora",
   "version": "1.0.0",
   "private": true,
-  "description": "Stoora: public site, shop dashboard, public shop pages, JSON API and SQLite database. No npm packages.",
-  "engines": {
-    "node": ">=22.5.0"
-  },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server/index.js",
-    "dev": "node --disable-warning=ExperimentalWarning server/index.js",
-    "test": "node --disable-warning=ExperimentalWarning server/test-api.js",
-    "format": "prettier --write \"server/**/*.js\" \"public/js/dashboard/*.js\" \"public/shop.html\"",
-    "web:install": "npm --prefix web install",
-    "web:dev": "npm --prefix web run dev",
-    "web:build": "npm --prefix web run build",
-    "web:start": "npm --prefix web start"
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "screenshots": "node scripts/capture-screenshots.js",
+    "e2e": "node scripts/e2e-flows.js",
+    "db:test": "node supabase/tests/schema.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "gsap": "3.12.5",
+    "next": "16.4.2",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@types/node": "20.16.11",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.6.3"
+  },
+  "description": "Stoora: the public site, Journal, sign-in, seller dashboard, storefronts, buyer account and admin. One React + TypeScript app (Next.js) on one port.",
+  "engines": {
+    "node": ">=20.9.0"
   }
 }
