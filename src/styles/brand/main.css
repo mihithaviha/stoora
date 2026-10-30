@@ -895,7 +895,7 @@ svg.paint .p2{mix-blend-mode:multiply}
 
 /* ---- 3. Who it's for ---- */
 .aud-hint{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:var(--pill);padding:6px var(--s3) 6px var(--s2);width:max-content;max-width:100%;margin-top:var(--s1)}
-.aud-hint .ms{color:var(--primary-deep)}
+.aud-hint .ms{color:var(--primary-deep);flex-shrink:0}
 .aud-tabs{position:relative}
 .aud-ind{position:absolute;left:0;top:0;opacity:0;z-index:0;pointer-events:none;border-radius:var(--r-2xl);background:var(--surface);border:1.5px solid var(--ink);box-shadow:var(--shadow-warm);transition:transform .45s var(--ease-out),width .45s var(--ease-out),height .45s var(--ease-out),opacity .2s}
 .aud-tab{position:relative;z-index:1;cursor:pointer;background:var(--surface);border:1px solid var(--line);transition:background-color .2s,border-color .2s,color .2s,transform .25s var(--ease-out),box-shadow .25s}
@@ -1160,7 +1160,6 @@ select.input{padding-right:46px;text-overflow:ellipsis}
 body.lmenu-open{overflow:hidden}
 
 /* the pause button beside "Who it's for" */
-.aud-hint{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s1)}
 .aud-pp{width:32px;height:32px;margin-left:var(--s1);display:inline-grid;place-items:center;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;transition:background-color .2s}
 .aud-pp:hover{background:var(--muted)}
 

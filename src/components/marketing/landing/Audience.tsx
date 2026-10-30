@@ -125,7 +125,7 @@ export function Audience() {
         <div className="sec-open rv">
           <span className="eyebrow">Who it’s for</span>
           <h2 className="l-h2" id="for-h">Made for people who sell from their phone.</h2>
-          <p className="aud-hint"><Ic n="touch_app" c="sm" />Choose your selling style to see how Stoora fits.</p>
+          <p className="aud-hint"><Ic n="touch_app" c="sm" /><span>Choose your selling style to see how Stoora fits.</span></p>
         </div>
         <div
           className="aud rv"
