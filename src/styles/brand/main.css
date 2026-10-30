@@ -587,7 +587,7 @@ body.mode-public::before,body.mode-auth::before{background:var(--surface)}
 .claim input::placeholder{color:var(--ink-45)}
 .claim .btn{height:46px;margin-right:5px}
 .claim:focus-within{box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent),0 14px 30px -18px oklch(55% .2 40/.55)}
-@media (max-width:479px){.claim{flex-direction:column;background:none;box-shadow:none;padding:0;gap:var(--s2);max-width:none}.claim .box{width:100%;border:2px solid transparent;background:linear-gradient(var(--surface),var(--surface)) padding-box,var(--gradient-action) border-box}.claim .btn{width:100%;margin:0;height:50px}.claim .box{flex:none;height:56px}}
+/* claim mobile single-pill handled in touch.css */
 .hero .sub{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);margin-top:var(--s3)}
 .hero .admit{font-size:13px;color:var(--ink-65);display:flex;gap:var(--s1);align-items:center}
 .hero .admit i{width:8px;height:8px;border-radius:50%;background:var(--marigold);flex:none}
