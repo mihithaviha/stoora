@@ -80,7 +80,9 @@ function Day() {
       track.style.transform = '';
       pin.style.top = '';
       distance.current = 0;
-      track.querySelectorAll<HTMLElement>('.dcard').forEach((card) => { card.style.opacity = ''; card.classList.remove('now'); });
+      const line = track.querySelector<HTMLElement>('.day-line');
+      if (line) { line.style.top = ''; line.style.height = ''; line.style.bottom = ''; }
+      track.querySelectorAll<HTMLElement>('.dcard').forEach((card) => { card.style.opacity = ''; card.classList.remove('now', 'reached'); });
       return;
     }
     const style = getComputedStyle(view);
@@ -92,7 +94,48 @@ function Day() {
 
   const scroll = useCallback(() => {
     const day = dayRef.current, pin = pinRef.current, view = viewRef.current, track = trackRef.current;
-    if (!day || !pin || !view || !track || !distance.current) return;
+    if (!day || !pin || !view || !track) return;
+
+    if (window.innerWidth < 980) {
+      // Mobile & tablet vertical timeline scroll animation
+      const vh = window.innerHeight;
+      const cards = track.querySelectorAll<HTMLElement>('.dcard');
+      if (!cards.length) return;
+
+      const line = track.querySelector<HTMLElement>('.day-line');
+      if (line && cards.length >= 2) {
+        const firstCard = cards[0];
+        const lastCard = cards[cards.length - 1];
+        const topOffset = firstCard.offsetTop + 28;
+        const totalHeight = (lastCard.offsetTop + 28) - topOffset;
+        line.style.top = `${topOffset}px`;
+        line.style.height = `${totalHeight}px`;
+        line.style.bottom = 'auto';
+      }
+
+      const firstRect = cards[0].getBoundingClientRect();
+      const lastRect = cards[cards.length - 1].getBoundingClientRect();
+      const focalY = vh * 0.52;
+      const firstY = firstRect.top + 28;
+      const lastY = lastRect.top + 28;
+      const totalSpan = lastY - firstY;
+      const progress = totalSpan > 0 ? Math.max(0, Math.min(1, (focalY - firstY) / totalSpan)) : 0;
+      track.style.setProperty('--mobile-p', progress.toFixed(4));
+
+      let activeIdx = 0;
+      cards.forEach((card, idx) => {
+        const rect = card.getBoundingClientRect();
+        const reached = rect.top + 28 <= focalY;
+        card.classList.toggle('reached', reached);
+        if (reached) activeIdx = idx;
+      });
+      cards.forEach((card, idx) => {
+        card.classList.toggle('now', idx === activeIdx);
+      });
+      return;
+    }
+
+    if (!distance.current) return;
     const top = parseFloat(getComputedStyle(pin).top) || 0;
     const p = Math.min(1, Math.max(0, (top - day.getBoundingClientRect().top) / distance.current));
     track.style.transform = `translate3d(${(-p * distance.current).toFixed(1)}px,0,0)`;

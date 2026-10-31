@@ -97,12 +97,35 @@ a, button, summary, select, label, input, textarea, [role="button"], [role="tab"
     color: var(--ink-soft);
   }
   .stage {
-    max-width: 440px;
-    margin: 12px auto 0;
-    width: 100%;
+    max-width: min(410px, 92vw) !important;
+    margin: 12px auto 0 !important;
+    width: 100% !important;
+  }
+  .stage .shop {
+    right: 4px !important;
+    width: 72% !important;
   }
   .stage .phone {
-    width: min(200px, 45%);
+    width: min(190px, 44%) !important;
+  }
+
+  /* Who it's for photo: complete image shown with natural proportions and zero cropping */
+  .aphoto {
+    aspect-ratio: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  .aphoto img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 440px !important;
+    object-fit: contain !important;
+    border-radius: var(--r-2xl) !important;
+    box-shadow: var(--shadow-warm) !important;
   }
 }
 

@@ -196,3 +196,10 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 .dapp .fbar-wrap { position: absolute; left: 50%; bottom: 20px; width: 460px; max-width: calc(100% - 32px); transform: translateX(-50%); z-index: 20; }
 .dapp .fbar-wrap .fbar { position: static; width: 100%; margin: 0; }
 .dapp .csoon.hero-ask, .dapp .hero-ask .csoon { display: block; }
+
+@media (max-width: 979px) {
+  .photos img, .thumb img {
+    object-fit: contain !important;
+    background: var(--inner) !important;
+  }
+}

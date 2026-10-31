@@ -110,3 +110,12 @@
 .t-neg{color:var(--negative)}
 .ibtn[aria-pressed="true"]{color:var(--negative)}
 .ibtn[aria-pressed="true"] .ms{font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 24}
+
+@media (max-width: 979px) {
+  .pcard .part img,
+  .gallery .part img,
+  .bagline .part img,
+  .sumline .part img {
+    object-fit: contain !important;
+  }
+}
