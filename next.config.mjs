@@ -7,6 +7,12 @@ const nextConfig = {
   // the public site and the seller app are separate root layouts, so an unknown address needs its own 404 page
   experimental: { globalNotFound: true },
   poweredByHeader: false,
+  async redirects() {
+    return [
+      { source: '/journal', destination: '/blogs', permanent: true },
+      { source: '/journal/:slug', destination: '/blogs/:slug', permanent: true },
+    ];
+  },
   async headers() {
     return [{
       source: '/:path*',

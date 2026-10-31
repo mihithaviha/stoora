@@ -30,7 +30,7 @@ export default function GlobalNotFound() {
               <p className="lede">The link may be old or mistyped. Here are some places that will help.</p>
               <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)' }}>
                 <Link className="btn primary" href="/">Go to the home page<Ic n="arrow_forward" c="sm" /></Link>
-                <Link className="btn line" href="/journal">Read the Journal</Link>
+                <Link className="btn line" href="/blogs">Read Blogs</Link>
                 <Link className="btn line" href="/login">Log in</Link>
               </div>
             </div>

@@ -182,7 +182,7 @@ function OrbitCard({ article, n, total }: { article: Article; n: number; total: 
   const topic = topicOf(article.topic);
   return (
     <li className="jr-ocard" data-i={n} role="group" aria-roledescription="slide" aria-label={`Story ${n + 1} of ${total}`}>
-      <Link className="jr-ocard-link" href={`/journal/${article.slug}`}>
+      <Link className="jr-ocard-link" href={`/blogs/${article.slug}`}>
         <span className="jr-ocard-img"><Picture name={article.photo} sizes="(min-width: 1000px) 430px, 80vw" eager={n < 2} soon={n >= 2} /></span>
         <span className="jr-ocard-body">
           <TopicTag topic={topic} />

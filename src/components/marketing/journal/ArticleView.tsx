@@ -35,7 +35,7 @@ function BlockView({ block }: { block: Block }) {
 
 export function ArticleView({ article, origin }: { article: Article; origin: string }) {
   const topic = topicOf(article.topic);
-  const url = `${origin}/journal/${article.slug}`;
+  const url = `${origin}/blogs/${article.slug}`;
   const headings = article.body.filter((b) => b.h2).map((b) => b.h2 as string);
   const share = `https://wa.me/?text=${encodeURIComponent(`${article.title} ${url}`)}`;
   return (
@@ -43,8 +43,8 @@ export function ArticleView({ article, origin }: { article: Article; origin: str
       <div className="jr-article-top">
         <div className="wrap jr-narrow">
           <nav className="jr-crumbs" aria-label="Breadcrumb">
-            <Link href="/journal">Journal</Link><Ic n="chevron_right" c="xs" />
-            <Link href={`/journal?topic=${topic.id}`}>{topic.name}</Link><Ic n="chevron_right" c="xs" />
+            <Link href="/blogs">Blogs</Link><Ic n="chevron_right" c="xs" />
+            <Link href={`/blogs?topic=${topic.id}`}>{topic.name}</Link><Ic n="chevron_right" c="xs" />
             <span aria-current="page">{article.title}</span>
           </nav>
           <div className="jr-meta jr-meta-lg"><TopicTag topic={topic} /><span><Ic n="schedule" c="xs" />{readTime(article)}</span></div>
@@ -80,12 +80,12 @@ export function ArticleView({ article, origin }: { article: Article; origin: str
             </>
           )}
           <p className="jr-note">This is general guidance for small sellers. Check prices, rules and costs for your own business before you act on it.</p>
-          <p><Link className="jr-back" href="/journal"><Ic n="arrow_back" c="xs" />Back to the Journal</Link></p>
+          <p><Link className="jr-back" href="/blogs"><Ic n="arrow_back" c="xs" />Back to Blogs</Link></p>
         </article>
       </div>
       <section className="jr-list jr-related" aria-labelledby="jr-rel-h">
         <div className="wrap">
-          <div className="jr-list-head"><h2 className="l-h2" id="jr-rel-h">Keep reading</h2><Link className="jr-all" href="/journal">All stories<Ic n="arrow_forward" c="xs" /></Link></div>
+          <div className="jr-list-head"><h2 className="l-h2" id="jr-rel-h">Keep reading</h2><Link className="jr-all" href="/blogs">All stories<Ic n="arrow_forward" c="xs" /></Link></div>
           <div className="jr-grid">{relatedTo(article).map((item) => <StoryCard key={item.slug} article={item} />)}</div>
         </div>
       </section>

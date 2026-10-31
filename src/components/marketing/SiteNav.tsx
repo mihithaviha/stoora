@@ -18,7 +18,7 @@ type Props = {
   /** On the home page the section links scroll; elsewhere they are plain links to the home page's addresses. */
   onHome?: boolean;
   /** Which top-level page this is, for the highlighted link. */
-  page?: 'home' | 'journal';
+  page?: 'home' | 'blogs' | 'journal';
   /** Scroll to a section (home page only). */
   onSection?: (id: string) => void;
   /** The section in view (home page only). */
@@ -51,7 +51,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
   const slideTo = useCallback(() => {
     const links = linksRef.current;
     if (!links) return;
-    const key = page === 'journal' ? 'journal' : activeSection;
+    const key = (page === 'blogs' || page === 'journal') ? 'blogs' : activeSection;
     place(indRef.current, key ? links.querySelector<HTMLElement>(`[data-key="${key}"]`) : null);
   }, [activeSection, page]);
 
@@ -108,7 +108,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
             <span className="ind" ref={indRef} aria-hidden="true" />
             <span className="hov" ref={hovRef} aria-hidden="true" />
             {SECTIONS.map((s) => section(s.id, s.label, s.path))}
-            <Link href="/journal" data-key="journal" className={page === 'journal' ? 'on' : ''} aria-current={page === 'journal' ? 'page' : undefined}>Journal</Link>
+            <Link href="/blogs" data-key="blogs" className={(page === 'blogs' || page === 'journal') ? 'on' : ''} aria-current={(page === 'blogs' || page === 'journal') ? 'page' : undefined}>Blogs</Link>
           </nav>
           <div className="acts">
             <Link className="btn quiet sm login" href="/login">Log in</Link>
@@ -129,8 +129,8 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
                 <span>{s.label}</span><Ic n="arrow_forward" c="t-cap" />
               </Link>
             ))}
-            <Link href="/journal" style={{ '--i': 4 } as CSSProperties} aria-current={page === 'journal' ? 'page' : undefined} onClick={() => closeMenu()}>
-              <span>Journal</span><Ic n="arrow_forward" c="t-cap" />
+            <Link href="/blogs" style={{ '--i': 4 } as CSSProperties} aria-current={(page === 'blogs' || page === 'journal') ? 'page' : undefined} onClick={() => closeMenu()}>
+              <span>Blogs</span><Ic n="arrow_forward" c="t-cap" />
             </Link>
           </nav>
           <div className="ft" style={{ '--i': 5 } as CSSProperties}>

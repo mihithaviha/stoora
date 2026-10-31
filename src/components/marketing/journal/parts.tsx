@@ -31,7 +31,7 @@ export function StoryCard({ article, hidden = false, collapsed = false }: { arti
     <article className={`jr-card${collapsed ? ' is-collapsed' : ''}`} hidden={hidden} data-slug={article.slug}>
       <div className="jr-card-img" aria-hidden="true"><Picture name={article.photo} sizes={CARD_SIZES} /></div>
       <div className="jr-meta"><TopicTag topic={topic} /><span>{formatDate(article.published)} · {readTime(article)}</span></div>
-      <h3><Link href={`/journal/${article.slug}`}>{article.title}</Link></h3>
+      <h3><Link href={`/blogs/${article.slug}`}>{article.title}</Link></h3>
       <p>{article.excerpt}</p>
       <span className="jr-more">Read story<Ic n="arrow_forward" c="xs" /></span>
     </article>

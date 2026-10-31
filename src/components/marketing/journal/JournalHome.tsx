@@ -92,7 +92,7 @@ export function JournalHome() {
             <div><span className="jr-kicker">Explore</span><h2 id="jr-topics-h">By topic</h2></div>
             <form className="jr-search" role="search" onSubmit={submit}>
               <Ic n="search" />
-              <label className="sr" htmlFor="jr-q">Search the Journal</label>
+              <label className="sr" htmlFor="jr-q">Search Blogs</label>
               <input id="jr-q" name="q" type="search" value={typed} placeholder="Search stories" autoComplete="off" maxLength={80}
                 onChange={(e) => { setTyped(e.target.value); publish(topic, e.target.value, false); }} />
               <button className="btn primary sm" type="submit">Search</button>
@@ -100,7 +100,7 @@ export function JournalHome() {
           </div>
           <nav className="jr-topic-grid" aria-label="Topics">
             {TOPICS.map((item) => (
-              <Link key={item.id} className="jr-topic" href={`/journal?topic=${item.id}`} aria-current={item.id === topic ? 'true' : undefined}
+              <Link key={item.id} className="jr-topic" href={`/blogs?topic=${item.id}`} aria-current={item.id === topic ? 'true' : undefined}
                 onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); choose(item.id); }}>
                 <span className={`jr-topic-ic t-${item.id}`}><Ic n={item.icon} /></span>
                 <b>{item.name}</b>
@@ -110,7 +110,7 @@ export function JournalHome() {
             ))}
           </nav>
           <p className="jr-allrow">
-            <Link className="jr-allstories" href="/journal" hidden={!filtering} onClick={(e) => { e.preventDefault(); reset(); }}><Ic n="arrow_back" c="xs" />Show all stories</Link>
+            <Link className="jr-allstories" href="/blogs" hidden={!filtering} onClick={(e) => { e.preventDefault(); reset(); }}><Ic n="arrow_back" c="xs" />Show all stories</Link>
           </p>
         </div>
       </section>
@@ -131,7 +131,7 @@ export function JournalHome() {
           <div className="jr-empty" hidden={shownCount > 0}>
             <h3>No stories match that yet.</h3>
             <p>Try another word, or look at everything we have.</p>
-            <Link className="btn line" href="/journal" onClick={(e) => { e.preventDefault(); reset(); }}>Show all stories</Link>
+            <Link className="btn line" href="/blogs" onClick={(e) => { e.preventDefault(); reset(); }}>Show all stories</Link>
           </div>
         </div>
       </section>
@@ -139,14 +139,14 @@ export function JournalHome() {
       <section className="jr-pick" hidden={filtering} aria-labelledby="jr-pick-h">
         <div className="wrap">
           <div className="jr-pick-in">
-            <Link className="jr-pick-img" href={`/journal/${PICK.slug}`} tabIndex={-1} aria-hidden="true"><Picture name={PICK.photo} sizes="(min-width: 900px) 520px, 92vw" /></Link>
+            <Link className="jr-pick-img" href={`/blogs/${PICK.slug}`} tabIndex={-1} aria-hidden="true"><Picture name={PICK.photo} sizes="(min-width: 900px) 520px, 92vw" /></Link>
             <div className="jr-pick-copy">
               <span className="jr-kicker">Editor’s pick</span>
-              <h2 id="jr-pick-h"><Link href={`/journal/${PICK.slug}`}>{PICK.title}</Link></h2>
+              <h2 id="jr-pick-h"><Link href={`/blogs/${PICK.slug}`}>{PICK.title}</Link></h2>
               <p className="jr-pick-why">{PICK.pick}</p>
               <p className="jr-pick-short"><b>The short answer</b>{PICK.summary}</p>
               <div className="jr-pick-foot">
-                <Link className="btn primary" href={`/journal/${PICK.slug}`}>Read story<Ic n="arrow_forward" c="xs" /></Link>
+                <Link className="btn primary" href={`/blogs/${PICK.slug}`}>Read story<Ic n="arrow_forward" c="xs" /></Link>
                 <span className="jr-meta"><TopicTag topic={pickTopic} /><span>{readTime(PICK)}</span></span>
               </div>
             </div>
