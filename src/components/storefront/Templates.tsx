@@ -25,6 +25,8 @@ export interface StoreCtx {
   extras?: StoreExtras;
   /** An editor or gallery preview (not the live shop). */
   preview?: boolean;
+  /** The seller paused the shop: buyers can look but not order, so no Add to bag buttons. */
+  paused?: boolean;
   /** The content is the labelled sample, not the seller's own. */
   sample?: boolean;
   /** Saved items of the person looking, when the shop supports them (previews have no hearts). */
@@ -101,7 +103,7 @@ function RatingLine({ item, ctx }: { item: StoreItem; ctx: P['ctx'] }) {
 function Action({ item, ctx }: { item: StoreItem; ctx: P['ctx'] }) {
   const a = ctx.actions;
   if (isService(item)) return <button className="sf-btn" type="button" onClick={() => a?.book?.(item.id)}>{ctx.config.hero.cta && ctx.template === 'services' ? ctx.config.hero.cta : 'Book now'}</button>;
-  if (soldOut(item)) return null;
+  if (soldOut(item) || ctx.paused) return null;
   // A product with sizes needs a choice first, so its button opens the product page.
   if (optionsOf(item).length) return <button className="sf-btn" type="button" onClick={() => a?.view?.(item.id)}>Choose size</button>;
   const quantity = ctx.cart?.[item.id] || 0;

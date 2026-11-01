@@ -8,7 +8,7 @@ import { getSupabase } from './supabase/client';
 import { isSupabaseConfigured, safeNext } from './supabase/config';
 
 export type Role = 'seller' | 'buyer' | 'admin';
-export interface Person { id: string; name: string; email: string; avatar?: string; phone?: string }
+export interface Person { id: string; name: string; email: string; avatar?: string; phone?: string; /** A phone number that was proven with a code is linked to this login. */ hasPhone?: boolean; /** A Google account is linked to this login. */ hasGoogle?: boolean }
 interface AuthCtx {
   mode: 'live' | 'demo';
   ready: boolean;
@@ -27,7 +27,7 @@ const DEMO_USER: Person = { id: 'demo', name: 'Meera Iyer', email: 'meera.studio
 const Ctx = createContext<AuthCtx | null>(null);
 export const toE164 = (phone: string) => '+91' + phone.replace(/\D/g, '').slice(-10);
 
-const person = (u: User): Person => ({ id: u.id, email: u.email ?? '', phone: u.phone || undefined, name: (u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'You') as string, avatar: (u.user_metadata?.avatar_url || u.user_metadata?.picture) as string | undefined });
+const person = (u: User): Person => ({ id: u.id, email: u.email ?? '', phone: u.phone || undefined, hasPhone: !!u.phone && !!u.phone_confirmed_at, hasGoogle: (u.identities ?? []).some((i) => i.provider === 'google'), name: (u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'You') as string, avatar: (u.user_metadata?.avatar_url || u.user_metadata?.picture) as string | undefined });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sb = getSupabase();

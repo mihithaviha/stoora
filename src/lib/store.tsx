@@ -141,8 +141,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const createShop = useCallback(async (s: NewShopInput): Promise<string | null> => {
     if (!sb) {
-      setDemo((d) => ({ ...d, shop: { ...d.shop, name: s.name, handle: s.handle, city: s.city, look: s.look, open: s.open, cod: s.cod },
-        products: s.firstProduct ? [{ id: 'p' + Date.now(), name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' }, ...d.products] : d.products }));
+      // a new shop starts empty (like a real one); "Reset demo" brings the sample shop back
+      setDemo(() => ({ ...emptyDb(), shop: { ...PLACEHOLDER, name: s.name, owner: auth.user?.name ?? '', handle: s.handle, city: s.city, look: s.look, open: true, cod: s.cod, online: s.online, upi: s.upi ?? '', orderSettings: (s.minimum ? { minimum: s.minimum } : {}) as Record<string, string> },
+        products: s.firstProduct ? [{ id: 'p' + Date.now(), name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' }] : [] }));
       return null;
     }
     if (!userId) return 'Please sign in first.';

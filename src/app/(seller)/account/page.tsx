@@ -21,7 +21,7 @@ export default function AccountPage() {
           </Card>
           <Card title="Shop" icon="storefront">
             <div className="kv"><div className="r"><span>Shop</span><span>{db.shop.name}</span></div><div className="r"><span>Link</span><span>stoora.in/{db.shop.handle}</span></div><div className="r"><span>City</span><span>{db.shop.city || '—'}</span></div></div>
-            <Link className="link cap" href="/settings/general" style={{ marginTop: 'var(--s2)', display: 'inline-flex' }}>Edit shop details<Icon name="chevron_right" size="xs" /></Link>
+            <Link className="link cap" href="/settings/shop-details" style={{ marginTop: 'var(--s2)', display: 'inline-flex' }}>Edit shop details<Icon name="chevron_right" size="xs" /></Link>
           </Card>
         </div>
         <div>

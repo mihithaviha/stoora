@@ -159,10 +159,11 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
 
     await flow('Open a shop through onboarding', async (t) => {
       await t.goto('/onboarding'); await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
-      await t.type('#ob-name', 'Test Bakes'); await t.click('Continue'); await t.type('#ob-pn', 'Chocolate cake'); await t.type('#ob-pp', '850'); await t.click('Continue');
+      await t.type('#ob-name', 'Test Bakes'); await t.click('Continue');
       await t.click('Continue'); await t.click('Continue'); await t.click('Publish my shop');
       expect(await t.waitFor('Test Bakes is live', 8000), 'shop was not published');
       expect(await t.has('stoora.in/test-bakes'), 'shop link was not made from the name');
+      await t.goto('/s/test-bakes'); expect(await t.has('Coming soon'), 'a shop with no products should say Coming soon');
     });
 
     await flow('Signed-out screens appear without a login', async (t) => {

@@ -8,9 +8,24 @@ export type PayMethod = 'upi' | 'cod' | 'cash';
 export interface Product {
   id: string;
   name: string;
-  category: 'Kurtas' | 'Dupattas' | 'Other';
+  /** The shop's own category name (picked from the shop's categories, or a new short name). */
+  category: string;
   color?: string;
+  /** Sizes the buyer can pick. Stock for each one is in `optionStock`. */
   sizes: string[];
+  /** Other colours the product comes in (the main colour stays in `color`). */
+  colors?: string[];
+  /** Stock for each size (or, when there are no sizes, each colour). When set, `stock` is their total. */
+  optionStock?: Record<string, number>;
+  material?: string;
+  /** Grams. Used for shipping. */
+  weightGrams?: number;
+  /** Box size in cm, worked out by AI and used for shipping. Never shown on the form. */
+  boxCm?: { l: number; w: number; h: number };
+  /** Search words from AI. Never shown on the form. */
+  tags?: string[];
+  /** Set by Stoora (shop handle + running number, like SHAURYA-0001). Read-only. */
+  productNumber?: string;
   price: number;
   comparePrice?: number;
   stock: number;
@@ -76,6 +91,8 @@ export interface Shop {
   // live mode only
   id?: string; online?: boolean; tagline?: string; orderSettings?: Record<string, string>;
   whatsappNumber?: string; whatsappVerified?: boolean; showWhatsapp?: boolean;
+  /** UPI ID buyers pay to (private: the public shop page only learns that one is set). */
+  upi?: string;
   /** The storefront design the seller chose (template, theme, texts, sections). Empty until they pick one. */
   storefront?: StoreConfig | null;
 }

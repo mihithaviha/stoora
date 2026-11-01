@@ -1,5 +1,6 @@
 'use client';
 // Product details: pictures, price, size, delivery check, details, reviews and more from the shop.
+import { PAUSED_LINE } from '@/lib/shopstate';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -41,7 +42,7 @@ export default function ProductPage() {
           {p.sizes.length > 0 && <div className="field" id="size-h"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => <button key={s} type="button" aria-pressed={size === s} onClick={() => { setSize(s); setErr(false); }}>{s}</button>)}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size to continue.</span>}</div>}
           <div className="row"><span className="flabel">Quantity</span><div className="step" role="group" aria-label="Quantity"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="One less"><Icon name="remove" size="sm" /></button><output aria-live="polite">{qty}</output><button type="button" onClick={() => setQty(Math.min(Math.min(10, p.stock || 1), qty + 1))} aria-label="One more"><Icon name="add" size="sm" /></button></div></div>
           <div className="pdp-bar">
-            <Button kind="primary" icon="shopping_bag" disabled={out || !db.shop.open} onClick={() => add()}>{out ? 'Sold out' : !db.shop.open ? 'Not taking orders' : 'Add to bag'}</Button>
+            {db.shop.open ? <Button kind="primary" icon="shopping_bag" disabled={out} onClick={() => add()}>{out ? 'Sold out' : 'Add to bag'}</Button> : <span className="cap grow" role="status">{PAUSED_LINE}</span>}
             <button className="ibtn" style={{ width: 52, height: 52 }} aria-pressed={wished} aria-label={wished ? 'Remove from wishlist' : 'Save to wishlist'} onClick={() => { bag.toggleWish(p.id); toast(wished ? 'Removed from wishlist.' : 'Saved to wishlist.', { icon: 'favorite' }); }}><Icon name={wished ? 'favorite' : 'favorite'} className={wished ? 't-neg' : ''} /></button>
           </div>
           {!out && db.shop.open && <Button full onClick={() => add(true)}>Buy now</Button>}

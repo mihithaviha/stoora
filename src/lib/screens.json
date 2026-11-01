@@ -57,28 +57,23 @@
   },
   {
     "group": "Store setup",
-    "name": "Step 2: first product",
+    "name": "Step 2: get paid",
     "path": "/onboarding?step=2"
   },
   {
     "group": "Store setup",
-    "name": "Step 3: get paid",
+    "name": "Step 3: orders and WhatsApp",
     "path": "/onboarding?step=3"
   },
   {
     "group": "Store setup",
-    "name": "Step 4: orders and WhatsApp",
+    "name": "Step 4: look",
     "path": "/onboarding?step=4"
   },
   {
     "group": "Store setup",
-    "name": "Step 5: look",
-    "path": "/onboarding?step=5"
-  },
-  {
-    "group": "Store setup",
     "name": "Shop is live",
-    "path": "/onboarding?step=6"
+    "path": "/onboarding?step=5"
   },
   {
     "group": "Seller dashboard",
@@ -172,38 +167,44 @@
   },
   {
     "group": "Settings",
-    "name": "General",
-    "path": "/settings/general",
+    "name": "Shop details",
+    "path": "/settings/shop-details",
     "auth": "seller"
   },
   {
     "group": "Settings",
-    "name": "Order-taking",
-    "path": "/settings/order-taking",
+    "name": "Delivery",
+    "path": "/settings/delivery",
     "auth": "seller"
   },
   {
     "group": "Settings",
-    "name": "WhatsApp verification",
-    "path": "/settings/whatsapp-verification",
+    "name": "Getting paid",
+    "path": "/settings/getting-paid",
+    "auth": "seller"
+  },
+  {
+    "group": "Settings",
+    "name": "WhatsApp",
+    "path": "/settings/whatsapp",
     "auth": "seller"
   },
   {
     "group": "Settings",
     "name": "WhatsApp: code sent",
-    "path": "/settings/whatsapp-verification?state=sent",
+    "path": "/settings/whatsapp?state=sent",
     "auth": "seller"
   },
   {
     "group": "Settings",
     "name": "WhatsApp: wrong code",
-    "path": "/settings/whatsapp-verification?state=wrong",
+    "path": "/settings/whatsapp?state=wrong",
     "auth": "seller"
   },
   {
     "group": "Settings",
     "name": "WhatsApp: verified",
-    "path": "/settings/whatsapp-verification?state=verified",
+    "path": "/settings/whatsapp?state=verified",
     "auth": "seller"
   },
   {

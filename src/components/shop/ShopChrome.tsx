@@ -6,7 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { Badge, Button, ButtonLink, Dialog, EmptyState, Icon, useToast } from '../ui';
 import { Logo, ProductArt, Stars } from '../bits';
 import { useStore } from '@/lib/store';
-import { FREE_DELIVERY_OVER, useBag } from '@/lib/bag';
+import { useBag } from '@/lib/bag';
+import { PAUSED_LINE } from '@/lib/shopstate';
 import { metaOf, SHOP_TAGLINE } from '@/lib/catalog';
 import { rs } from '@/lib/format';
 import type { Product } from '@/lib/types';
@@ -24,7 +25,7 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
 
   return (
     <div className="shopwrap">
-      {!db.shop.open ? <div className="announce" role="status">{db.shop.name} is not taking orders right now. You can still look around.</div> : <div className="announce">Free delivery on orders over {rs(FREE_DELIVERY_OVER)} · Ships from {db.shop.city}</div>}
+      {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : <div className="announce">{bag.rule.fee === 0 ? 'Free delivery on every order' : bag.rule.freeOver > 0 ? `Free delivery on orders over ${rs(bag.rule.freeOver)}` : `Delivery ${rs(bag.rule.fee)}`}{db.shop.city ? ` · Ships from ${db.shop.city}` : ''}</div>}
       <header className="shopbar">
         <div className="wrap">
           <button className="ibtn burger flat" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}><Icon name="menu" /></button>
@@ -91,12 +92,12 @@ export function ProductCard({ p, base, onQuick }: { p: Product; base: string; on
 }
 
 export function QuickView({ p, base, onClose }: { p: Product | null; base: string; onClose: () => void }) {
-  const bag = useBag(); const toast = useToast(); const [size, setSize] = useState<string>(''); const [err, setErr] = useState(false);
+  const bag = useBag(); const toast = useToast(); const [size, setSize] = useState<string>(''); const [err, setErr] = useState(false); const { db } = useStore(); const orderable = db.shop.open;
   useEffect(() => { setSize(''); setErr(false); }, [p?.id]);
   if (!p) return null; const m = metaOf(p);
   const add = () => { if (p.sizes.length && !size) { setErr(true); return; } bag.add(p.id, size || undefined); toast(`${p.name} added to your bag.`, { icon: 'shopping_bag' }); onClose(); };
   return (
-    <Dialog open onClose={onClose} title={p.name} footer={<><ButtonLink href={`${base}/p/${p.id}`} kind="line" small>Full details</ButtonLink><Button kind="primary" icon="shopping_bag" onClick={add}>Add to bag</Button></>}>
+    <Dialog open onClose={onClose} title={p.name} footer={<><ButtonLink href={`${base}/p/${p.id}`} kind="line" small>Full details</ButtonLink>{orderable ? <Button kind="primary" icon="shopping_bag" onClick={add}>Add to bag</Button> : <span className="cap">{PAUSED_LINE}</span>}</>}>
       <div className="stack"><ProductArt product={p} big /><div className="row"><span className="price money" style={{ fontSize: 24 }}>{rs(p.price)}</span><Stars value={m.rating} count={m.reviews} /></div><p className="t-body">{m.blurb}</p>
         {p.sizes.length > 0 && <div className="field"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => <button key={s} type="button" aria-pressed={size === s} onClick={() => { setSize(s); setErr(false); }}>{s}</button>)}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size first.</span>}</div>}</div>
     </Dialog>
