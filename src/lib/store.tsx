@@ -41,7 +41,7 @@ interface Store {
   deleteProduct: (id: string) => Product | undefined;
   restoreProduct: (p: Product) => void;
   /** Add or change a class, session or download. */
-  saveService: (s: Service) => void;
+  saveService: (s: Service, file?: File) => void;
   deleteService: (id: string) => Service | undefined;
   /** Conversations (demo shop only: live shops have no chats until WhatsApp or Instagram is connected). */
   sendChatReply: (id: string, text?: string) => void;
@@ -64,7 +64,9 @@ interface Store {
 
 const Ctx = createContext<Store | null>(null);
 const PLACEHOLDER: Shop = { name: 'Your shop', owner: '', handle: '', email: '', phone: '', city: '', open: true, showPrices: true, cod: true, look: 'Warm' };
-const emptyDb = (): Db => ({ shop: PLACEHOLDER, products: [], services: [], orders: [], bookings: [], chats: [], customers: [], offers: [], ideas: [], alerts: [], stats: deriveStats([]), nextOrderId: 1001 });
+const SHOP_CACHE = 'stoora.shop.cache';
+/** A blank shop. While the real one loads, the last known name and link are shown so the name never flashes "Your shop". */
+const emptyDb = (cached?: { name: string; handle: string } | null): Db => ({ shop: cached ? { ...PLACEHOLDER, name: cached.name, handle: cached.handle } : PLACEHOLDER, products: [], services: [], orders: [], bookings: [], chats: [], customers: [], offers: [], ideas: [], alerts: [], stats: deriveStats([]), nextOrderId: 1001 });
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const sb = getSupabase(); const live = !!sb;
@@ -82,6 +84,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [owner, setOwner] = useState<Db | null>(null); const [ownerLoaded, setOwnerLoaded] = useState(false);
   const [pub, setPub] = useState<Db | null>(null); const [pubHandle, setPubHandle] = useState('');
   const [buyer, setBuyer] = useState<Db | null>(null); const [buyerLoaded, setBuyerLoaded] = useState(false);
+  const [cached, setCached] = useState<{ name: string; handle: string } | null>(null);
+  useEffect(() => { try { const v = localStorage.getItem(SHOP_CACHE); if (v) setCached(JSON.parse(v)); } catch { /* ignore */ } }, []);
+  useEffect(() => { if (owner?.shop.name) { try { localStorage.setItem(SHOP_CACHE, JSON.stringify({ name: owner.shop.name, handle: owner.shop.handle })); } catch { /* ignore */ } } }, [owner?.shop.name, owner?.shop.handle]);
 
   useEffect(() => {
     if (live) return;
@@ -98,12 +103,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadPublicNow = useCallback(async (h: string) => { if (!sb || !h) return; try { setPub(await remote.loadPublic(sb, h)); } catch (e) { toast((e as Error).message, { icon: 'error' }); setPub(null); } finally { setPubHandle(h); } }, [sb, toast]);
   const loadBuyerNow = useCallback(async () => { if (!sb || !userId) return; try { setBuyer(await remote.loadBuyer(sb)); } catch (e) { toast((e as Error).message, { icon: 'error' }); } finally { setBuyerLoaded(true); } }, [sb, userId, toast]);
 
-  useEffect(() => { if (live && auth.ready && !userId) { setOwner(null); setOwnerLoaded(false); setBuyer(null); setBuyerLoaded(false); } }, [live, auth.ready, userId]);
+  useEffect(() => { if (live && auth.ready && !userId) { try { localStorage.removeItem(SHOP_CACHE); } catch { /* ignore */ } setCached(null); setOwner(null); setOwnerLoaded(false); setBuyer(null); setBuyerLoaded(false); } }, [live, auth.ready, userId]);
   useEffect(() => { if (live && view === 'owner' && userId) loadOwnerNow(); }, [live, view, userId, loadOwnerNow]);
   useEffect(() => { if (live && view === 'public' && handle) loadPublicNow(handle); }, [live, view, handle, loadPublicNow]);
   useEffect(() => { if (live && view === 'buyer' && userId) loadBuyerNow(); }, [live, view, userId, loadBuyerNow]);
 
-  const db: Db = !live ? demo : view === 'public' ? pub ?? emptyDb() : view === 'buyer' ? buyer ?? emptyDb() : owner ?? emptyDb();
+  const db: Db = !live ? demo : view === 'public' ? pub ?? emptyDb() : view === 'buyer' ? buyer ?? emptyDb() : owner ?? emptyDb(cached);
   const ready = !live ? demoReady : view === 'public' ? pubHandle === handle : view === 'buyer' ? (auth.ready && (!userId || buyerLoaded)) : (auth.ready && (!userId || ownerLoaded));
   const needsShop = live && view === 'owner' && !!userId && ownerLoaded && !owner;
 
@@ -126,10 +131,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const created: Order = { id: d.nextOrderId, buyer: o.buyer, phone: o.phone, city: o.city, address: o.address, lines, shipping: o.shipping, total,
       paid: o.pay === 'paid', method, shipped: false, source: o.source, createdAt: 'Just now', createdIso: new Date().toISOString(), notes: o.notes, createdBy: o.createdBy };
     // Stock goes down exactly once, here.
-    const products = d.products.map((p) => { const used = o.lines.filter((l) => l.productId === p.id).reduce((a, l) => a + l.qty, 0); return used ? { ...p, stock: Math.max(0, p.stock - used) } : p; });
+    const products = d.products.map((p) => {
+      const mine = o.lines.filter((l) => l.productId === p.id);
+      const used = mine.reduce((a, l) => a + l.qty, 0);
+      if (!used) return p;
+      // a product with stock for each size: the size that was bought goes down too
+      const optionStock = p.optionStock ? { ...p.optionStock } : undefined;
+      if (optionStock) mine.forEach((l) => { if (l.size && l.size in optionStock) optionStock[l.size] = Math.max(0, optionStock[l.size] - l.qty); });
+      return { ...p, stock: Math.max(0, p.stock - used), ...(optionStock ? { optionStock } : {}) };
+    });
     const next = { ...d, products, orders: [created, ...d.orders], nextOrderId: d.nextOrderId + 1 };
     dbRef.current = next; setDb(() => next);
-    save((c, sid) => remote.createOwnerOrder(c, sid, created, products.filter((p, i) => p.stock !== d.products[i].stock).map((p) => ({ id: p.id, stock: p.stock }))), true);
+    save((c, sid) => remote.createOwnerOrder(c, sid, created, products.filter((p, i) => p.stock !== d.products[i].stock).map((p) => ({ id: p.id, stock: p.stock, optionStock: p.optionStock }))), true);
     return created;
   }, [setDb, save]);
 
@@ -141,8 +154,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const createShop = useCallback(async (s: NewShopInput): Promise<string | null> => {
     if (!sb) {
-      setDemo((d) => ({ ...d, shop: { ...d.shop, name: s.name, handle: s.handle, city: s.city, look: s.look, open: s.open, cod: s.cod },
-        products: s.firstProduct ? [{ id: 'p' + Date.now(), name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' }, ...d.products] : d.products }));
+      // a new shop starts empty (like a real one); "Reset demo" brings the sample shop back
+      setDemo(() => ({ ...emptyDb(), shop: { ...PLACEHOLDER, name: s.name, owner: auth.user?.name ?? '', handle: s.handle, city: s.city, look: s.look, open: true, cod: s.cod, online: s.online, upi: s.upi ?? '', orderSettings: (s.minimum ? { minimum: s.minimum } : {}) as Record<string, string> },
+        products: s.firstProduct ? [{ id: 'p' + Date.now(), name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' }] : [] }));
       return null;
     }
     if (!userId) return 'Please sign in first.';
@@ -163,9 +177,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       save(async (c, sid) => { const saved = await remote.saveProduct(c, sid, p); setDb((d) => ({ ...d, products: d.products.map((x) => (x.id === p.id ? saved : x)) })); });
     },
     deleteProduct: (id) => { const p = db.products.find((x) => x.id === id); setDb((d) => ({ ...d, products: d.products.filter((x) => x.id !== id) })); save((c) => remote.deleteProduct(c, id)); return p; },
-    saveService: (s) => {
+    saveService: (s, file) => {
       setDb((d) => ({ ...d, services: d.services.some((x) => x.id === s.id) ? d.services.map((x) => (x.id === s.id ? s : x)) : [...d.services, s] }));
-      save(async (c, sid) => { const saved = await remote.saveService(c, sid, s); setDb((d) => ({ ...d, services: d.services.map((x) => (x.id === s.id ? saved : x)) })); });
+      save(async (c, sid) => { const saved = await remote.saveService(c, sid, s, file); setDb((d) => ({ ...d, services: d.services.map((x) => (x.id === s.id ? saved : x)) })); });
     },
     deleteService: (id) => { const s = db.services.find((x) => x.id === id); setDb((d) => ({ ...d, services: d.services.filter((x) => x.id !== id) })); save((c) => remote.deleteService(c, id)); return s; },
     sendChatReply: (id, text) => setDb((d) => ({ ...d, chats: d.chats.map((c: Chat) => { if (c.id !== id) return c; const say = text ?? c.draft; if (!say) return c; return { ...c, msgs: [...c.msgs, ['me', say]], draft: null, last: 'You: ' + say, unread: false }; }) })),

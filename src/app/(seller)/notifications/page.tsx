@@ -20,7 +20,7 @@ export default function NotificationsPage() {
   return (
     <>
       <DemoBar />
-      <PageHeader title="Notifications" lede="Things in your shop that may need you." actions={<Link className="btn line" href="/settings/notifications"><Icon name="tune" />Choose alerts</Link>} />
+      <PageHeader title="Notifications" lede="Things in your shop that may need you." />
       <div className="stack">
         <Chips label="Show" value={kind} onChange={setKind} options={(['All', 'Orders', 'Money', 'Stock'] as Kind[]).map((k) => ({ value: k, label: k, count: items.filter((i) => k === 'All' || i.kind === k).length }))} />
         {list.length ? <div className="rows">{list.map((a) => (

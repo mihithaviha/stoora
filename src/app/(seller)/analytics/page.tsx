@@ -2,7 +2,6 @@
 // Analytics: how the shop did, in plain numbers (the dashboard prototype's Analytics screen).
 import Link from 'next/link';
 import { useState } from 'react';
-import { useDash } from '@/components/dash/DashShell';
 import { DI, TopRow } from '@/components/dash/parts';
 import { Skeleton } from '@/components/ui';
 import { rs } from '@/lib/format';
@@ -10,7 +9,6 @@ import { useStore } from '@/lib/store';
 
 export default function AnalyticsPage() {
   const { db, ready } = useStore();
-  const { openAsk } = useDash();
   const [range, setRange] = useState<'7' | '30'>('7');
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={4} height={110} /></div>;
 

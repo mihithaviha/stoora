@@ -44,9 +44,7 @@ export default function StorefrontPage() {
   };
   const edit = () => { setWorking((w) => w ?? s.storefront ?? startingConfig(db)); setTab('editor'); };
 
-  const hd = { Warm: 'var(--gradient-soft)', Indigo: 'var(--ink)', Plain: 'var(--card)' }[s.look];
-  const dark = s.look === 'Indigo';
-  const toggle = (k: 'open' | 'showPrices' | 'cod', label: string) => (v: boolean) => { setShop({ [k]: v } as Partial<Shop>); toast(`${label}: ${v ? 'on' : 'off'}.`, { undo: () => setShop({ [k]: !v } as Partial<Shop>) }); };
+  const toggle = (k: 'showPrices' | 'cod', label: string) => (v: boolean) => { setShop({ [k]: v } as Partial<Shop>); toast(`${label}: ${v ? 'on' : 'off'}.`, { undo: () => setShop({ [k]: !v } as Partial<Shop>) }); };
 
   return (
     <>
@@ -61,7 +59,7 @@ export default function StorefrontPage() {
 
       {tab === 'templates' && (
         <div className="stack">
-          <p className="t-body">{TEMPLATES.length} templates, drawn with sample shops. Pick one to open it in the editor. Your real products replace the sample ones. {live ? `You are live with ${templateById(s.storefront!.template).name}.` : 'Until you publish, buyers see the simple shop page.'}</p>
+          <p className="t-body">{TEMPLATES.filter((t) => !t.premium).length} templates, drawn with sample shops. Pick one to open it in the editor. Your real products replace the sample ones. {live ? `You are live with ${templateById(s.storefront!.template).name}.` : 'Until you publish, buyers see the simple shop page.'}</p>
           <Gallery current={(working ?? s.storefront)?.template} onUse={use} />
         </div>
       )}
@@ -73,22 +71,18 @@ export default function StorefrontPage() {
       {tab === 'settings' && (
         <div className="detail">
           <div>
-            <Card style={{ background: 'var(--inner)' }}>
-              <div className="shopprev" aria-label="Preview of your simple shop page on a phone">
-                <div className="hd" style={{ background: hd }}><span className="shop-av" aria-hidden="true">{s.name[0]}</span>
-                  <b style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: dark ? '#FFFFFF' : 'var(--ink)', letterSpacing: '-.02em' }}>{s.name}</b>
-                  <span style={{ fontSize: 12, color: dark ? 'var(--on-ink-soft)' : 'var(--ink-65)' }}>Hand block prints and yoga, {s.city}</span></div>
-                <div className="gridp">{db.products.filter((p) => p.status === 'Active').slice(0, 4).map((p) => (
-                  <div key={p.id}><span className="ph" style={p.photos?.[0] ? { backgroundImage: `url(${p.photos[0]})`, backgroundSize: 'cover' } : undefined}>{!p.photos?.[0] && <Icon name={p.icon} />}</span><span>{p.name}</span>{s.showPrices && <b className="t-ink num">{rs(p.price)}</b>}{p.stock === 0 && <span className="cap">Sold out</span>}</div>
-                ))}</div>
-              </div>
-              {!s.open && <div className="banner warn" style={{ marginTop: 'var(--s3)' }}><Icon name="storefront" /><span>Your shop is closed. Buyers see a “back soon” page.</span></div>}
+            <Card style={{ background: 'var(--inner)' }} className="stack tight">
+              {/* the real shop, exactly as a buyer sees it (not a drawing of it) */}
+              <iframe key={`${s.handle}-${s.open}-${db.products.length}-${s.look}-${live}`} title="Your shop as buyers see it" src={`/s/${s.handle}`} loading="lazy" style={{ width: '100%', maxWidth: 420, height: 600, border: '1px solid var(--line)', borderRadius: 16, background: '#fff', margin: '0 auto', display: 'block' }} />
+              <a className="link cap" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer" style={{ justifySelf: 'center' }}>Open your shop in a new tab</a>
+              {!s.open && <div className="banner warn"><Icon name="storefront" /><span>Your shop is paused. Buyers can look but can’t order.</span></div>}
             </Card>
           </div>
           <div>
             <Card className="stack tight" title="Your shop link"><div className="row"><span className="grow t-ink" style={{ fontWeight: 500, overflowWrap: 'anywhere' }}>stoora.in/{s.handle}</span><CopyButton small text={link} done="Shop link copied." /></div><p className="cap">Put it in your Instagram bio and your WhatsApp status.</p></Card>
             <Card title="Shop settings">
-              {([['open', 'Shop is open', 'Buyers can order right now'], ['showPrices', 'Show prices', 'Turn off to show products without prices'], ['cod', 'Cash on delivery', 'Let buyers pay when the parcel arrives']] as const).map(([k, l, sub]) => (
+              <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Pause my shop</span><span className="cap" role="status">{s.open ? 'Shop is open. Buyers can order.' : 'Shop is paused. Buyers can look but can’t order.'}</span></span><Switch checked={!s.open} onChange={(paused) => { setShop({ open: !paused }); toast(paused ? 'Shop paused. Buyers can look but can’t order.' : 'Shop is open. Buyers can order.', { undo: () => setShop({ open: paused }) }); }} label="Pause my shop" /></div>
+              {([['showPrices', 'Show prices', 'Turn off to show products without prices'], ['cod', 'Cash on delivery', 'Let buyers pay when the parcel arrives']] as const).map(([k, l, sub]) => (
                 <div key={k} className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{l}</span><span className="cap">{sub}</span></span><Switch checked={s[k]} onChange={toggle(k, l)} label={l} /></div>))}
             </Card>
             <Card className="stack tight" title="Look of the simple shop page"><Chips label="Shop look" value={s.look} onChange={(v) => setShop({ look: v })} options={(['Warm', 'Indigo', 'Plain'] as const).map((v) => ({ value: v, label: v }))} /><p className="cap">Used until you publish a template. Products stay the same.</p></Card>

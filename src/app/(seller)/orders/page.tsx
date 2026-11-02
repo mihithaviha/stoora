@@ -121,7 +121,7 @@ export default function OrdersPage() {
                     </tr>
                   );
                 })}
-                {!orders.length && <tr><td colSpan={9} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="done" height={90} /><div style={{ marginTop: 8 }}>{q ? `No orders match “${q}”.` : 'Nothing here — all caught up.'}</div></td></tr>}
+                {!orders.length && <tr><td colSpan={9} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="done" height={90} /><div style={{ marginTop: 8 }}>{q ? `No orders match “${q}”.` : !db.orders.length ? <>No orders yet. Share your link to get your first one.<div style={{ marginTop: 10 }}><button className="btn grey sm" type="button" onClick={() => { const link = `https://stoora.in/${db.shop.handle}`; navigator.clipboard?.writeText(link).then(() => toast('Shop link copied.')).catch(() => toast(`Your shop link is ${link}`, { icon: 'info' })); }}>Copy link</button></div></> : 'Nothing here in this view.'}</div></td></tr>}
               </tbody>
             </table>
           )}

@@ -51,6 +51,14 @@ async function flow(name, fn) {
 }
 const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
 
+// ---- helpers for the Add product checks: fake photos, and a fake AI answer (there is no AI key here, so what is tested is the screen's own handling) ----
+const pick = (sel, specs) => `(async () => { const mk = (name, ok) => new Promise((res) => { if (!ok) { res(new File([new Uint8Array([1, 2, 3])], name, { type: 'image/jpeg' })); return; } const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const x = c.getContext('2d'); x.fillStyle = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0'); x.fillRect(0, 0, 1600, 1200); c.toBlob((b) => res(new File([b], name, { type: 'image/jpeg' })), 'image/jpeg', 0.8); }); const dt = new DataTransfer(); for (const [n, ok] of ${JSON.stringify(specs)}) dt.items.add(await mk(n, ok)); const el = document.querySelector(${JSON.stringify(sel)}); el.files = dt.files; el.dispatchEvent(new Event('change', { bubbles: true })); return dt.files.length; })()`;
+const fakeAi = (draft, status = 200) => `(() => { if (!window.__realFetch) window.__realFetch = window.fetch; window.__aiCalls = 0; window.fetch = (u, o) => String(u).includes('/api/describe-product') ? (window.__aiCalls++, Promise.resolve(new Response(${status === 200 ? JSON.stringify(JSON.stringify({ draft })) : '"{}"'}, { status: ${status} }))) : window.__realFetch(u, o); })()`;
+const photoCount = (t) => t.js(`document.querySelectorAll('.photos img').length`);
+const MUG = { title: 'Ceramic mug', description: 'A glazed ceramic mug for tea and coffee. Made of stoneware and easy to wash.', category: 'Cups', categoryIsNew: true, color: 'Blue', material: 'Stoneware', sizeKind: 'capacity', sizes: ['250 ml', '350 ml'], weightGrams: 350, boxCm: { l: 12, w: 12, h: 12 }, tags: ['mug'] };
+const KURTA = { title: 'Handblock cotton kurta', description: 'A soft cotton kurta with a hand block print. Made for everyday wear.', category: 'Kurtas', categoryIsNew: true, color: 'Indigo', material: 'Cotton', sizeKind: 'clothes', sizes: [], weightGrams: 400, tags: ['kurta'] };
+const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake baked to order. Made with cocoa and fresh cream.', category: 'Cakes', categoryIsNew: true, color: '', material: '', sizeKind: 'food', sizes: [], weightGrams: 1000, tags: ['cake'] };
+
 (async () => {
   const browser = await launch();
   try {
@@ -63,13 +71,59 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
       expect(await t.waitUrl('/dashboard', 8000), 'right code did not open the dashboard');
     });
 
-    await flow('Continue with Google signs in (demo mode)', async (t) => {
+    await flow('Continue with Google signs in, and the phone must be added first (P0-6)', async (t) => {
       await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
       await t.goto('/login'); expect(await t.has('Continue with Google') && await t.has('or with a WhatsApp code'), 'login page is missing the Google button or the WhatsApp option');
       expect(!(await t.has('Password')), 'a password field is still on the page');
       await t.click('Continue with Google'); expect(await t.waitUrl('/dashboard', 8000), 'Google button did not open the dashboard');
+      expect(await t.waitFor('Add your WhatsApp number'), 'a Google sign-up reached the dashboard without being asked for a phone');
+      expect(!(await t.has('Good morning')) && !(await t.has('Welcome to Stoora')), 'the dashboard showed before the phone was verified');
+      await t.type('#pg-num', '9000000001'); await t.click('Send code on WhatsApp');
+      expect(await t.waitFor('This number is already used by another Stoora account'), 'a number that belongs to another account was not refused');
+      await t.type('#pg-num', '9811122233'); await t.click('Send code on WhatsApp');
+      expect(await t.waitFor('We sent a 6-digit code'), 'no code step');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('000000');
+      expect(await t.waitFor('That code isn’t right'), 'a wrong code was accepted');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitFor('Welcome to Stoora', 8000) || await t.waitFor('Good morning', 3000) || await t.waitFor('Good afternoon', 3000) || await t.waitFor('Good evening', 3000), 'the dashboard did not open after the code');
+      await t.goto('/account'); expect(await t.waitFor('Phone login') && await t.has('Google login'), 'Account does not show both logins');
+      expect((await t.text()).includes('••• ••'), 'the phone is not shown masked');
       await t.goto('/buyer/login'); await t.click('Continue with Google'); expect(await t.waitUrl('/buyer/orders', 8000), 'buyer Google sign-in did not open orders');
       await t.goto('/dashboard'); await t.goto('/account'); await t.click('Sign out'); expect(await t.waitUrl('/signed-out', 6000), 'sign out did not reach the signed-out screen');
+    });
+
+    await flow('An unknown phone number asks "first time on Stoora?" and never makes an account by itself (P0-3)', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
+      await t.goto('/login'); await t.type('#li-phone', '9123456780'); await t.click('Get WhatsApp code');
+      expect(await t.waitFor('Is this your first time on Stoora?'), 'an unknown number was not asked about');
+      expect(!(await t.has('link an existing email')) && !(await t.has('make a new account')), 'the old link-an-email screen showed');
+      expect((await t.where()).startsWith('/login') && !(await t.where()).includes('verify'), 'a code was sent before asking');
+      await t.click('No, I used Google before'); expect(await t.waitUrl('/dashboard', 8000), 'Google did not lead to the dashboard');
+      expect(await t.waitFor('Add your WhatsApp number'), 'the number was not asked for again to connect the two');
+      expect((await t.js(`document.getElementById('pg-num').value`)).replace(/\D/g, '') === '9123456780', 'the number typed at login was not carried to the connect step');
+      await t.click('Send code on WhatsApp'); expect(await t.waitFor('We sent a 6-digit code'), 'no code step');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitFor('Welcome to Stoora', 8000) || await t.waitFor('Good morning', 3000) || await t.waitFor('Good afternoon', 3000) || await t.waitFor('Good evening', 3000), 'the dashboard did not open after connecting the number');
+      await t.goto('/account'); await t.click('Sign out'); expect(await t.waitUrl('/signed-out', 6000), 'sign out failed');
+      await t.goto('/login'); await t.type('#li-phone', '9123456780'); await t.click('Get WhatsApp code');
+      expect(await t.waitUrl('/login/verify', 6000), 'after connecting, the same number should go straight to the code screen');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitUrl('/dashboard', 8000), 'the next phone login did not open the dashboard');
+    });
+
+    await flow('Signed up with the phone: Google is offered, Later keeps it in the setup list (P0-6 rule 2)', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
+      await t.goto('/login'); await t.type('#li-phone', '9333344444'); await t.click('Get WhatsApp code');
+      expect(await t.waitFor('Is this your first time on Stoora?'), 'unknown number was not asked');
+      await t.click('Yes, I’m new'); expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitUrl('/onboarding', 8000), 'a new number should be asked for the store name');
+      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing');
+      await t.goto('/dashboard'); expect(await t.waitFor('Add your Google account so you can log in with it too'), 'Google was not offered');
+      await t.click('Later'); await sleep(300);
+      expect(!(await t.has('Add your Google account so you can log in with it too')), 'the prompt should go after Later');
+      expect(await t.has('Add Google login'), 'Later should leave "Add Google login" in the setup list');
+      await t.goto('/account'); expect(await t.has('Google login') && await t.has('Not added yet'), 'Account should show Google as not added');
     });
 
     await flow('Buyer buys something and it reaches the seller', async (t) => {
@@ -110,7 +164,7 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     });
 
     await flow('Verify a WhatsApp number', async (t) => {
-      await t.goto('/settings/whatsapp-verification'); await t.type('#wa-num', '9876543210'); await t.click('Send code on WhatsApp');
+      await t.goto('/settings/whatsapp'); await sleep(800); await t.type('#wa-num', '9876543210'); await t.click('Send code on WhatsApp');
       expect(await t.waitFor('Waiting for code'), 'no code step');
       await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456'); await t.click('Verify number');
       expect(await t.waitFor('Verified'), 'number was not verified');
@@ -123,18 +177,26 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
       await t.goto('/admin/enquiries'); expect(await t.has('Test Visitor'), 'enquiry is not in the admin inbox');
     });
 
-    await flow('Pause orders and the shop page says so', async (t) => {
-      await t.goto('/settings/order-taking');
-      await t.js(`document.querySelector('button[role=switch][aria-label="Shop is open for orders"]').click()`); await sleep(300);
-      expect(await t.has('Your shop is paused'), 'pause banner missing');
-      await t.click('Save changes'); expect(await t.waitFor('Order-taking settings saved'), 'not saved');
-      await t.goto('/s/meera'); expect(await t.has('is not taking orders right now'), 'shop page does not show the pause');
+    await flow('Pause my shop: the words follow the switch and the shop page agrees (P0-1)', async (t) => {
+      await t.goto('/settings/shop-details'); await sleep(600);
+      const words = () => t.js(`document.getElementById('pause-words').textContent`);
+      expect((await words()).includes('Shop is open. Buyers can order.'), 'open shop should say it is open');
+      await t.js(`document.querySelector('button[role=switch][aria-label="Pause my shop"]').click()`); await sleep(300);
+      expect((await words()).includes('Shop is paused. Buyers can look but can’t order.'), 'the words did not follow the switch');
+      await t.click('Save changes'); await sleep(900);
+      await t.goto('/s/meera'); expect(await t.has('Shop is paused') || await t.has('can’t order'), 'shop page does not show the pause');
+      expect(!(await t.js(`[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Add to bag')`)), 'Add to bag is still shown while paused');
+      await t.goto('/settings/shop-details'); await sleep(600);
+      await t.js(`document.querySelector('button[role=switch][aria-label="Pause my shop"]').click()`); await sleep(300);
+      expect((await words()).includes('Shop is open. Buyers can order.'), 'unpausing did not change the words');
+      await t.click('Save changes'); await sleep(900);
+      await t.goto('/s/meera'); expect(!(await t.has('Shop is paused')), 'shop still says paused after unpausing');
     });
 
     await flow('Pick a template, edit it, publish it, and the shop page uses it', async (t) => {
       await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
       await t.goto('/storefront'); await sleep(2500);
-      expect(await t.js(`document.querySelectorAll('.sfg-card').length`) === 8, 'the gallery should show 8 templates');
+      expect(await t.js(`document.querySelectorAll('.sfg-card').length`) === 5, 'the gallery should show the 5 templates that are on sale (premium ones are hidden)');
       expect(await t.js(`!!document.querySelector('a[href="/s/meera"]')`), 'View storefront button missing');
       await t.js(`[...document.querySelectorAll('.sfg-card button')].find((b) => b.textContent.includes('Use this template')).click()`); await sleep(3500);
       expect(await t.js(`!!document.querySelector('.sfin')`), 'editor did not open');
@@ -145,6 +207,116 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
       expect(await t.js(`!!document.querySelector('.sf')`) && await t.has('Made by Meera'), 'the shop page should be drawn by the template with the new headline');
       await t.js(`[...document.querySelectorAll('.sf-card .sf-btn')].find((b) => b.textContent.includes('Add to bag')).click()`); await sleep(700);
       expect(await t.js(`document.querySelector('.sf-float-pill.dark b').textContent`) === '1', 'the bag should hold one item');
+    });
+
+    await flow('Add product: many photos at once, the cap of 8, and one broken photo (5.6 item 1)', async (t) => {
+      await t.goto('/products/new'); await t.js(fakeAi(MUG, 503)); // AI off: only the photos are tested here
+      await t.js(pick('#pf-photos', [['a.jpg', 1], ['b.jpg', 1], ['c.jpg', 1], ['d.jpg', 1], ['e.jpg', 1]])); await sleep(1800);
+      expect(await photoCount(t) === 5, '5 photos picked in one go should all appear, saw ' + await photoCount(t));
+      await t.js(pick('#pf-photos', [['f.jpg', 1], ['g.jpg', 1], ['h.jpg', 1], ['i.jpg', 1], ['j.jpg', 1]])); await sleep(1800);
+      expect(await photoCount(t) === 8, 'picking more than 8 should stop at 8, saw ' + await photoCount(t));
+      expect(await t.has('We added the first 3'), 'no note saying only the first 3 were added');
+      await t.goto('/products/new'); await t.js(fakeAi(MUG, 503));
+      await t.js(pick('#pf-photos', [['ok1.jpg', 1], ['broken.jpg', 0], ['ok2.jpg', 1]])); await sleep(1800);
+      expect(await photoCount(t) === 2, 'the good photos should still be added when one is broken, saw ' + await photoCount(t));
+      expect(await t.has('Try again'), 'the broken photo should offer Try again');
+      expect(await t.js(`document.querySelectorAll('.photos img')[0].closest('.phot').textContent.includes('Cover')`), 'the first photo should be the cover');
+    });
+
+    await flow('Add product: AI fills the details; mug gets ml sizes, no price or "One size" (5.6 item 2)', async (t) => {
+      await t.goto('/products/new'); await t.js(fakeAi(MUG));
+      await t.js(pick('#pf-photos', [['mug.jpg', 1]])); await sleep(2800);
+      expect(await t.js('window.__aiCalls') === 1, 'exactly one AI call per product, saw ' + await t.js('window.__aiCalls'));
+      expect(await t.has('Ceramic mug') && await t.has('glazed ceramic mug'), 'title and description were not filled');
+      expect(!/₹\s?0|One size/.test((await t.text()).split(/your answers/i)[0]), 'the description mentions a price or One size');
+      expect(await t.js(`[...document.querySelectorAll('.chip')].some((c) => c.textContent === '250 ml' && c.getAttribute('aria-pressed') === 'true')`), 'ml sizes were not suggested');
+      expect(await t.js(`document.querySelector('#pf-stock') === null`), 'stock for each size should replace the single stock box');
+      expect(await t.js(`document.querySelector('#pf-weight').value`) === '350', 'weight guess missing');
+      expect(await t.js(`document.querySelector('#pf-cat').value`) === '__new', 'a new category should be suggested through "+ New category"');
+    });
+
+    await flow('Add product: kurta sizes are XS to XXL and stock per size adds up (5.6 item 3)', async (t) => {
+      await t.goto('/products/new'); await t.js(fakeAi(KURTA));
+      await t.js(pick('#pf-photos', [['k.jpg', 1]])); await sleep(2800);
+      expect(await t.js(`['XS','S','M','L','XL','XXL'].every((z) => [...document.querySelectorAll('.chip')].some((c) => c.textContent === z && c.getAttribute('aria-pressed') === 'true'))`), 'XS to XXL should be pre-set');
+      expect(await t.js(`[...document.querySelectorAll('[role=tab]')].some((b) => b.getAttribute('aria-selected') === 'true' && b.textContent === 'Yes' && b.closest('.field').textContent.includes('sizes or colours'))`), 'sizes or colours should be pre-set to Yes');
+      for (const [z, n] of [['XS', '1'], ['S', '2'], ['M', '3'], ['L', '4'], ['XL', '5'], ['XXL', '6']]) await t.type(`input[aria-label="Stock for ${z}"]`, n);
+      const total = await t.js(`document.querySelector('b.num[aria-live=polite]')?.textContent`);
+      expect(total === '21', 'stock per size should add up to 21, saw ' + total);
+    });
+
+    await flow('Add product: cake has no colour question and sizes in kg (5.6 item 4)', async (t) => {
+      await t.goto('/products/new'); await t.js(fakeAi(CAKE));
+      await t.js(pick('#pf-photos', [['c.jpg', 1]])); await sleep(2800);
+      expect(!(await t.has('Colour')) && !(await t.has('colours')) || !(await t.js(`!!document.querySelector('#pf-color')`)), 'a cake should not be asked about colour');
+      expect(await t.js(`['0.5 kg','1 kg','2 kg'].every((z) => [...document.querySelectorAll('.chip')].some((c) => c.textContent === z))`), 'kg sizes missing');
+    });
+
+    await flow('Add product: weight 1500 shows = 1.5 kg and has no arrows (5.6 item 5)', async (t) => {
+      await t.goto('/products/new'); await t.type('#pf-weight', '1500');
+      expect(await t.has('= 1.5 kg'), 'no kg note');
+      expect(await t.js(`document.querySelector('#pf-weight').type`) === 'text', 'weight should be a plain box with no arrows');
+    });
+
+    await flow('Add product: with AI off the seller types everything; no photo stays hidden; with a photo it goes live (5.6 items 6, 7)', async (t) => {
+      await t.goto('/products/new'); await t.js(fakeAi(MUG, 503));
+      expect(await t.js(`document.querySelector('#pf-stock').value`) === '', 'stock should start empty, not 1');
+      await t.type('#pf-name', 'Hidden test lamp'); await t.type('#pf-price', '800'); await t.type('#pf-stock', '4');
+      expect(await t.has('Add a photo to show it in your shop'), 'no hint about the photo');
+      await t.click('Add product'); await sleep(900);
+      await t.goto('/s/meera'); expect(!(await t.has('Hidden test lamp')), 'a product with no photo should stay hidden from the shop');
+      await t.goto('/products'); expect(await t.has('Hidden test lamp'), 'the product is not in the seller\'s list');
+      await t.goto('/products/new'); await t.js(fakeAi(MUG, 503));
+      await t.js(pick('#pf-photos', [['v.jpg', 1]])); await sleep(1500);
+      await t.type('#pf-name', 'Visible test lamp'); await t.type('#pf-price', '800');
+      await t.js(`[...document.querySelectorAll('[role=tab]')].find((b) => b.textContent === 'Yes' && b.closest('.field').textContent.includes('on sale')).click()`); await sleep(300);
+      await t.type('#pf-was', '1000'); await t.type('#pf-stock', '4');
+      await t.click('Add product'); await sleep(1200);
+      await t.goto('/s/meera'); expect(await t.has('Visible test lamp'), 'a product with a photo should be live in the shop');
+      expect(await t.js(`!!document.querySelector('s, del')`) || await t.has('₹1,000'), 'the crossed-out old price is missing on the shop');
+    });
+
+    await flow('Add product: leaving with unsaved changes asks; Delete has Undo (5.6 items 8, 9)', async (t) => {
+      await t.goto('/products'); await sleep(600);
+      await t.js(`[...document.querySelectorAll('tr.rw')].find((x) => x.textContent.includes('Visible test lamp')).click()`); await sleep(1500);
+      await t.click('Visible test lamp'); await t.type('#pf-name', ' 2'); // tap the title line to fix it
+      expect(await t.has('Unsaved changes'), 'the unsaved bar is missing');
+      expect(await t.js(`!!document.querySelector('a[aria-label="Back to Products"]') && getComputedStyle(document.querySelector('.savebar-float')).position === 'fixed'`), 'the bar should float and leave the back button visible');
+      await t.js(`document.querySelector('a[aria-label="Back to Products"]').click()`); await sleep(500);
+      expect(await t.has('Leave without saving?'), 'no leave prompt');
+      await t.click('Not now'); await sleep(300);
+      expect((await t.where()).startsWith('/products/'), 'should still be on the product');
+      await t.click('Discard'); await sleep(300);
+      await t.js(`document.querySelector('details.more summary').click()`); await sleep(300); await t.click('Delete product'); await sleep(900);
+      expect((await t.where()) === '/products', 'delete should go back to the list, at ' + await t.where());
+      expect(!(await t.js(`[...document.querySelectorAll('tr.rw')].some((r) => r.textContent.includes('Visible test lamp'))`)), 'the product should be gone from the list');
+      await t.click('Undo'); await sleep(900);
+      expect(await t.js(`[...document.querySelectorAll('tr.rw')].some((r) => r.textContent.includes('Visible test lamp'))`), 'Undo did not bring it back');
+    });
+
+    await flow('Services: Add service asks which kind first, then opens that form with no stock or sizes (P0-5)', async (t) => {
+      await t.goto('/products/service/new'); expect(await t.has('What are you adding?') && await t.has('Workshop') && await t.has('Digital download'), 'the kind chooser is missing');
+      await t.goto('/products/service/new?kind=workshop'); expect((await t.text()).toLowerCase().includes('date and time') && (await t.text()).toLowerCase().includes('seats'), 'workshop form is missing date, time and seats');
+      expect(!/stock|weight|sizes/i.test(await t.text()), 'a service form shows stock, sizes or weight');
+      await t.goto('/products/service/new?kind=session'); expect((await t.text()).toLowerCase().includes('time slots'), 'session form is missing time slots');
+      await t.goto('/products/service/new?kind=digital'); expect((await t.text()).toLowerCase().includes('the file'), 'download form is missing the file');
+      await t.type('#sv-name', 'Pattern ebook'); await t.type('#sv-price', '299'); await t.click('Add digital download');
+      expect(await t.has('Add the file buyers will receive'), 'a download without a file was accepted');
+      await t.js(pick('#sv-file', [['ebook.jpg', 1]])); await sleep(500); await t.click('Add digital download'); await sleep(900);
+      await t.goto('/products?tab=services'); expect(await t.has('Pattern ebook'), 'the download is not in the services list');
+    });
+
+    await flow('Sign-up: link check, error clears, no tick box (S2 to S6)', async (t) => {
+      await t.goto('/signup');
+      expect(await t.js(`document.querySelector('#su-shop').placeholder`) === 'e.g. Meera Studio', 'sample text should read "e.g. Meera Studio"');
+      expect(!(await t.js(`!!document.querySelector('#su-terms')`)) && await t.has('By continuing you agree to the'), 'the terms tick box should be a sentence');
+      await t.click('Create my shop'); expect(await t.has('Add your shop’s name'), 'name was not required');
+      await t.type('#su-shop', 'Meera Studio'); await sleep(1200);
+      expect(!(await t.has('Add your shop’s name')), 'the red message should clear once the box is filled');
+      expect(await t.has('is taken') && await t.has('try'), 'a taken link was not flagged with a suggestion');
+      await t.type('#su-shop', 'Shaurya Studio'); await sleep(1200);
+      expect(await t.has('is free'), 'a free link was not flagged');
+      expect(await t.js(`document.querySelector('button.btn.primary[type=submit]').getBoundingClientRect().bottom <= window.innerHeight`), 'Create my shop is below the screen at 1440x900');
     });
 
     await flow('The public site: home, Journal and sign-up open without errors', async (t) => {
@@ -159,10 +331,11 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
 
     await flow('Open a shop through onboarding', async (t) => {
       await t.goto('/onboarding'); await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
-      await t.type('#ob-name', 'Test Bakes'); await t.click('Continue'); await t.type('#ob-pn', 'Chocolate cake'); await t.type('#ob-pp', '850'); await t.click('Continue');
+      await t.type('#ob-name', 'Test Bakes'); await t.click('Continue');
       await t.click('Continue'); await t.click('Continue'); await t.click('Publish my shop');
       expect(await t.waitFor('Test Bakes is live', 8000), 'shop was not published');
       expect(await t.has('stoora.in/test-bakes'), 'shop link was not made from the name');
+      await t.goto('/s/test-bakes'); expect(await t.has('Coming soon'), 'a shop with no products should say Coming soon');
     });
 
     await flow('Signed-out screens appear without a login', async (t) => {

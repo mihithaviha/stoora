@@ -155,7 +155,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback((msg: string, opts?: { icon?: string; undo?: () => void }) => {
     clearTimeout(timer.current); const id = Date.now();
     setT({ msg, icon: opts?.icon ?? 'check_circle', undo: opts?.undo, id });
-    timer.current = setTimeout(() => setT((x) => (x?.id === id ? null : x)), opts?.undo ? 6000 : 3200);
+    timer.current = setTimeout(() => setT((x) => (x?.id === id ? null : x)), opts?.undo ? 5000 : 3200);
   }, []);
   return (
     <ToastCtx.Provider value={show}>
