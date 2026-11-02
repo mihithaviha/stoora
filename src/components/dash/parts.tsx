@@ -41,11 +41,11 @@ export function BackRow({ to, icon, title, children }: { to?: string; icon: stri
   );
 }
 
-/** Takes the place of the top row while a form has changes that are not saved yet. */
-export function SaveRow({ what, onDiscard, onSave, busy }: { what: string; onDiscard: () => void; onSave: () => void; busy?: boolean }) {
+/** The dark bar for a form with changes that are not saved yet. It floats at the bottom, so it never covers the back button or pushes the page down. */
+export function SaveRow({ onDiscard, onSave, busy }: { what?: string; onDiscard: () => void; onSave: () => void; busy?: boolean }) {
   return (
-    <div className="dtop savebar" role="region" aria-label="Unsaved changes">
-      <b className="sp">Unsaved {what}</b>
+    <div className="savebar-float" role="region" aria-label="Unsaved changes">
+      <b className="sp">Unsaved changes</b>
       <button className="btn sm dk" type="button" onClick={onDiscard}>Discard</button>
       <button className="btn sm main" type="button" onClick={onSave} disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
     </div>

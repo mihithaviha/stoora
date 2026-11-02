@@ -1,14 +1,18 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
-import { Avatar, Badge, Button, Card, ConfirmDialog, Icon, PageHeader } from '@/components/ui';
+import { Avatar, Badge, Button, Card, ConfirmDialog, Dialog, Icon, PageHeader } from '@/components/ui';
+import { PhoneForm } from '@/components/auth/PhoneGate';
 
 export default function AccountPage() {
   const { db, resetDemo, mode } = useStore(); const auth = useAuth(); const router = useRouter();
-  const [reset, setReset] = useState(false);
+  const [reset, setReset] = useState(false); const [addingPhone, setAddingPhone] = useState(false); const [googleErr, setGoogleErr] = useState('');
+  const sp = useSearchParams(); const linkError = googleErr || sp.get('linkerror') || '';
+  const maskedPhone = (p?: string) => { const d = (p ?? '').replace(/\D/g, '').slice(-10); return d ? `+91 ${d.slice(0, 2)}••• ••${d.slice(-3)}` : ''; };
+  const addGoogle = async () => { setGoogleErr(''); const failed = await auth.linkGoogle('/account'); if (failed) setGoogleErr(failed); };
   const name = auth.user?.name || db.shop.owner || 'You'; const email = auth.user?.email || db.shop.email;
   return (
     <>
@@ -18,6 +22,12 @@ export default function AccountPage() {
           <Card title="Signed in as" icon="person">
             <div className="row"><Avatar name={name} size={48} /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>{name}</div><div className="cap">{email}{auth.user?.phone ? ` · ${auth.user.phone}` : ''}</div></div>{mode === 'live' ? <Badge tone="ok" icon="verified">Signed in</Badge> : <Badge tone="warn" icon="science">Demo</Badge>}</div>
             {mode === 'demo' && <div className="banner warn" style={{ marginTop: 'var(--s3)' }}><Icon name="info" /><span>Supabase isn’t connected, so this is a demo session in this browser, not a real Stoora account. Add the keys from <b>.env.example</b> to turn on real sign-in.</span></div>}
+          </Card>
+          <Card title="How you log in" icon="key" className="stack tight">
+            <p className="t-soft" style={{ margin: 0 }}>Both ways open the same shop.</p>
+            <div className="row"><Icon name="chat" /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>Phone login</div><div className="cap">{auth.user?.hasPhone ? <>{maskedPhone(auth.user.phone)} ✓</> : 'Not added yet'}</div></div>{auth.user?.hasPhone ? <Badge tone="ok" icon="verified">Added</Badge> : <Button small onClick={() => setAddingPhone(true)}>Add</Button>}</div>
+            <div className="row"><Icon name="mail" /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>Google login</div><div className="cap">{auth.user?.hasGoogle ? <>{email || 'Google account'} ✓</> : 'Not added yet'}</div></div>{auth.user?.hasGoogle ? <Badge tone="ok" icon="verified">Added</Badge> : <Button small onClick={addGoogle}>Add</Button>}</div>
+            {linkError && <div className="banner bad" role="alert"><Icon name="error" /><span>{linkError}</span></div>}
           </Card>
           <Card title="Shop" icon="storefront">
             <div className="kv"><div className="r"><span>Shop</span><span>{db.shop.name}</span></div><div className="r"><span>Link</span><span>stoora.in/{db.shop.handle}</span></div><div className="r"><span>City</span><span>{db.shop.city || '—'}</span></div></div>
@@ -32,6 +42,7 @@ export default function AccountPage() {
           <Card className="stack tight"><Button full icon="logout" onClick={async () => { await auth.signOut(); router.push('/signed-out'); }}>Sign out</Button></Card>
         </div>
       </div>
+      <Dialog open={addingPhone} onClose={() => setAddingPhone(false)} title="Add your WhatsApp number"><PhoneForm onDone={() => setAddingPhone(false)} /></Dialog>
       <ConfirmDialog open={reset} onClose={() => setReset(false)} title="Reset the demo shop?" body="All sample orders, products and settings go back to how they started. This can’t be undone." yes="Reset" danger onYes={resetDemo} />
     </>
   );

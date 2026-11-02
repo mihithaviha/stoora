@@ -98,7 +98,8 @@ export interface StoreConfig {
   about: { title: string; text: string; image: string };
   story: { title: string; text: string };
   process: { title: string; text: string }[];
-  contact: { email: string; phone: string; whatsapp: string; address: string; hours: string };
+  /** `show` is which contact details buyers see. WhatsApp shows unless switched off; phone shows unless switched off; email only when the seller switches it on. */
+  contact: { email: string; phone: string; whatsapp: string; address: string; hours: string; show?: { whatsapp?: boolean; phone?: boolean; email?: boolean } };
   social: { instagram: string };
   services: { subjects: string[]; levels: string[]; modes: string[]; sessions: string; credentials: string[] };
   faqs: { q: string; a: string }[];
@@ -128,7 +129,7 @@ export function defaultConfig(templateId: string, shop: { name?: string; tagline
 
 /** One product or service as a storefront shows it. Only public fields. */
 export interface StoreItem {
-  id: string; name: string; price: number; cat?: string; stock?: number | null; img?: string;
+  id: string; name: string; price: number; /** The old price, shown crossed out (only when it is higher than the price). */ was?: number; cat?: string; stock?: number | null; img?: string;
   crop?: { pos?: string; zoom?: number }; desc?: string; sizes?: string; tags?: string;
   // services only
   type?: string; duration?: string; where?: string; next?: string;

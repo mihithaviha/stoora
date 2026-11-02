@@ -13,6 +13,7 @@ import { moneyWaiting, useStore } from '@/lib/store';
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 
 const LINK_KEY = 'stoora.setup.linkcopied';
+const GOOGLE_LATER_KEY = 'stoora.setup.googlelater';
 interface Step { art: ArtKey; title: string; text: string; cta: string; href?: string; copy?: boolean; done: boolean }
 
 export default function Home() {
@@ -24,7 +25,13 @@ export default function Home() {
   const [hidden, setHidden] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>([]);
   const [linkCopied, setLinkCopied] = useState(false);
-  useEffect(() => { try { setLinkCopied(localStorage.getItem(LINK_KEY) === '1'); } catch { /* ignore */ } }, []);
+  const [googleLater, setGoogleLater] = useState(true); // true until we have looked, so the prompt never flashes
+  useEffect(() => { try { setLinkCopied(localStorage.getItem(LINK_KEY) === '1'); setGoogleLater(localStorage.getItem(GOOGLE_LATER_KEY) === '1'); } catch { setGoogleLater(false); } }, []);
+  const askGoogle = async () => { const failed = await auth.linkGoogle('/dashboard'); if (failed) toast(failed, { icon: 'error' }); };
+  const laterGoogle = () => { setGoogleLater(true); try { localStorage.setItem(GOOGLE_LATER_KEY, '1'); } catch { /* ignore */ } };
+  const googlePrompt = auth.user && auth.user.hasPhone && !auth.user.hasGoogle && !googleLater ? (
+    <div className="banner info" role="status" style={{ marginBottom: 16 }}><DI n="link" s={18} /><div>Add your Google account so you can log in with it too.<div style={{ marginTop: 10, display: 'flex', gap: 8 }}><button className="btn main sm" type="button" onClick={askGoogle}>Add Google</button><button className="btn grey sm" type="button" onClick={laterGoogle}>Later</button></div></div></div>
+  ) : null;
 
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={1} height={70} /><div style={{ height: 16 }} /><Skeleton rows={3} height={120} /></div>;
 
@@ -37,7 +44,7 @@ export default function Home() {
     { art: 'upi', title: 'Choose how you get paid', text: 'Add your UPI ID so buyers can pay you.', cta: 'Set up', href: '/settings/getting-paid', done: !!db.shop.upi },
     { art: 'look', title: 'Choose your shop look', text: 'Pick colours and a cover photo for your shop page.', cta: 'Choose look', href: '/storefront', done: !!db.shop.storefront },
     { art: 'link', title: 'Share your shop link', text: `${link} — share it anywhere.`, cta: 'Copy link', copy: true, done: linkCopied },
-    ...(mode === 'live' && auth.user && auth.user.hasPhone && !auth.user.hasGoogle ? [{ art: 'link' as ArtKey, title: 'Add Google login', text: 'Log in with Google as well as your number. It is the same shop.', cta: 'Add Google', href: '/account', done: false }] : []),
+    ...(auth.user && auth.user.hasPhone && !auth.user.hasGoogle ? [{ art: 'link' as ArtKey, title: 'Add Google login', text: 'Log in with Google as well as your number. It is the same shop.', cta: 'Add Google', href: '/account', done: false }] : []),
   ];
   const doneCount = steps.filter((s) => s.done).length;
   const allDone = doneCount === steps.length;
@@ -60,6 +67,7 @@ export default function Home() {
   if (empty || sp.get('setup') === '1') {
     return (
       <div className="dpad" style={{ paddingTop: 40 }}>
+        {googlePrompt}
         <h1 className="h1 big">Welcome to Stoora.<br />Let’s set up <u style={{ textDecorationStyle: 'dotted', textUnderlineOffset: 6 }}>{db.shop.name}</u></h1>
         {!db.products.length && !db.services.length ? (
           <div className="banner info" role="status" style={{ marginTop: 20 }}><DI n="store" s={18} /><div>Your shop is live. Add your first product so buyers can see it.<div style={{ marginTop: 10 }}><Link className="btn main sm" href="/products/new">Add product</Link></div></div></div>
@@ -82,6 +90,7 @@ export default function Home() {
 
   return (
     <div className="dpad" style={{ paddingTop: 20 }}>
+      {googlePrompt}
       {!allDone ? (
         <div className="box" style={{ marginBottom: 16 }} aria-label="Setup">
           <div className="box-h"><span className="box-t"><DI n="box" s={16} /> Let’s get your shop ready</span><span className="tiny muted">{doneCount} of {steps.length} done</span></div>

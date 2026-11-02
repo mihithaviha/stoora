@@ -8,8 +8,11 @@ import { Logo, ProductArt, Stars } from '../bits';
 import { useStore } from '@/lib/store';
 import { useBag } from '@/lib/bag';
 import { PAUSED_LINE } from '@/lib/shopstate';
-import { metaOf, SHOP_TAGLINE } from '@/lib/catalog';
+import { metaOf } from '@/lib/catalog';
 import { rs } from '@/lib/format';
+import { deliveryLine } from '@/lib/delivery';
+import { publishedConfig } from '@/lib/storefront/map';
+import { themeVariables } from '@/lib/storefront/shared';
 import type { Product } from '@/lib/types';
 
 export const shopBase = (handle: string) => `/s/${handle}`;
@@ -23,13 +26,23 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
   const links: [string, string, string][] = [['Shop', base, 'storefront'], ['Wishlist', `${base}/wishlist`, 'favorite'], ['My orders', '/buyer/orders', 'receipt_long']];
   const search = (e: React.FormEvent) => { e.preventDefault(); router.push(`${base}${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`); };
 
+  // T3: a shop with its own design keeps that design on the bag, checkout and product pages: its colours, fonts and name
+  const design = publishedConfig(db);
+  const themed: React.CSSProperties | undefined = design ? ({
+    ...themeVariables(design.theme, design.accent),
+    '--surface': 'var(--store-background)', '--card': 'var(--store-surface)', '--ink': 'var(--store-text)', '--ink-soft': 'var(--store-text)', '--ink-65': 'var(--store-muted)', '--ink-45': 'var(--store-muted)',
+    '--line': 'var(--store-border)', '--line-soft': 'var(--store-border)', '--primary': 'var(--store-button)', '--primary-deep': 'var(--store-primary)',
+    '--font-display': '"Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif', '--font-sans': '"Lexend", ui-sans-serif, system-ui, sans-serif',
+    background: 'var(--store-background)', color: 'var(--store-text)',
+  } as React.CSSProperties) : undefined;
+  const brandName = design?.brand.name || db.shop.name; const logo = design?.brand.logo;
   return (
-    <div className="shopwrap">
-      {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : <div className="announce">{bag.rule.fee === 0 ? 'Free delivery on every order' : bag.rule.freeOver > 0 ? `Free delivery on orders over ${rs(bag.rule.freeOver)}` : `Delivery ${rs(bag.rule.fee)}`}{db.shop.city ? ` · Ships from ${db.shop.city}` : ''}</div>}
+    <div className="shopwrap" style={themed} data-themed={design ? design.template : undefined}>
+      {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : <div className="announce">{deliveryLine(bag.rule)}{db.shop.city ? ` · Ships from ${db.shop.city}` : ''}</div>}
       <header className="shopbar">
         <div className="wrap">
           <button className="ibtn burger flat" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}><Icon name="menu" /></button>
-          <Link className="shopname" href={base}><span className="shop-av" aria-hidden="true">{db.shop.name[0]}</span><b>{db.shop.name}</b></Link>
+          <Link className="shopname" href={base}>{logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="shop-av" style={{ objectFit: 'cover' }} /> : <span className="shop-av" aria-hidden="true">{brandName[0]}</span>}<b>{brandName}</b></Link>
           <nav className="links" aria-label="Shop">{links.map(([l, h]) => <Link key={l} href={h} className={path === h ? 'on' : ''}>{l}</Link>)}</nav>
           <div className="right">
             <form className="search" onSubmit={search} role="search"><Icon name="search" size="sm" /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the shop" aria-label="Search the shop" /></form>
@@ -50,7 +63,7 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
       <main id="main" className="grow-main">{children}</main>
       <footer className="shopfoot">
         <div className="wrap"><div className="cols">
-          <div><b className="t-ink" style={{ fontFamily: 'var(--font-display)', fontSize: 18 }}>{db.shop.name}</b><p className="cap" style={{ maxWidth: '36ch', marginTop: 4 }}>{SHOP_TAGLINE}</p></div>
+          <div><b className="t-ink" style={{ fontFamily: 'var(--font-display)', fontSize: 18 }}>{db.shop.name}</b>{db.shop.tagline ? <p className="cap" style={{ maxWidth: '36ch', marginTop: 4 }}>{db.shop.tagline}</p> : null}</div>
           <div><b className="label">Shop</b><Link href={base}>All products</Link><Link href={`${base}/wishlist`}>Wishlist</Link><Link href="/buyer/orders">Track my order</Link></div>
           <div><b className="label">Help</b><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/data-requests">My data</Link></div>
         </div><div className="powered"><span className="smark xs" aria-hidden="true">S</span>Shop powered by <Logo label="Stoora" /></div></div>
@@ -98,8 +111,8 @@ export function QuickView({ p, base, onClose }: { p: Product | null; base: strin
   const add = () => { if (p.sizes.length && !size) { setErr(true); return; } bag.add(p.id, size || undefined); toast(`${p.name} added to your bag.`, { icon: 'shopping_bag' }); onClose(); };
   return (
     <Dialog open onClose={onClose} title={p.name} footer={<><ButtonLink href={`${base}/p/${p.id}`} kind="line" small>Full details</ButtonLink>{orderable ? <Button kind="primary" icon="shopping_bag" onClick={add}>Add to bag</Button> : <span className="cap">{PAUSED_LINE}</span>}</>}>
-      <div className="stack"><ProductArt product={p} big /><div className="row"><span className="price money" style={{ fontSize: 24 }}>{rs(p.price)}</span><Stars value={m.rating} count={m.reviews} /></div><p className="t-body">{m.blurb}</p>
-        {p.sizes.length > 0 && <div className="field"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => <button key={s} type="button" aria-pressed={size === s} onClick={() => { setSize(s); setErr(false); }}>{s}</button>)}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size first.</span>}</div>}</div>
+      <div className="stack"><ProductArt product={p} big /><div className="row"><span className="price money" style={{ fontSize: 24 }}>{rs(p.price)}</span>{m.reviews > 0 && <Stars value={m.rating} count={m.reviews} />}</div>{m.blurb ? <p className="t-body">{m.blurb}</p> : null}
+        {p.sizes.length > 0 && <div className="field"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => { const gone = p.optionStock?.[s] !== undefined && p.optionStock[s] <= 0; return <button key={s} type="button" aria-pressed={size === s} disabled={gone} title={gone ? 'Sold out' : undefined} onClick={() => { setSize(s); setErr(false); }}>{s}{gone ? ' (sold out)' : ''}</button>; })}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size first.</span>}</div>}</div>
     </Dialog>
   );
 }

@@ -47,6 +47,21 @@ export interface Service {
   minutes: number;
   next: string;
   icon: string;
+  /** What the seller chose to add. A workshop and a class are both type 'Class'; a session is '1-on-1'. */
+  kind?: 'workshop' | 'class' | 'session' | 'digital';
+  /** A workshop's date (YYYY-MM-DD). */
+  date?: string;
+  /** Classes and sessions: the weekdays they run. */
+  days?: string[];
+  /** The time slots, like '7:00 am'. A workshop has one. */
+  times?: string[];
+  /** Seats in a workshop or a class. */
+  seats?: number;
+  /** Online, At my studio, At buyer's home. */
+  place?: string;
+  /** A download: the file buyers receive (kept privately; never shown on the shop page). */
+  fileName?: string;
+  filePath?: string;
 }
 
 export interface OrderLine { productId: string; qty: number; size?: string; price: number }

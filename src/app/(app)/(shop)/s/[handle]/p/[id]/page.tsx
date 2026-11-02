@@ -10,6 +10,7 @@ import { ProductCard, shopBase } from '@/components/shop/ShopChrome';
 import { useStore } from '@/lib/store';
 import { useBag } from '@/lib/bag';
 import { metaOf, REVIEWS } from '@/lib/catalog';
+import { deliveryLine } from '@/lib/delivery';
 import { rs } from '@/lib/format';
 
 export default function ProductPage() {
@@ -18,6 +19,7 @@ export default function ProductPage() {
   const p = db.products.find((x) => x.id === id && x.status === 'Active');
   if (!ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={1} height={420} /></div>;
   if (!p) return <StateScreen kind="notfound" title="That product isn’t here" text="It may have been removed or sold out for good." actions={<Link className="btn primary" href={base}>Back to the shop</Link>} />;
+  const soldSize = (z: string) => p.optionStock?.[z] !== undefined && p.optionStock[z] <= 0; const left = size && p.optionStock?.[size] !== undefined ? p.optionStock[size] : p.stock;
   const m = metaOf(p); const out = p.stock <= 0; const wished = bag.wish.includes(p.id);
   const more = db.products.filter((x) => x.status === 'Active' && x.id !== p.id).slice(0, 4);
   const add = (go?: boolean) => {
@@ -36,11 +38,11 @@ export default function ProductPage() {
         </div>
         <div className="pinfo">
           <div className="stack tight"><div className="row" style={{ flexWrap: 'wrap' }}>{m.badge && <Badge tone="offer" icon="star">{m.badge}</Badge>}{!out && p.stock <= 3 && <Badge tone="warn" icon="local_fire_department">Only {p.stock} left</Badge>}{out && <Badge tone="neutral" icon="inventory_2">Sold out</Badge>}</div>
-            <h1 className="h1">{p.name}</h1><Stars value={m.rating} count={m.reviews} /></div>
+            <h1 className="h1">{p.name}</h1>{m.reviews > 0 && <Stars value={m.rating} count={m.reviews} />}</div>
           <div className="price">{rs(p.price)}{p.comparePrice && <s className="cap" style={{ marginLeft: 8, fontSize: 18, fontWeight: 400 }}>{rs(p.comparePrice)}</s>}<span className="cap" style={{ display: 'block', fontSize: 13, fontWeight: 400 }}>Inclusive of taxes. Delivery calculated at checkout.</span></div>
-          <p className="t-body">{m.blurb}</p>
-          {p.sizes.length > 0 && <div className="field" id="size-h"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => <button key={s} type="button" aria-pressed={size === s} onClick={() => { setSize(s); setErr(false); }}>{s}</button>)}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size to continue.</span>}</div>}
-          <div className="row"><span className="flabel">Quantity</span><div className="step" role="group" aria-label="Quantity"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="One less"><Icon name="remove" size="sm" /></button><output aria-live="polite">{qty}</output><button type="button" onClick={() => setQty(Math.min(Math.min(10, p.stock || 1), qty + 1))} aria-label="One more"><Icon name="add" size="sm" /></button></div></div>
+          {m.blurb ? <p className="t-body">{m.blurb}</p> : null}
+          {p.sizes.length > 0 && <div className="field" id="size-h"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => <button key={s} type="button" aria-pressed={size === s} disabled={soldSize(s)} title={soldSize(s) ? 'Sold out' : undefined} onClick={() => { setSize(s); setQty(1); setErr(false); }}>{s}{soldSize(s) ? ' (sold out)' : ''}</button>)}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size to continue.</span>}</div>}
+          <div className="row"><span className="flabel">Quantity</span><div className="step" role="group" aria-label="Quantity"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="One less"><Icon name="remove" size="sm" /></button><output aria-live="polite">{qty}</output><button type="button" onClick={() => setQty(Math.min(Math.min(10, left || 1), qty + 1))} aria-label="One more"><Icon name="add" size="sm" /></button></div></div>
           <div className="pdp-bar">
             {db.shop.open ? <Button kind="primary" icon="shopping_bag" disabled={out} onClick={() => add()}>{out ? 'Sold out' : 'Add to bag'}</Button> : <span className="cap grow" role="status">{PAUSED_LINE}</span>}
             <button className="ibtn" style={{ width: 52, height: 52 }} aria-pressed={wished} aria-label={wished ? 'Remove from wishlist' : 'Save to wishlist'} onClick={() => { bag.toggleWish(p.id); toast(wished ? 'Removed from wishlist.' : 'Saved to wishlist.', { icon: 'favorite' }); }}><Icon name={wished ? 'favorite' : 'favorite'} className={wished ? 't-neg' : ''} /></button>
@@ -49,13 +51,13 @@ export default function ProductPage() {
           <div className="card stack tight"><b className="t-ink">Check delivery</b><div className="pincode"><div className={`affix ${pinMsg === 'bad' ? 'bad' : ''}`}><input inputMode="numeric" maxLength={6} placeholder="6-digit pincode" aria-label="Pincode" value={pin} onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setPinMsg(''); }} style={{ paddingLeft: 0 }} /></div><Button onClick={check}>Check</Button></div>
             {pinMsg === 'bad' ? <span className="err" role="alert" style={{ color: 'var(--negative-deep)', fontSize: 14 }}>Enter a 6-digit pincode.</span> : pinMsg && <span className="verified"><Icon name="local_shipping" size="sm" />{pinMsg}</span>}</div>
           <div>
-            <Accordion title="Details" open><ul style={{ margin: 0, paddingLeft: 18 }}>{(m.details.length ? m.details : [p.description || 'Made by hand.']).map((d) => <li key={d}>{d}</li>)}</ul></Accordion>
-            <Accordion title="Delivery and returns"><p>Ships from {db.shop.city} within 2 days. Free delivery over ₹1,500. Returns accepted within 7 days if unused and in original packaging.</p></Accordion>
+            {(m.details.length > 0 || p.material) && <Accordion title="Details" open><ul style={{ margin: 0, paddingLeft: 18 }}>{(m.details.length ? m.details : [`Made of ${p.material!.toLowerCase()}`]).map((d) => <li key={d}>{d}</li>)}</ul></Accordion>}
+            <Accordion title="Delivery"><p>{db.shop.city ? `Ships from ${db.shop.city}. ` : ''}{deliveryLine(bag.rule)}.</p></Accordion>
           </div>
         </div>
       </div>
-      <section style={{ paddingBottom: 'var(--s5)' }}><h2 className="h2" style={{ marginBottom: 'var(--s3)' }}>What buyers say</h2>
-        <div className="grid2">{REVIEWS.map((r) => <div className="review" key={r.who}><Stars value={r.stars} /><p className="t-soft">{r.text}</p><span className="cap">{r.who} · {r.city} · {r.when}</span></div>)}</div></section>
+      {m.reviews > 0 && <section style={{ paddingBottom: 'var(--s5)' }}><h2 className="h2" style={{ marginBottom: 'var(--s3)' }}>What buyers say</h2>
+        <div className="grid2">{REVIEWS.map((r) => <div className="review" key={r.who}><Stars value={r.stars} /><p className="t-soft">{r.text}</p><span className="cap">{r.who} · {r.city} · {r.when}</span></div>)}</div></section>}
       {more.length > 0 && <section style={{ paddingBottom: 'var(--s6)' }}><h2 className="h2" style={{ marginBottom: 'var(--s3)' }}>More from {db.shop.name}</h2><div className="pgrid2">{more.map((x) => <ProductCard key={x.id} p={x} base={base} />)}</div></section>}
     </div>
   );

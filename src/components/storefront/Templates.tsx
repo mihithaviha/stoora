@@ -127,7 +127,7 @@ function Card({ item, ctx, ui, variant = '', filterable = false }: { item: Store
         {detail ? <p className="sf-sub">{detail}</p> : null}
         {variant === 'describe' && item.desc ? <p className="sf-desc">{item.desc.slice(0, 120)}</p> : null}
         <RatingLine item={item} ctx={ctx} />
-        <p className="sf-price">{isService(item) ? 'From ' : ''}{rupees(item.price)}</p>
+        <p className="sf-price">{isService(item) ? 'From ' : ''}{rupees(item.price)}{item.was ? <s style={{ marginLeft: 8, opacity: .6, fontWeight: 400 }} aria-label={`was ${rupees(item.was)}`}>{rupees(item.was)}</s> : null}</p>
         <Availability item={item} />
         <Action item={item} ctx={ctx} />
       </div>
@@ -153,12 +153,15 @@ function LogoOrName({ ctx }: P) {
 function collectionsOf(data: StoreData) {
   const groups: Record<string, StoreItem[]> = {};
   for (const item of data.products) if (item.cat) (groups[item.cat] = groups[item.cat] || []).push(item);
-  return Object.entries(groups).map(([name, items]) => ({ name, count: items.length, image: items.find((i) => i.img)?.img || '' }));
+  // a collection with no photo would be a giant grey box, so it is left out until one of its products has a photo
+  return Object.entries(groups).map(([name, items]) => ({ name, count: items.length, image: items.find((i) => i.img)?.img || '' })).filter((c) => c.image);
 }
 const byIds = (ids: string[], items: StoreItem[]) => ids.map((id) => items.find((item) => item.id === id)).filter(Boolean) as StoreItem[];
 const featuredOf = (ctx: P['ctx']) => byIds(ctx.config.featuredIds, ctx.data.products);
 const bestsellersOf = (ctx: P['ctx']) => byIds(ctx.data.bestsellerIds || [], ctx.data.products).slice(0, 4);
 const newestOf = (ctx: P['ctx']) => ctx.data.products.slice(0, 4);
+/** "New arrivals" only earns its place once there are more products than it shows; with a few, "The collection" already lists them all. */
+const hasMoreThanNewest = (ctx: P['ctx']) => ctx.data.products.length > 4;
 
 function Reviews({ ctx, heading = 'What customers say' }: { ctx: P['ctx']; heading?: string }) {
   const list = ctx.data.reviews || [];
@@ -191,9 +194,10 @@ function Contact({ ctx }: { ctx: P['ctx'] }) {
   const c = ctx.config.contact;
   const instagram = ctx.config.social.instagram;
   const rows: ReactNode[] = [];
-  if (c.whatsapp) rows.push(<a key="w" className="sf-btn" href={`https://wa.me/91${c.whatsapp}`} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>);
-  if (c.phone) rows.push(<a key="p" className="sf-btn ghost" href={`tel:+91${c.phone}`}>Call {c.phone}</a>);
-  if (c.email) rows.push(<a key="e" className="sf-btn ghost" href={`mailto:${c.email}`}>{c.email}</a>);
+  const show = c.show ?? {};
+  if (c.whatsapp && show.whatsapp !== false) rows.push(<a key="w" className="sf-btn" href={`https://wa.me/91${c.whatsapp}`} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>);
+  if (c.phone && show.phone !== false) rows.push(<a key="p" className="sf-btn ghost" href={`tel:+91${c.phone}`}>Call {c.phone}</a>);
+  if (c.email && show.email === true) rows.push(<a key="e" className="sf-btn ghost" href={`mailto:${c.email}`}>{c.email}</a>);
   if (instagram) rows.push(<a key="i" className="sf-btn ghost" href={`https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer">Instagram</a>);
   if (!ctx.config.sections.contact || (!rows.length && !c.address && !c.hours)) return null;
   return (
@@ -250,10 +254,10 @@ function Boutique({ ctx, ui }: P) {
       <header className="sf-top sf-top-center"><div className="sf-wrap"><LogoOrName ctx={ctx} ui={ui} />
         <nav className="sf-nav" aria-label="Store"><a href="#sf-shop">Shop</a>{shown.collections && tiles.length ? <a href="#sf-collections">Collections</a> : null}{shown.about && (config.about.text || config.about.image) ? <a href="#sf-about">About</a> : null}<a href="#sf-contact">Contact</a></nav></div></header>
       <section className={`sf-hero sf-hero-full ${config.hero.image ? 'has-image' : ''}`.trim()} style={heroBackground(config)}><div className="sf-hero-shade" />
-        <div className="sf-wrap sf-hero-copy"><p className="sf-eyebrow">{data.shop.city || 'New season'}</p><h1>{heroTitle(ctx)}</h1><p className="sf-lede">{heroText(ctx)}</p><a className="sf-btn big" href="#sf-shop">{config.hero.cta}</a></div></section>
+        <div className="sf-wrap sf-hero-copy"><p className="sf-eyebrow">{data.shop.city || ''}</p><h1>{heroTitle(ctx)}</h1><p className="sf-lede">{heroText(ctx)}</p><a className="sf-btn big" href="#sf-shop">{config.hero.cta}</a></div></section>
       {shown.collections && tiles.length ? <section className="sf-section" id="sf-collections"><div className="sf-wrap"><h2 className="sf-h2">Collections</h2><div className="sf-tiles">{tiles.slice(0, 3).map((t) => <Tile key={t.name} t={t} ui={ui} />)}</div></div></section> : null}
       {shown.featured && picks.length ? <section className="sf-section"><div className="sf-wrap"><h2 className="sf-h2">Featured</h2><Grid items={picks} ctx={ctx} ui={ui} variant="tall" /></div></section> : null}
-      {shown.newArrivals && data.products.length > 1 ? <section className="sf-section sf-tint"><div className="sf-wrap"><h2 className="sf-h2">New arrivals</h2><div className="sf-row">{newestOf(ctx).map((i) => <Card key={i.id} item={i} ctx={ctx} ui={ui} variant="tall" />)}</div></div></section> : null}
+      {shown.newArrivals && hasMoreThanNewest(ctx) ? <section className="sf-section sf-tint"><div className="sf-wrap"><h2 className="sf-h2">New arrivals</h2><div className="sf-row">{newestOf(ctx).map((i) => <Card key={i.id} item={i} ctx={ctx} ui={ui} variant="tall" />)}</div></div></section> : null}
       {shown.bestsellers && bestsellersOf(ctx).length ? <section className="sf-section"><div className="sf-wrap"><h2 className="sf-h2">Bestsellers</h2><Grid items={bestsellersOf(ctx)} ctx={ctx} ui={ui} variant="tall" /></div></section> : null}
       <section className="sf-section" id="sf-shop"><div className="sf-wrap"><h2 className="sf-h2">The collection</h2>{data.products.length ? <Grid items={data.products} ctx={ctx} ui={ui} variant="tall" className="sf-grid-3" filterable /> : <EmptyShelf ctx={ctx} />}</div></section>
       <About ctx={ctx} /><Reviews ctx={ctx} /><Faqs ctx={ctx} /><Contact ctx={ctx} /><Footer ctx={ctx} />

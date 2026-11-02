@@ -187,7 +187,7 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
           <div className="sfed-panel">
             <Section title="Template" open>
               <div className="sfed-templates">
-                {TEMPLATES.map((t) => (
+                {TEMPLATES.filter((t) => !t.premium || t.id === config.template).map((t) => (
                   <button key={t.id} type="button" className={`sfed-tpl${t.id === config.template ? ' on' : ''}`} disabled={isPremium(t.id)} onClick={() => applyTemplate(t.id)} aria-pressed={t.id === config.template}>
                     <b>{t.name}{t.premium ? ' · premium' : ''}</b><small>{t.premium ? 'Premium templates are not switched on yet.' : t.blurb}</small>
                   </button>
@@ -268,6 +268,10 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
               {config.faqs.length < LIMITS.faqs ? <Button small onClick={() => change((c) => ({ ...c, faqs: [...c.faqs, { q: '', a: '' }] }))}>Add a question</Button> : <p className="cap">That is the most questions a shop can show.</p>}
             </Section>
             <Section title="Contact">
+              <p className="cap" style={{ margin: 0 }}>Choose which details buyers see under “Get in touch”. Your email stays private unless you switch it on.</p>
+              {([['whatsapp', 'WhatsApp', true], ['phone', 'Phone', true], ['email', 'Email', false]] as const).map(([key, label, dflt]) => (
+                <div className="toggle-row" key={key}><span className="grow t-ink">Show {label}</span><Switch label={`Show ${label} on my shop`} checked={config.contact.show?.[key] ?? dflt} onChange={(v) => set('contact', { show: { ...config.contact.show, [key]: v } })} /></div>
+              ))}
               <Text id="sf-wa" label="WhatsApp number (10 digits)" value={config.contact.whatsapp} onChange={(v) => set('contact', { whatsapp: v.replace(/\D/g, '').slice(0, 10) })} max={10} />
               <Text id="sf-ph" label="Phone number" value={config.contact.phone} onChange={(v) => set('contact', { phone: v.replace(/\D/g, '').slice(0, 10) })} max={10} />
               <Text id="sf-em" label="Email" value={config.contact.email} onChange={(v) => set('contact', { email: v })} />
