@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const r = await askClaudeJSON('You list products for small sellers from photos. Reply with JSON only.', [
       ...photos.map((i) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: i.type, data: i.data } })),
       { type: 'text', text: productPrompt(categories, shopName) },
-    ], 700, { model: process.env.ANTHROPIC_PRODUCT_MODEL || 'claude-haiku-5-5', timeoutMs: SECONDS * 1000, onUsage: (u) => { record?.(u); console.info(`[describe-product] tokens in=${u.input} out=${u.output}`); } });
+    ], 700, { model: process.env.AI_MODEL || process.env.ANTHROPIC_PRODUCT_MODEL || 'claude-haiku-5-5', timeoutMs: SECONDS * 1000, onUsage: (u) => { record?.(u); console.info(`[describe-product] tokens in=${u.input} out=${u.output}`); } });
     return NextResponse.json({ draft: normaliseDraft(r, categories) });
   } catch (e) {
     const code = (e as { code?: string }).code;

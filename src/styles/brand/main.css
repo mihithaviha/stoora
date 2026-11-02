@@ -592,6 +592,7 @@ body.mode-public::before,body.mode-auth::before{background:var(--surface)}
 .hero .admit{font-size:13px;color:var(--ink-65);display:flex;gap:var(--s1);align-items:center}
 .hero .admit i{width:8px;height:8px;border-radius:50%;background:var(--marigold);flex:none}
 .stage{position:relative;aspect-ratio:1/1.02;max-width:560px;width:100%;margin:0 auto}
+.hero-mobile-stage{display:none}
 .stage .shop{position:absolute;right:0;top:0;width:76%;max-width:100%}
 .stage .shop svg{width:100%;height:auto;display:block}
 .stage .phone{position:absolute;left:0;bottom:0;width:min(240px,44%)}
@@ -1196,3 +1197,10 @@ h1,h2,h3,h4{overflow-wrap:break-word}
 .input::placeholder,.askbox textarea::placeholder{color:color-mix(in srgb,var(--ink-65) 80%,var(--inner))}
 .field .hint{line-height:1.45}
 .tbl td,.tbl th{font-variant-numeric:tabular-nums}
+
+/* home page calls to action: Start for Free and Log in side by side, on every screen size */
+.claim-cta .btn{height:56px;padding:0 32px;font-size:18px;white-space:nowrap}
+.hero-cta{display:flex;align-items:center;gap:var(--s2);flex-wrap:nowrap}
+.hero-cta .btn.line{height:56px;padding:0 28px;font-size:18px;white-space:nowrap;flex:none}
+@media (max-width:480px){.claim-cta .btn,.hero-cta .btn.line{height:50px;font-size:16px}.claim-cta .btn{padding:0 22px}.hero-cta .btn.line{padding:0 20px}}
+@media (max-width:359px){.hero-cta{gap:8px}.claim-cta .btn{padding:0 14px;font-size:15px}.hero-cta .btn.line{padding:0 14px;font-size:15px}}

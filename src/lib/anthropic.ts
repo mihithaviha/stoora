@@ -2,7 +2,9 @@
 // The key is never sent to the browser and must never use a NEXT_PUBLIC_ prefix.
 import 'server-only';
 
-export const aiConfigured = () => !!process.env.ANTHROPIC_API_KEY;
+/** The doc's AI_API_KEY and AI_MODEL come first; the older ANTHROPIC_* names still work. */
+const apiKey = () => process.env.AI_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+export const aiConfigured = () => !!apiKey();
 
 type Block = { type: 'text'; text: string } | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
 
@@ -11,8 +13,8 @@ export interface AskOptions { /** Use this model instead of ANTHROPIC_MODEL. */ 
 export async function askClaudeJSON(system: string, content: Block[], maxTokens = 1200, opts: AskOptions = {}): Promise<unknown> {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY as string, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: opts.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey(), 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: opts.model || process.env.AI_MODEL || process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
     signal: AbortSignal.timeout(opts.timeoutMs ?? 60_000),
   });
   if (!r.ok) throw Object.assign(new Error('upstream_' + r.status), { code: 'upstream', status: r.status });

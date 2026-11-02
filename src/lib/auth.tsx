@@ -23,7 +23,7 @@ interface AuthCtx {
   user: Person | null;
   role: Role | null;
   /** Google: redirects away in live mode. Returns an error message, or null when it worked. */
-  signInWithGoogle: (as: 'seller' | 'buyer', next?: string, opts?: { sample?: boolean }) => Promise<string | null>;
+  signInWithGoogle: (as: 'seller' | 'buyer', next?: string, opts?: { sample?: boolean; back?: string }) => Promise<string | null>;
   /** Sends a 6-digit code to the phone. With createUser false an unknown number is reported as `unknown` and no account is made. */
   requestLoginCode: (phone: string, createUser: boolean) => Promise<CodeRequest>;
   /** Sends a 6-digit code to the phone (WhatsApp where the project has it, otherwise SMS). */
@@ -47,13 +47,17 @@ export const DEMO_TAKEN_PHONE = '9000000001';
 const Ctx = createContext<AuthCtx | null>(null);
 export const toE164 = (phone: string) => '+91' + phone.replace(/\D/g, '').slice(-10);
 
+/** An old code is not the same as a wrong one: the screen sends a fresh code by itself when it sees this. */
+export const EXPIRED = 'This code has expired. We’ve sent you a new one.';
+
 /** Plain words for what Supabase says, so nobody sees a raw error. */
 export function friendly(error: Pick<AuthError, 'message'> & { code?: string; status?: number }): string {
   const m = `${error.code ?? ''} ${error.message}`;
   if (/phone_exists|already (been )?(registered|exists|taken|used)|phone.*already/i.test(m)) return 'This number is already used by another Stoora account.';
   if (/identity_already_exists|identity.*(already|exists)|already linked/i.test(m)) return 'This Google account is already used by another Stoora account.';
   if (/rate.?limit|too many|over_sms_send_rate_limit|over_request_rate_limit|429/i.test(m) || error.status === 429) return 'Too many tries. Please wait a few minutes and try again.';
-  if (/otp_expired|expired|invalid/i.test(m)) return 'That code isn’t right. Check the latest message and try again.';
+  if (/otp_expired|expired/i.test(m) && !/invalid/i.test(m)) return EXPIRED;
+  if (/invalid/i.test(m)) return 'That code isn’t right. Try again.';
   return error.message;
 }
 
@@ -103,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       writeIds({ phone: opts?.sample ? DEMO_KNOWN_PHONE : cur?.phone ?? '', google: true });
       window.location.assign(target); return null;
     }
-    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback?role=${as}&next=${encodeURIComponent(target)}`, queryParams: { prompt: 'select_account' } } });
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback?role=${as}&next=${encodeURIComponent(target)}${opts?.back ? `&back=${encodeURIComponent(opts.back)}` : ''}`, queryParams: { prompt: 'select_account' } } });
     return error ? friendly(error) : null;
   }, [sb]);
 
@@ -128,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyCode = useCallback<AuthCtx['verifyCode']>(async (phone, code, as) => {
     const digits = phone.replace(/\D/g, '').slice(-10);
     if (!sb) {
-      if (code !== '123456') return 'That code isn’t right. Check the latest message and try again.';
+      if (code !== '123456') return 'That code isn’t right. Try again.';
       startDemoSession();
       const cur = readIds();
       writeIds({ phone: digits, google: cur?.google ?? false });
@@ -151,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const confirmPhone = useCallback<AuthCtx['confirmPhone']>(async (phone, code) => {
     const digits = phone.replace(/\D/g, '').slice(-10);
     if (!sb) {
-      if (code !== '123456') return 'That code isn’t right. Check the latest message and try again.';
+      if (code !== '123456') return 'That code isn’t right. Try again.';
       const cur = readIds();
       writeIds({ phone: digits, google: cur ? cur.google : true });
       return null;

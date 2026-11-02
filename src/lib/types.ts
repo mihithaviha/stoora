@@ -26,6 +26,8 @@ export interface Product {
   tags?: string[];
   /** Set by Stoora (shop handle + running number, like SHAURYA-0001). Read-only. */
   productNumber?: string;
+  /** Set by Stoora, never asked: country of origin, the tax rule, and the line shown in search listings. */
+  country?: string; tax?: string; googleText?: string;
   price: number;
   comparePrice?: number;
   stock: number;
@@ -105,6 +107,8 @@ export interface Shop {
   name: string; owner: string; handle: string; email: string; phone: string; city: string; open: boolean; showPrices: boolean; cod: boolean; look: 'Warm' | 'Indigo' | 'Plain';
   // live mode only
   id?: string; online?: boolean; tagline?: string; orderSettings?: Record<string, string>;
+  /** What the shop sells: "Physical products" or "Digital products" (anything else, like the sample shop, shows both). */
+  category?: string;
   whatsappNumber?: string; whatsappVerified?: boolean; showWhatsapp?: boolean;
   /** UPI ID buyers pay to (private: the public shop page only learns that one is set). */
   upi?: string;

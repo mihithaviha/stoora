@@ -47,10 +47,10 @@ function FinalCta() {
       <div className="wrap">
         <div className="final rv">
           <div className="stack">
-            <span className="eyebrow">Get started</span>
+            <span className="eyebrow">Start for free</span>
             <h2 className="l-h2" id="fin-h">Your shop is one link away.</h2>
-            <p className="lede">Type the name you want. It takes a name, an email and a password.</p>
-            <ClaimForm id="claim-final" button="Open my shop" />
+            <p className="lede">Sign up with your WhatsApp number or Google. No password to remember.</p>
+            <ClaimForm id="claim-final" button="Start for Free" />
             <p className="cap">Already selling with Stoora? <Link href="/login" className="link">Log in</Link></p>
           </div>
           <div className="shop paint-in"><ShopFront boardId="board-final" handle={handle} /></div>

@@ -83,7 +83,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                   return (
                     <div className="row" key={i} style={{ padding: '10px 0', borderTop: '1px solid var(--line-soft)' }}>
                       <div className="thumb" style={{ width: 40, height: 40 }}><Ms n={p?.icon ?? 'inventory_2'} /></div>
-                      <div className="sp small"><b>{p?.name ?? 'Product removed'}</b><div className="muted">{l.size ? `Size ${l.size} · ` : ''}{rs(l.price)} × {l.qty}</div></div>
+                      <div className="sp small"><b>{p?.name ?? 'Product removed'}</b><div className="muted">{p?.productNumber ? `${p.productNumber} · ` : ''}{l.size ? `Size ${l.size} · ` : ''}{rs(l.price)} × {l.qty}</div></div>
                       <span className="money small">{rs(l.qty * l.price)}</span>
                     </div>
                   );

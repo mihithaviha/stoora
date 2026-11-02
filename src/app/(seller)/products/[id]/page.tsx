@@ -85,7 +85,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const base = useMemo(() => JSON.stringify(toForm(p)), [p]);
   const dirty = loaded && JSON.stringify(f) !== base;
   const categories = useMemo(() => uniq(db.products.map((x) => x.category)).sort((a, b) => a.localeCompare(b)), [db.products]);
-  useLeaveGuard(dirty, (href) => setLeaveTo(href));
+  const guard = useLeaveGuard(dirty, (href) => setLeaveTo(href));
 
   const set = (patch: Partial<Form>) => setF((x) => ({ ...x, ...patch }));
 
@@ -119,7 +119,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       }));
       const photos = shots.filter(Boolean);
       if (!photos.length) { setAi('failed'); return; }
-      const r = await fetch('/api/describe-product', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photos, categories, shopName: db.shop.name }), signal: ctl.signal });
+      const r = await fetch('/api/v1/products/ai-draft', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photos, categories, shopName: db.shop.name }), signal: ctl.signal });
       if (r.status === 503) { setAi('unavailable'); return; }
       if (r.status === 429) { setAi('limit'); return; }
       if (!r.ok) { setAi('failed'); return; }
@@ -185,6 +185,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       name: f.name.trim(), description: f.description.trim() || undefined, category: f.category.trim() || 'Other', color: f.color.trim() || undefined, material: f.material.trim() || undefined,
       price: num(f.price), comparePrice: f.onSale && f.comparePrice ? num(f.comparePrice) : undefined, cost: f.cost ? num(f.cost) : undefined,
       stock: totalStock(f), sizes, colors: colors.length ? colors : undefined, optionStock,
+      country: p?.country ?? 'India', tax: p?.tax ?? 'Shop default', googleText: `${f.name.trim()}. ${f.description.trim()}`.slice(0, 300),
       weightGrams: f.weight ? Number(f.weight) : undefined, boxCm: f.box ?? p?.boxCm ?? DEFAULT_BOX, tags: f.tags.length ? f.tags : undefined,
       status: shown ? 'Active' : 'Draft', // no photo: saved hidden
       photos: f.photos } as Product;
@@ -192,7 +193,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       try { saveProduct(next); } catch { setBusy(false); toast('Couldn’t save. Your browser storage may be full — remove a photo and try again.', { icon: 'error' }); return; }
       setBusy(false);
       toast(!hasPhoto ? `${next.name} saved, hidden. Add a photo to show it in your shop.` : isNew ? `${next.name} added.` : 'Saved.');
-      if (isNew) router.replace(`/products/${next.id}`); else setF(toForm(next));
+      if (isNew) void guard.release().then(() => router.replace(`/products/${next.id}`)); else setF(toForm(next));
     }, 250);
   };
 
@@ -221,7 +222,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
             <div className="card" aria-busy={ai === 'working'}>
               <div className="box-h"><span className="box-t">About this product</span>
-                {hasPhoto && ai !== 'unavailable' ? <button className="mini ai" type="button" disabled={ai === 'working'} onClick={() => { drafted.current = true; void runAi(); }}>{ai === 'working' ? 'Reading photos…' : isNew && ai === 'idle' ? 'Fill from photos' : 'Write it again'}</button> : null}
+                {hasPhoto && ai !== 'unavailable' ? <button className="mini ai" type="button" disabled={ai === 'working'} onClick={() => { drafted.current = true; void runAi(); }}>{ai === 'working' ? 'Reading photos…' : 'Write it for me'}</button> : null}
               </div>
               {aiNote ? <p className="small muted" role="status" style={{ margin: '0 0 10px' }}>{aiNote}</p> : null}
               <Line id="pf-name" label="Title" value={f.name} onChange={(v) => set({ name: v })} placeholder="e.g. Handblock cotton kurta" />
@@ -348,7 +349,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <div className="card" style={{ marginTop: 8 }}>
                   <button type="button" className="btn line sm" style={{ color: 'var(--negative-deep)' }} onClick={() => {
                     const gone = deleteProduct(p!.id);
-                    router.push('/products');
+                    void guard.release().then(() => router.push('/products'));
                     toast(`${p!.name} deleted.`, { icon: 'delete', undo: () => gone && restoreProduct(gone) });
                   }}>Delete product</button>
                   <p className="tiny muted" style={{ margin: '8px 0 0' }}>You can undo for 5 seconds. Past orders keep their details.</p>
@@ -358,7 +359,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
         </form>
       </div>
-      <ConfirmDialog open={leaveTo !== null} onClose={() => setLeaveTo(null)} title="Leave without saving?" body="Your changes to this product won’t be saved." yes="Leave" danger onYes={() => { if (leaveTo) router.push(leaveTo); }} />
+      <ConfirmDialog open={leaveTo !== null} onClose={() => { setLeaveTo(null); guard.stay(); }} title="Leave without saving?" body="Your changes to this product won’t be saved." yes="Leave" danger onYes={() => { if (leaveTo !== null) guard.leave(leaveTo); }} />
     </>
   );
 }
