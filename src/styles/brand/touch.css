@@ -36,7 +36,7 @@ a, button, summary, select, label, input, textarea, [role="button"], [role="tab"
 
 /* ---------- phones ---------- */
 
-/* the website's top bar must fit 360px: logo, "Get started" and the menu button */
+/* the website's top bar must fit 360px: logo, "Start for Free" and the menu button */
 @media (max-width: 380px) {
   .lnav .in { gap: var(--s1); }
   .lnav .logo { gap: 6px; }
@@ -96,17 +96,58 @@ a, button, summary, select, label, input, textarea, [role="button"], [role="tab"
     margin-bottom: 22px;
     color: var(--ink-soft);
   }
-  .stage {
-    max-width: min(410px, 92vw) !important;
-    margin: 12px auto 0 !important;
-    width: 100% !important;
+  .desktop-stage {
+    display: none !important;
   }
-  .stage .shop {
-    right: 4px !important;
-    width: 72% !important;
+  .hero-mobile-stage {
+    display: block !important;
+    position: relative;
+    width: 100%;
+    max-width: min(390px, 92vw);
+    margin: 14px auto 0;
   }
-  .stage .phone {
-    width: min(190px, 44%) !important;
+  .hero-mobile-slider {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 764 / 1024;
+    cursor: pointer;
+  }
+  .hero-mobile-slider .m-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: var(--r-2xl);
+    box-shadow: 0 12px 36px rgba(23, 28, 60, 0.08);
+    opacity: 0;
+    transition: opacity 0.75s ease-in-out;
+    pointer-events: none;
+  }
+  .hero-mobile-slider .m-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .hero-mobile-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .hero-mobile-dots button {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--line);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: width 0.3s var(--ease-out), background 0.3s ease;
+  }
+  .hero-mobile-dots button.active {
+    width: 24px;
+    background: var(--ink);
   }
 
   /* Who it's for photo: complete image shown with natural proportions and zero cropping */
@@ -333,4 +374,11 @@ a, button, summary, select, label, input, textarea, [role="button"], [role="tab"
   .dcard.now .vis {
     border-color: color-mix(in srgb, var(--primary) 22%, var(--line-soft));
   }
+}
+
+/* at 320px "Start for Free" is longer than the old "Get started": drop the arrow and tighten, so the menu button stays on screen */
+@media (max-width: 340px) {
+  .lnav .acts .btn { padding-inline: 10px; font-size: 13px; }
+  .lnav .acts .btn .arr { display: none; }
+  .lnav .logo .wordmark { font-size: 18px; }
 }

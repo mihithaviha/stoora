@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import Link from 'next/link';
 import { AppIcon, Av, Bdg, Ic, Src } from '../bits';
 import { useOnScreen, usePageVisible, useReducedMotion } from '../hooks';
 import { ShopFront } from '../ShopFront';
@@ -81,7 +82,7 @@ function HeroPhone({ scene, previous }: { scene: number; previous: number }) {
   );
 }
 
-export function Hero({ onSeeHow }: { onSeeHow: () => void }) {
+export function Hero(_props: { onSeeHow?: () => void }) {
   const reduced = useReducedMotion();
   const pageVisible = usePageVisible();
   const heroRef = useRef<HTMLElement>(null);
@@ -91,9 +92,19 @@ export function Hero({ onSeeHow }: { onSeeHow: () => void }) {
 
   const [scene, setScene] = useState(0);
   const [previous, setPrevious] = useState(-1);
+  const [mobileSlide, setMobileSlide] = useState(0);
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
   const paused = reduced || !stageVisible || !pageVisible || hover || focus;
+
+  // Mobile stage: smoothly cycle between the chat and payout images
+  useEffect(() => {
+    if (reduced || !pageVisible) return;
+    const interval = setInterval(() => {
+      setMobileSlide((curr) => (curr + 1) % 2);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, [reduced, pageVisible]);
 
   // The slideshow keeps moving. It rests only for people who ask for less motion, while the pointer or keyboard is on it,
   // while it is off screen, or while the tab is hidden.
@@ -131,15 +142,18 @@ export function Hero({ onSeeHow }: { onSeeHow: () => void }) {
             <span className="ln"><span className="ent" style={delay(3)}><em className="em">every rupee.</em></span></span>
           </h1>
           <p className="lede ent" style={delay(4)}>Your own shop at stoora.in/yourname, and one place for every order, chat and UPI payment — wherever it came from.</p>
-          <div className="ent" style={delay(5)}><ClaimForm id="claim-hero" /></div>
+          <div className="hero-cta ent" style={delay(5)}>
+            <ClaimForm id="claim-hero" />
+            <Link className="btn line" href="/login">Log in</Link>
+          </div>
           <div className="sub ent" style={delay(6)}>
-            <button className="btn line sm" type="button" onClick={onSeeHow}>See how it works<Ic n="arrow_downward" c="sm" /></button>
             <span className="admit"><i aria-hidden="true" />The new dashboard is opening to a first group of sellers, a few at a time.</span>
           </div>
         </div>
         <div className="ent" style={delay(3)}>
+          {/* Laptop & desktop interactive stage */}
           <div
-            className={`stage${paused ? ' paused' : ''}`}
+            className={`stage desktop-stage${paused ? ' paused' : ''}`}
             id="stage"
             ref={stageRef}
             onPointerEnter={(event) => event.pointerType === 'mouse' && setHover(true)}
@@ -162,6 +176,42 @@ export function Hero({ onSeeHow }: { onSeeHow: () => void }) {
               </span>
             </div>
             <span className="cap2">Illustration · sample shop</span>
+          </div>
+
+          {/* Mobile & tablet stage: Auto-cycling between Chat & Payment screens */}
+          <div className="hero-mobile-stage" aria-label="Stoora sample shop illustration">
+            <div className="hero-mobile-slider" onClick={() => setMobileSlide((s) => (s + 1) % 2)}>
+              <img
+                src="/assets/home/hero-mobile-chat.jpg"
+                alt="Stoora WhatsApp order and enquiry illustration"
+                className={`m-slide${mobileSlide === 0 ? ' active' : ''}`}
+                loading="eager"
+                decoding="async"
+              />
+              <img
+                src="/assets/home/hero-mobile-payout.jpg"
+                alt="Stoora UPI payment and payout illustration"
+                className={`m-slide${mobileSlide === 1 ? ' active' : ''}`}
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <div className="hero-mobile-dots" role="tablist" aria-label="Slides">
+              <button
+                type="button"
+                className={mobileSlide === 0 ? 'active' : ''}
+                onClick={() => setMobileSlide(0)}
+                aria-label="View chat illustration"
+                aria-selected={mobileSlide === 0}
+              />
+              <button
+                type="button"
+                className={mobileSlide === 1 ? 'active' : ''}
+                onClick={() => setMobileSlide(1)}
+                aria-label="View payout illustration"
+                aria-selected={mobileSlide === 1}
+              />
+            </div>
           </div>
         </div>
       </div>

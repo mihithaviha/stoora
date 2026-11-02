@@ -56,7 +56,7 @@ export default function ProductsPage() {
             <label className="search"><DI n="search" s={16} /><span className="sr">Search {isS ? 'services' : 'products'}</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${isS ? 'services' : 'products'}`} style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label>
           </div>
           {isS ? (
-            <table className="tbl">
+            <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
               <thead><tr><th className="ck"><Chk on={allOn} onChange={(on) => setPicked(on ? ids : [])} label="Select all services" /></th><th>Service</th><th>Type</th><th className="r">Price</th><th>Next slot</th></tr></thead>
               <tbody>
                 {services.map((s) => (
@@ -68,9 +68,9 @@ export default function ProductsPage() {
                 ))}
                 {!services.length && <tr><td colSpan={5} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="product" height={90} /><div style={{ marginTop: 8 }}>{q ? `No services match “${q}”.` : 'No services yet. Add a class, a 1-on-1 session or a download.'}</div></td></tr>}
               </tbody>
-            </table>
+            </table></div>
           ) : (
-            <table className="tbl">
+            <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
               <thead><tr><th className="ck"><Chk on={allOn} onChange={(on) => setPicked(on ? ids : [])} label="Select all products" /></th><th>Product</th><th>Status</th><th>Stock</th><th className="r">Price</th><th>Category</th><th className="r">Sold (30 days)</th></tr></thead>
               <tbody>
                 {products.map((p) => (
@@ -84,7 +84,7 @@ export default function ProductsPage() {
                 ))}
                 {!products.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="product" height={90} /><div style={{ marginTop: 8 }}>{q ? `No products match “${q}”.` : 'No products yet. Add your first one to start selling.'}</div></td></tr>}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

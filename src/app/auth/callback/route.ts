@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
   const role = searchParams.get('role') === 'seller' ? 'seller' : 'buyer';
   // adding Google to a signed-in account (link=1): a failure goes back to Account with a plain message, not to the login page
   const linking = role === 'seller' && searchParams.get('link') === '1';
-  const login = linking ? '/account' : role === 'seller' ? '/login' : '/buyer/login';
+  // Start for Free sends its own address as `back`, so closing the Google window returns to that screen
+  const back = safeNext(searchParams.get('back'), '');
+  const login = linking ? '/account' : role === 'seller' ? (back && /^\/shop\/start/.test(back) ? '/shop/start' : '/login') : '/buyer/login';
   const errKey = linking ? 'linkerror' : 'error';
   const plain = (m: string) => (/identity.*(already|exists)|already.*(linked|registered|exists)/i.test(m) ? 'This Google account is already used by another Stoora account.' : m);
   const next = safeNext(searchParams.get('next'), role === 'seller' ? '/dashboard' : '/buyer/orders');

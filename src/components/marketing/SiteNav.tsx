@@ -27,7 +27,7 @@ type Props = {
 };
 
 /**
- * The top bar of the public site: logo, section links with a sliding pill, "Log in" and "Get started",
+ * The top bar of the public site: logo, section links with a sliding pill, "Log in" and "Start for Free",
  * and on phones a menu button that opens a full-screen menu.
  */
 export function SiteNav({ onHome = false, page = 'home', onSection, activeSection = null, solidAlways = false }: Props) {
@@ -112,7 +112,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
           </nav>
           <div className="acts">
             <Link className="btn quiet sm login" href="/login">Log in</Link>
-            <Link className="btn primary sm cta" href="/signup">Get started<span className="arr" aria-hidden="true"><Ic n="arrow_forward" c="xs" /></span></Link>
+            <Link className="btn primary sm cta" href="/shop/start">Start for Free<span className="arr" aria-hidden="true"><Ic n="arrow_forward" c="xs" /></span></Link>
           </div>
           <button ref={menuBtnRef} className="menu-btn" type="button" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mnav" onClick={toggleMenu}><span /><span /></button>
         </div>
@@ -134,7 +134,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
             </Link>
           </nav>
           <div className="ft" style={{ '--i': 5 } as CSSProperties}>
-            <Link className="btn primary full" href="/signup" onClick={() => closeMenu()}>Get started</Link>
+            <Link className="btn primary full" href="/shop/start" onClick={() => closeMenu()}>Start for Free</Link>
             <Link className="btn line full" href="/login" onClick={() => closeMenu()}>Log in</Link>
           </div>
         </div>

@@ -44,7 +44,7 @@ export function CtaBand() {
       <div className="wrap">
         <div className="jr-cta-in">
           <div><span className="eyebrow">Ready when you are</span><h2>Open your shop in a few minutes.</h2><p>One link for every order, every chat and every rupee.</p></div>
-          <Link className="btn primary" href="/signup">Get started<Ic n="arrow_forward" c="xs" /></Link>
+          <Link className="btn primary" href="/shop/start">Start for Free<Ic n="arrow_forward" c="xs" /></Link>
         </div>
       </div>
     </section>

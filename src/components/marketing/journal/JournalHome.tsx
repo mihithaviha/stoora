@@ -166,7 +166,7 @@ export function JournalHome() {
             <div className="jr-close-copy">
               <h2 id="jr-close-h">From reading to selling.</h2>
               <p>Stoora gives you a shop page, your orders and your payments in one place, so what you learn here goes straight into your own storefront.</p>
-              <div className="jr-close-actions"><Link className="btn primary" href="/signup">Open your shop<Ic n="arrow_forward" c="xs" /></Link><Link className="jr-textlink" href="/how-it-works">See how it works</Link></div>
+              <div className="jr-close-actions"><Link className="btn primary" href="/shop/start">Start for Free<Ic n="arrow_forward" c="xs" /></Link><Link className="jr-textlink" href="/how-it-works">See how it works</Link></div>
             </div>
           </div>
         </div>

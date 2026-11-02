@@ -3,7 +3,7 @@
 // API_TODO: POST /api/shop (step 1), POST /api/products (step 2), PATCH /api/shop/payments (step 3), PATCH /api/shop/order-taking (step 4).
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Button, ButtonLink, Card, Field, Icon, Switch, useToast } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { Logo, Stepper } from '@/components/bits';
@@ -11,9 +11,15 @@ import { WhatsAppVerify } from '@/components/WhatsAppVerify';
 import { useStore } from '@/lib/store';
 import { cleanHandle, rs, toNum } from '@/lib/format';
 import { useHandleCheck } from '@/lib/handle';
+import { DIGITAL, PHYSICAL } from '@/lib/shopstate';
 
-const STEPS = ['Your shop', 'Get paid', 'Orders', 'Look'];
-const CATS: [string, string][] = [['Clothing', 'checkroom'], ['Food and bakes', 'bakery_dining'], ['Jewellery', 'diamond'], ['Home and decor', 'chair'], ['Classes and coaching', 'self_improvement'], ['Something else', 'more_horiz']];
+const STEPS = ['Your shop', 'What you sell', 'Get paid', 'Orders', 'Look'];
+const SELLS: [string, string, string, string][] = [
+  [PHYSICAL, 'inventory_2', 'Physical products', 'Things you ship: clothes, food, jewellery, home goods. Your dashboard shows products, stock, orders, delivery and payments.'],
+  [DIGITAL, 'self_improvement', 'Digital products', 'Things you teach or send online: workshops, 1-on-1 sessions, downloads. Your dashboard shows sessions, calendar, bookings and payments.'],
+];
+/** The steps shown while the shop is made, so nobody stares at a blank screen. */
+const SETUP_LINES = ['Making your shop', 'Choosing how buyers pay and order', 'Getting your dashboard ready'];
 const LOOKS: [string, string, 'Warm' | 'Indigo' | 'Plain'][] = [['Warm', 'linear-gradient(135deg,#fbe0a8,#ef7f3d)', 'Warm'], ['Indigo', 'linear-gradient(135deg,#5f3ba8,#262a7a)', 'Indigo'], ['Plain', 'linear-gradient(135deg,#F7F7F7,#E0D6CA)', 'Plain']];
 
 function Wizard() {
@@ -21,26 +27,32 @@ function Wizard() {
   const params = useSearchParams();
   const start = Math.min(Math.max(Number(params.get('step') || 1) - 1, 0), 4);
   const [step, setStep] = useState(start); const [tried, setTried] = useState(false);
-  const [shop, setS] = useState({ name: start > 0 ? 'Meera Studio' : params.get('name') ?? '', handle: start > 0 ? 'meera' : params.get('handle') ?? '', city: start > 0 ? 'Jaipur' : '', cat: 'Clothing' });
+  const [shop, setS] = useState({ name: start > 0 ? 'Meera Studio' : params.get('name') ?? '', handle: start > 0 ? 'meera' : params.get('handle') ?? '', city: start > 0 ? 'Jaipur' : '', cat: start > 1 ? PHYSICAL : '' });
   const [pay, setPay] = useState({ upi: '', cod: true, online: true });
   const [look, setLook] = useState<'Warm' | 'Indigo' | 'Plain'>('Warm');
   const [orders, setOrders] = useState({ open: true, minimum: '', note: '' });
   const [busy, setBusy] = useState(false);
+  const [setupAt, setSetupAt] = useState(0);
+  useEffect(() => { if (!busy) return; const t = setInterval(() => setSetupAt((n) => Math.min(n + 1, SETUP_LINES.length - 1)), 500); return () => clearInterval(t); }, [busy]);
   const handleState = useHandleCheck(shop.handle, shop.name);
 
   const errs: Record<number, Record<string, string>> = {
     0: { ...(shop.name.trim() ? {} : { name: 'Add your shop’s name.' }), ...(shop.handle.length < 3 ? { handle: 'Use at least 3 letters or numbers.' } : handleState.status === 'taken' ? { handle: 'That link is taken. Pick another.' } : {}) },
-    1: pay.upi && !/^[\w.-]{2,}@[a-z]{2,}$/i.test(pay.upi) ? { upi: 'A UPI ID looks like name@bank.' } : {},
-    2: {}, 3: {},
+    1: shop.cat ? {} : { cat: 'Pick one to go on.' },
+    2: pay.upi && !/^[\w.-]{2,}@[a-z]{2,}$/i.test(pay.upi) ? { upi: 'A UPI ID looks like name@bank.' } : {},
+    3: {}, 4: {},
   };
   const e = (k: string) => (tried ? errs[step]?.[k] : undefined);
   const next = () => { setTried(true); if (Object.keys(errs[step] ?? {}).length) return; setTried(false); setStep(step + 1); };
   const publish = async () => {
-    setBusy(true); setPubError('');
+    setBusy(true); setPubError(''); setSetupAt(0);
+    const shown = Date.now();
     const err = await createShop({ name: shop.name.trim(), handle: shop.handle, city: shop.city, category: shop.cat, cod: pay.cod, online: pay.online, open: true, look, upi: pay.upi, minimum: orders.minimum });
+    // let each line of the setting-up screen show for a moment, so it reads as steps and not a blank wait
+    const wait = 1500 - (Date.now() - shown); if (!err && wait > 0) await new Promise((r) => setTimeout(r, wait));
     setBusy(false);
-    if (err) { setPubError(err); return; }
-    setStep(4); toast('Your shop is live.', { icon: 'celebration' });
+    if (err) { setPubError(err); return; } // every answer is still here, so Try again loses nothing
+    setStep(5); toast('Your shop is live.', { icon: 'celebration' });
   };
 
   // S1: already signed in to a shop and arriving with a new shop name: ask, never drop the name silently
@@ -49,12 +61,20 @@ function Wizard() {
     <div className="wizard"><div className="wiz-top"><Logo /></div>
       <Card className="wiz-card stack" aria-live="polite">
         <div><h1 className="h1">You already have {db.shop.name}</h1><p className="t-body">Open it, or make a new shop? Each Stoora login has one shop, so a new shop needs its own login.</p></div>
-        <div className="btns"><ButtonLink href="/dashboard" kind="primary">Open {db.shop.name}</ButtonLink><Button onClick={async () => { await auth.signOut(); router.push(`/signup?shop=${encodeURIComponent(params.get('name') ?? '')}`); }}>Sign out and make “{params.get('name')}”</Button></div>
+        <div className="btns"><ButtonLink href="/dashboard" kind="primary">Open {db.shop.name}</ButtonLink><Button onClick={async () => { await auth.signOut(); router.push(`/shop/start?shop=${encodeURIComponent(params.get('name') ?? '')}`); }}>Sign out and make “{params.get('name')}”</Button></div>
       </Card>
     </div>
   );
 
-  if (step === 4) return (
+  // making the shop: show what is happening, step by step
+  if (busy) return (
+    <div className="wizard"><div className="payres" role="status" aria-live="polite">
+      <span className="big-ok"><Icon name="storefront" size="lg" /></span><h1 className="h1">Setting up {shop.name || 'your shop'}</h1><p className="t-body">This takes a few seconds.</p>
+      <Card className="stack tight">{SETUP_LINES.map((l, i) => <div key={l} className="row"><Icon name={i < setupAt ? 'check_circle' : i === setupAt ? 'pending' : 'radio_button_unchecked'} /><span className={i <= setupAt ? 't-ink' : 'cap'}>{l}</span></div>)}</Card>
+    </div></div>
+  );
+
+  if (step === 5) return (
     <div className="wizard"><div className="payres"><span className="big-ok"><Icon name="celebration" size="lg" /></span><h1 className="h1">{shop.name || 'Your shop'} is live</h1><p className="t-body">Share this link anywhere buyers are. Until you add your first product, buyers see “Coming soon”. You can change anything later in Settings.</p>
       <Card className="stack"><div className="row"><span className="grow t-ink" style={{ fontWeight: 500, overflowWrap: 'anywhere' }}>stoora.in/{shop.handle || 'yourshop'}</span><Button small icon="content_copy" onClick={() => navigator.clipboard?.writeText(`https://stoora.in/${shop.handle}`).then(() => toast('Link copied.', { icon: 'content_copy' })).catch(() => toast(`Your link is stoora.in/${shop.handle}`, { icon: 'info' }))}>Copy</Button></div></Card>
       <div className="btns" style={{ justifyContent: 'center' }}><ButtonLink href={`/s/${shop.handle}`} icon="open_in_new">See my shop</ButtonLink><ButtonLink href="/products/new" kind="primary">Add my first product</ButtonLink><ButtonLink href="/dashboard" kind="quiet">Go to my dashboard</ButtonLink></div></div></div>
@@ -72,28 +92,36 @@ function Wizard() {
           {!e('handle') && handleState.status === 'free' ? <p className="cap" role="status" style={{ margin: '-8px 0 0', color: 'var(--positive-deep, var(--positive))' }}><Icon name="check_circle" size="xs" /> stoora.in/{shop.handle} is free</p> : null}
           {handleState.status === 'taken' ? <p className="cap" role="alert" style={{ margin: '-8px 0 0', color: 'var(--negative-deep)' }}><Icon name="error" size="xs" /> stoora.in/{shop.handle} is taken{handleState.suggestion ? <>, try <button type="button" className="link" onClick={() => setS({ ...shop, handle: handleState.suggestion! })}>{handleState.suggestion}</button></> : '. Try another.'}</p> : null}
           <Field id="ob-city" label="City" optional><input id="ob-city" className="input" value={shop.city} onChange={(x) => setS({ ...shop, city: x.target.value })} /></Field>
-          <div className="field"><span className="flabel">What do you sell?</span><div className="cats">{CATS.map(([c, i]) => <button key={c} type="button" className="cat" aria-pressed={shop.cat === c} onClick={() => setS({ ...shop, cat: c })}><Icon name={i} /><span className="t-ink" style={{ fontWeight: 500 }}>{c}</span></button>)}</div></div>
         </>}
         {step === 1 && <>
+          <div><h1 className="h1">What do you sell?</h1><p className="t-body">Pick one for now. You can change it later in Settings.</p></div>
+          <div className="stack" role="radiogroup" aria-label="What you sell">{SELLS.map(([v, icon, name, text]) => (
+            <button key={v} type="button" role="radio" aria-checked={shop.cat === v} className="cat" aria-pressed={shop.cat === v} style={{ textAlign: 'left', width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }} onClick={() => setS({ ...shop, cat: v })}>
+              <Icon name={icon} /><span><span className="t-ink" style={{ fontWeight: 600, display: 'block' }}>{name}</span><span className="cap">{text}</span></span>
+            </button>))}</div>
+          {e('cat') ? <span className="err" role="alert"><Icon name="error" size="xs" />{e('cat')}</span> : null}
+          {shop.cat ? <p className="t-body" role="status" style={{ margin: 0 }}>You picked <b className="t-ink">{shop.cat}</b>. Is that right? If not, tap the other one.</p> : null}
+        </>}
+        {step === 2 && <>
           <div><h1 className="h1">How will you get paid?</h1><p className="t-body">Turn on what suits you. You can change this any time.</p></div>
           <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Online payments</span><span className="cap">UPI, cards and netbanking. Needs a few bank details later.</span></span><Switch checked={pay.online} onChange={(v) => setPay({ ...pay, online: v })} label="Online payments" /></div>
           <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Cash on delivery</span><span className="cap">The buyer pays when the parcel arrives.</span></span><Switch checked={pay.cod} onChange={(v) => setPay({ ...pay, cod: v })} label="Cash on delivery" /></div>
           <Field id="ob-upi" label="Your UPI ID" optional error={e('upi')} hint="Buyers can pay you directly. You confirm each payment yourself."><input id="ob-upi" className={`input ${e('upi') ? 'bad' : ''}`} value={pay.upi} onChange={(x) => setPay({ ...pay, upi: x.target.value })} placeholder="yourname@okhdfc" autoCapitalize="none" /></Field>
         </>}
-        {step === 2 && <>
+        {step === 3 && <>
           <div><h1 className="h1">How you take orders</h1><p className="t-body">Your shop opens as soon as you publish. You can pause it any time in Settings.</p></div>
           <Field id="ob-min" label="Smallest order" optional hint="Leave empty for no minimum."><div className="affix"><span aria-hidden="true">₹</span><input id="ob-min" inputMode="numeric" value={orders.minimum} onChange={(x) => setOrders({ ...orders, minimum: x.target.value })} /></div></Field>
           <div className="hr" style={{ margin: 0 }} /><h2 className="ct">WhatsApp number</h2><WhatsAppVerify />
         </>}
-        {step === 3 && <>
+        {step === 4 && <>
           <div><h1 className="h1">Pick a look</h1><p className="t-body">Three simple styles. Premium templates are optional extras you can try later.</p></div>
           <div className="looks" role="radiogroup" aria-label="Look">{LOOKS.map(([n, bg, v]) => <button key={n} type="button" className="look" role="radio" aria-checked={look === v} aria-pressed={look === v} onClick={() => setLook(v)}><i style={{ background: bg }} />{n}</button>)}</div>
           <Card className="stack tight" style={{ background: 'var(--inner)' }}><b className="t-ink">Ready to publish</b><p className="cap">{shop.name || 'Your shop'} · stoora.in/{shop.handle || 'yourshop'} · {pay.online ? 'online payments' : 'no online payments'}{pay.cod ? ', cash on delivery' : ''}</p></Card>
         </>}
-        {pubError && <div className="banner bad" role="alert"><Icon name="error" /><span>{pubError}</span></div>}
+        {pubError && <div className="banner bad" role="alert"><Icon name="error" /><span>{pubError} Nothing you typed is lost.</span><Button small onClick={publish}>Try again</Button></div>}
         <div className="wiz-foot">
           {step > 0 ? <Button icon="arrow_back" onClick={() => { setTried(false); setStep(step - 1); }}>Back</Button> : <span />}
-          {step < 3 ? <Button kind="primary" onClick={next}>Continue</Button> : mode === 'live' && auth.ready && !auth.user ? <Link className="btn primary" href="/login?next=/onboarding?step=4">Sign in to publish</Link> : <Button kind="primary" icon="rocket_launch" busy={busy} busyLabel="Publishing…" onClick={publish}>Publish my shop</Button>}
+          {step < 4 ? <Button kind="primary" onClick={next}>Continue</Button> : mode === 'live' && auth.ready && !auth.user ? <Link className="btn primary" href="/login?next=%2Fonboarding%3Fstep%3D5">Sign in to publish</Link> : <Button kind="primary" icon="rocket_launch" busy={busy} busyLabel="Publishing…" onClick={publish}>Publish my shop</Button>}
         </div>
       </Card>
     </div>

@@ -7,6 +7,7 @@ import { useToast } from '../ui';
 import { useAuth } from '@/lib/auth';
 import { rs } from '@/lib/format';
 import { orderFilters, useStore } from '@/lib/store';
+import { sellsDigital, sellsPhysical } from '@/lib/shopstate';
 
 interface Dash {
   openSearch: () => void;
@@ -64,6 +65,7 @@ export function DashShell({ children }: { children: ReactNode }) {
   const toast = useToast();
   const auth = useAuth();
   const { db, ready } = useStore();
+  const physicalOnly = sellsPhysical(db.shop); const digitalOnly = sellsDigital(db.shop); // the other kind stays saved, just out of the menu
   const tab = sp.get('tab');
   const screen = useRef<HTMLDivElement>(null);
   const lastPage = useRef('/dashboard'); // where Settings goes back to when you press it a second time
@@ -88,6 +90,7 @@ export function DashShell({ children }: { children: ReactNode }) {
     const el = screen.current;
     if (!el) return;
     el.scrollTo(0, 0);
+    el.classList.remove('leaving'); // the old screen has gone; the new one fades in
     animateScreen(el);
   }, [path, tab]);
 
@@ -95,7 +98,7 @@ export function DashShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openSearch(); }
-      if (event.key === 'Escape') { setOverlay(null); setNavOpen(false); }
+      if (event.key === 'Escape') { setOverlay((o) => (o === 'search' ? o : null)); setNavOpen(false); } // the search closes itself, with its pop-out
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -103,6 +106,26 @@ export function DashShell({ children }: { children: ReactNode }) {
 
   const ctx = useMemo<Dash>(() => ({ openSearch }), [openSearch]);
   const go = useCallback((href: string) => { setOverlay(null); router.push(href); }, [router]);
+
+  /** Moving to another section: the screen fades out first, then the next one fades in (so it never jumps). */
+  const leaveTimer = useRef<number | undefined>(undefined);
+  const onLinkClick = useCallback((e: React.MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || document.documentElement.dataset.leaveGuard) return;
+    const a = (e.target as Element).closest?.('a[href]') as HTMLAnchorElement | null;
+    const el = screen.current;
+    if (!a || !el || (a.target && a.target !== '_self') || a.hasAttribute('download') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const url = new URL(a.href, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    // only a move to another screen (or another tab of one) is a transition; a filter on the same screen is not
+    const sameScreen = url.pathname === window.location.pathname && (url.searchParams.get('tab') ?? '') === (new URLSearchParams(window.location.search).get('tab') ?? '');
+    if (sameScreen) return;
+    e.preventDefault();
+    setNavOpen(false); setOverlay(null);
+    el.classList.add('leaving');
+    window.clearTimeout(leaveTimer.current);
+    leaveTimer.current = window.setTimeout(() => { router.push(url.pathname + url.search + url.hash); }, 150);
+    window.setTimeout(() => el.classList.remove('leaving'), 1500); // never leave the screen faded if a move fails
+  }, [router]);
 
   const row = (href: string, id: string, icon: string, label: string, extra?: ReactNode) => (
     <Link className={`nrow${key === id && !sub ? ' on' : ''}`} href={href} title={label} aria-current={key === id && !sub ? 'page' : undefined}>
@@ -115,15 +138,15 @@ export function DashShell({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={ctx}>
-      <div className={`dapp${settings ? ' set' : ''}${navOpen ? ' nav-open' : ''}`}>
+      <div className={`dapp${settings ? ' set' : ''}${navOpen ? ' nav-open' : ''}`} onClickCapture={onLinkClick}>
         <nav className="dnav" id="nav" aria-label="Main">
           <div className="nhead"><Link href="/dashboard" aria-label="Stoora home"><div className="smark">S</div><span className="l brand">Stoora</span></Link></div>
           <button className="nsearch" type="button" onClick={openSearch} title="Search"><DI n="search" s={16} /><span className="l sp">Search</span><kbd className="l">Ctrl K</kbd></button>
           {row('/dashboard', 'home', 'home', 'Home')}
           {row('/orders', 'orders', 'orders', 'Orders', toShip ? <span className="dcnt">{toShip}</span> : null)}
-          {subRow('/orders?tab=bookings', 'bookings', 'Bookings')}
-          {row('/products', 'products', 'tag', 'Products')}
-          {row('/products?tab=services', 'services', 'cal', 'Services')}
+          {!physicalOnly ? subRow('/orders?tab=bookings', 'bookings', 'Bookings') : null}
+          {!digitalOnly ? row('/products', 'products', 'tag', 'Products') : null}
+          {!physicalOnly ? row('/products?tab=services', 'services', 'cal', 'Services') : null}
           {row('/customers', 'customers', 'user', 'Customers')}
           {row('/money', 'money', 'wallet', 'Money')}
           {row('/analytics', 'analytics', 'chart', 'Analytics')}
@@ -185,6 +208,10 @@ export function DashShell({ children }: { children: ReactNode }) {
 const KINDS = ['All', 'Orders', 'Bookings', 'Products', 'Services', 'Customers', 'Settings'] as const;
 function SearchPop({ onClose, go }: { onClose: () => void; go: (href: string) => void }) {
   const { db } = useStore();
+  const [leaving, setLeaving] = useState(false);
+  /** Closing plays the pop-out first, then the shell removes the search. */
+  const close = useCallback(() => { setLeaving(true); setTimeout(onClose, 170); }, [onClose]);
+  useEffect(() => { const k = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [close]);
   const [q, setQ] = useState('');
   const [kind, setKind] = useState<(typeof KINDS)[number]>('All');
   const input = useRef<HTMLInputElement>(null);
@@ -205,13 +232,13 @@ function SearchPop({ onClose, go }: { onClose: () => void; go: (href: string) =>
   }, [db, q, kind]);
   return (
     <>
-      <div className="dscrim" onClick={onClose} style={{ background: 'rgba(23,28,60,.3)' }} />
-      <div className="dspop" role="dialog" aria-label="Search">
+      <div className={`dscrim sscrim${leaving ? ' out' : ''}`} onClick={close} style={{ background: 'rgba(23,28,60,.3)' }} />
+      <div className={`dspop${leaving ? ' out' : ''}`} role="dialog" aria-modal="true" aria-label="Search">
         <div className="search"><DI n="search" s={18} /><input ref={input} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" placeholder="Search orders, products, customers…" onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) go(results[0].href); }} /><kbd>Esc</kbd></div>
         <div className="chips" style={{ padding: '12px 14px 10px' }}>{KINDS.map((k) => <button key={k} className={`chip${kind === k ? ' on' : ''}`} type="button" onClick={() => setKind(k)}>{k}</button>)}</div>
         <div className="list" style={{ padding: '0 14px 14px' }} aria-live="polite">
           {results.length ? results.map((r, i) => (
-            <button key={r.kind + r.href} className="li" type="button" onClick={() => go(r.href)} style={i === 0 ? { background: 'var(--muted)' } : undefined}>
+            <button key={r.kind + r.href} className="li" type="button" onClick={() => go(r.href)} style={{ ['--i' as string]: i, ...(i === 0 ? { background: 'var(--muted)' } : {}) }}>
               <div className="thumb"><DI n={r.icon} s={18} /></div><div className="sp"><b>{r.t}</b><div className="small muted">{r.s}</div></div>
             </button>
           )) : <p className="muted small" style={{ padding: '10px 4px' }}>Nothing matches “{q}”. Try a buyer’s name, an order number or a product.</p>}
