@@ -1,0 +1,231 @@
+/* The home page (plan of 1 Nov 2026). Brand tokens only, from main.css. Phone is under 760px.
+   Motion is opacity and transform only. The global reduced-motion rule in main.css turns every animation and transition off. */
+
+.lp-only-phone{display:none}
+@media (max-width:759px){.lp-only-desk{display:none}.lp-only-phone{display:inline-flex}}
+
+/* ---------- photo slots ---------- */
+.lp-photo{position:relative;overflow:hidden;border-radius:var(--r-2xl);background:var(--inner);border:1px solid var(--line-soft);min-width:0}
+.lp-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lp-photo.portrait{aspect-ratio:4/5}.lp-photo.wide{aspect-ratio:16/9}.lp-photo.square{aspect-ratio:1/1}.lp-photo.banner{aspect-ratio:21/9;width:100%}
+
+/* ---------- section 1 ---------- */
+.lp-top{padding-top:calc(var(--nav) + var(--s5));padding-bottom:var(--s5)}
+.lp-top-grid{display:grid;gap:var(--s5);align-items:center}
+.lp-top-text{display:grid;gap:var(--s3);justify-items:start;min-width:0}
+.lp-top h1{font-family:var(--font-display);font-weight:800;font-size:clamp(38px,6vw,60px);line-height:1.04;letter-spacing:-.035em;color:var(--ink)}
+@media (min-width:980px){.lp-top{min-height:min(820px,100svh);display:flex;align-items:center}.lp-top-grid{grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:var(--s5);width:100%}}
+.lp-w{display:inline-block;margin-right:.26em;animation:lp-rise .75s var(--ease-out) backwards;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+@keyframes lp-rise{from{opacity:0;transform:translateY(.55em)}to{opacity:1;transform:none}}
+
+/* phone hero: one tall card, the photo fills it, words sit on a dark ink fade */
+@media (max-width:759px){
+  .lp-top{padding:calc(var(--nav) + var(--s2)) 0 var(--s3)}
+  .lp-top-grid{position:relative;display:block;height:calc(100vh - var(--nav) - var(--s2) - var(--s3));height:calc(100svh - var(--nav) - var(--s2) - var(--s3));min-height:520px;border-radius:24px;overflow:hidden;background:var(--inner);isolation:isolate;padding:0}
+  .lp-top-grid .lp-photo{position:absolute;inset:0;z-index:0;border:0;border-radius:0;aspect-ratio:auto}
+  .lp-top-grid::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to top,color-mix(in srgb,var(--ink) 94%,transparent) 0%,color-mix(in srgb,var(--ink) 78%,transparent) 42%,transparent 78%)}
+  .lp-top-text{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:var(--s4) var(--s3) var(--s3)}
+  .lp-top h1,.lp-top .lede{color:#FFFFFF}
+  .lp-top .btn{width:100%;height:52px}
+}
+
+/* ---------- frames and cards ---------- */
+.lp-frame{display:grid;gap:var(--s5);background:var(--card);border:1px solid var(--line);border-radius:28px;padding:clamp(18px,3.4vw,44px);min-width:0}
+.lp-frame.center{justify-items:center;text-align:center}
+.lp-frame.center .lede{margin-inline:auto}
+.lp-two{display:grid;gap:var(--s4);align-items:center;min-width:0}
+@media (min-width:860px){.lp-two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s5)}}
+.lp-stack{display:grid;gap:var(--s3);min-width:0}
+.lp-grid{display:grid;gap:var(--s3);width:100%;grid-template-columns:1fr;min-width:0;text-align:left;list-style:none;margin:0;padding:0}
+@media (min-width:760px){.lp-grid.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4)}}
+.lp-item{display:flex;flex-direction:column;gap:var(--s2);background:var(--inner);border:1px solid var(--line-soft);border-radius:var(--r-2xl);padding:var(--s3);min-width:0}
+.lp-item h3{font-family:var(--font-display);font-weight:800;font-size:19px;line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
+.lp-item p{font-size:15px;line-height:1.55;color:var(--ink-65)}
+.lp-step-n{font-family:var(--font-display);font-weight:800;font-size:13px;color:var(--primary-deep)}
+@media (hover:hover) and (min-width:760px){.lp-item{transition:transform .25s var(--ease),box-shadow .25s var(--ease)}.lp-item:hover{transform:translateY(-4px);box-shadow:var(--shadow-warm)}}
+
+/* phone swipe rows: sections 3, 4 and 6 */
+@media (max-width:759px){
+  .lp-grid.swipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:var(--s2);padding-bottom:var(--s1);margin-inline:calc(-1 * var(--s1));padding-inline:var(--s1);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .lp-grid.swipe::-webkit-scrollbar{display:none}
+  .lp-grid.swipe>*{flex:0 0 82%;scroll-snap-align:start}
+  .lp-frame{border-radius:20px}
+}
+
+/* ---------- buttons ---------- */
+.lp .btn.primary{position:relative;overflow:hidden}
+.lp .btn.primary::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 40%,color-mix(in srgb,#FFFFFF 50%,transparent) 50%,transparent 60%);transform:translateX(-130%);animation:lp-sheen 5s ease-in-out 1.6s infinite}
+@keyframes lp-sheen{0%,65%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+@media (hover:hover) and (min-width:760px){.lp .btn.primary:hover{transform:translateY(-2px)}}
+.lp .btn.primary.full{width:100%}
+.lp-plans-btn .arr{display:inline-grid;transition:transform .25s var(--ease-out)}
+@media (hover:hover) and (min-width:760px){.lp-plans-btn:hover .arr{transform:translateX(4px)}}
+@media (max-width:759px){
+  .lp .btn{height:52px;min-width:48px}
+  .lp .btn:active{transform:scale(.97)}
+  .lp .claim{display:grid;gap:var(--s2);background:none;box-shadow:none;padding:0;max-width:none;width:100%}
+  .lp .claim .box{height:52px;border:1px solid var(--line);background:var(--surface)}
+  .lp .claim .btn{margin:0;width:100%}
+  .lp-plans-btn{width:100%}
+}
+.lp-claim-wrap{width:100%;display:flex;justify-content:center}
+.lp-claim-wrap .claim{width:100%}
+
+/* ---------- section 2: the phone and the Paid tag ---------- */
+.lp-phone-wrap{position:relative;width:min(300px,70vw);margin-inline:auto}
+.lp-phone{border-radius:34px;background:var(--ink);padding:10px;box-shadow:var(--shadow-float);aspect-ratio:9/17}
+.lp-phone .lp-scr{aspect-ratio:auto;width:100%;height:100%;border-radius:26px}
+.lp-float{animation:lp-float 5s ease-in-out infinite alternate}
+@keyframes lp-float{from{translate:0 0}to{translate:0 -8px}}
+.lp-paid{position:absolute;right:-14%;bottom:18%;display:inline-flex;align-items:center;gap:4px;background:var(--positive-tint);color:var(--positive-deep);font-size:13px;font-weight:600;padding:7px 14px 7px 10px;border-radius:var(--pill);box-shadow:var(--shadow-pill);animation:lp-pop .5s var(--spring) .9s both}
+@keyframes lp-pop{from{opacity:0;transform:scale(.8) translateY(8px)}to{opacity:1;transform:none}}
+@media (max-width:759px){.lp-paid{right:-4%}.lp-phone-wrap{width:min(280px,70vw)}}
+
+/* ---------- drawn app screens ---------- */
+.lp-scr{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-2xl);overflow:hidden;aspect-ratio:1/1;min-width:0;text-align:left}
+.lp-scr-in{display:grid;gap:var(--s2);align-content:start;padding:38px var(--s2) var(--s2);height:100%;font-size:13px;line-height:1.35;color:var(--ink-soft)}
+.lp-sample{position:absolute;top:8px;left:8px;z-index:2;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 9px;border-radius:var(--pill);background:var(--marigold-tint);color:var(--marigold-deep)}
+.lp-bar{display:grid;gap:2px;padding-bottom:var(--s1);border-bottom:1px solid var(--line-soft)}
+.lp-bar b{font-family:var(--font-display);font-size:15px;color:var(--ink)}
+.lp-bar small,.lp-field small,.lp-row small,.lp-tile small,.lp-input small{font-size:12px;color:var(--ink-65)}
+.lp-tiles{display:grid;grid-template-columns:1fr 1fr;gap:var(--s1)}
+.lp-tile{display:grid;gap:2px;font-size:12px}
+.lp-tile b{color:var(--ink);font-weight:500;line-height:1.25}
+.lp-tile-img{display:block;aspect-ratio:5/4;border-radius:var(--r-lg)}
+.lp-pay{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:36px;border-radius:var(--pill);background:var(--ink);color:#FFFFFF;font-weight:600;font-size:13px}
+.lp-rows{display:grid;gap:var(--s1)}
+.lp-row{display:flex;align-items:center;gap:var(--s1);padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--r-xl);background:var(--inner)}
+.lp-row b{flex:1;min-width:0;color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-row.two{display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.lp-dot{width:26px;height:26px;border-radius:8px;flex:none}
+.lp-hero-img{display:block;height:84px;border-radius:var(--r-xl)}
+.lp-copy{display:grid;gap:4px}.lp-copy b{font-family:var(--font-display);font-size:15px;color:var(--ink)}.lp-copy p{font-size:12.5px;color:var(--ink-65);line-height:1.4}
+.lp-price{font-weight:600;color:var(--ink)}
+.lp-field{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--r-xl);background:var(--inner)}.lp-field b{color:var(--ink);font-weight:500}
+.lp-ready{display:inline-flex;align-items:center;gap:4px;color:var(--positive-deep);font-weight:600}
+.lp-badge{font-size:12px;font-weight:600;padding:2px 9px;border-radius:var(--pill);background:var(--positive-tint);color:var(--positive-deep);justify-self:end}
+.lp-bars{display:flex;align-items:flex-end;gap:5px;height:48px}.lp-bars i{flex:1;border-radius:4px 4px 0 0;background:var(--primary-tint)}.lp-bars i:nth-child(6){background:var(--primary)}
+.lp-idea{display:flex;gap:6px;align-items:flex-start;padding:8px 10px;border-radius:var(--r-xl);background:var(--inner);color:var(--ink)}
+.lp-input{display:flex;align-items:baseline;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--pill)}.lp-input b{color:var(--ink);font-weight:500}
+.lp-msg{padding:8px 10px;border-radius:12px;max-width:92%}
+.lp-msg.them{background:var(--card);color:var(--ink)}
+.lp-msg.lp-draft{background:var(--primary-tint);color:var(--ink);justify-self:end}
+.lp-dots{display:none;gap:4px;padding:4px 2px}
+.lp-dots i{width:6px;height:6px;border-radius:50%;background:var(--ink-45)}
+
+/* chat card: three dots pulse, then the reply shows. Plays once, when the card scrolls into view. */
+@media (prefers-reduced-motion:no-preference){
+  .lp-chatcard .lp-dots{display:inline-flex}
+  .lp-chatcard .lp-msg.lp-draft{opacity:0}
+  .lp-chatcard.lp-go .lp-dots{animation:lp-gone 0s linear 2s forwards}
+  .lp-chatcard.lp-go .lp-dots i{animation:lp-dot 1s ease-in-out infinite}
+  .lp-chatcard.lp-go .lp-dots i:nth-child(2){animation-delay:.15s}.lp-chatcard.lp-go .lp-dots i:nth-child(3){animation-delay:.3s}
+  .lp-chatcard.lp-go .lp-msg.lp-draft{animation:lp-rise .6s var(--ease-out) 2s forwards}
+}
+@keyframes lp-dot{0%,60%,100%{transform:none;opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+@keyframes lp-gone{to{opacity:0;height:0;padding:0;overflow:hidden}}
+
+/* ---------- section reveal: fade in and rise ---------- */
+.lp .rv{transition:opacity .7s var(--ease-out),transform .7s var(--ease-out);transition-delay:calc(var(--d,0) * 80ms)}
+.lp .rv.pre{opacity:0;transform:translateY(24px)}
+@media (max-width:759px){.lp .rv{transition-duration:.5s}.lp .rv.pre{transform:translateY(16px)}}
+@media (prefers-reduced-motion:reduce){.lp .rv.pre{opacity:1;transform:none}}
+
+/* ---------- footer: open columns on wide screens, tap-to-open rows on phones ---------- */
+.sfoot .sf-col summary{list-style:none;margin:0 0 22px;font-size:16px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#171C3C;cursor:default}
+.sfoot .sf-col summary::-webkit-details-marker{display:none}
+.sfoot .sf-legal{display:none}
+@media (max-width:559px){
+  .sfoot .sf-g{gap:0}
+  .sfoot .sf-brand{padding-bottom:var(--s4)}
+  .sfoot .sf-col{border-top:1px solid #EBE3DA}
+  .sfoot .sf-col:last-of-type{border-bottom:1px solid #EBE3DA}
+  .sfoot .sf-col summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;margin:0;font-size:17px;font-weight:500;letter-spacing:0;text-transform:none}
+  .sfoot .sf-col summary::after{content:"";width:8px;height:8px;border-right:2px solid #171C3C;border-bottom:2px solid #171C3C;transform:rotate(45deg);margin-right:4px;transition:transform .25s var(--ease)}
+  .sfoot .sf-col[open] summary::after{transform:rotate(-135deg)}
+  .sfoot .sf-col ul{padding-bottom:var(--s3)}
+  .sfoot .legal-li{display:none}
+  .sfoot .sf-legal{display:flex;gap:var(--s4);margin-top:var(--s3)}
+  .sfoot .sf-legal a{color:#171C3C;text-decoration:none;font-size:15px;min-height:44px;display:inline-flex;align-items:center}
+}
+.lp-chatcard{width:100%;min-width:0}
+.lp-frame>*{min-width:0}
+
+/* ---------- placeholder drawings (until the licensed photos arrive) ---------- */
+.lp-art{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:var(--inner);animation:lp-drift 18s ease-in-out infinite alternate}
+.lp-art i{position:absolute;border-radius:50%}
+.lp-art .a{width:62%;aspect-ratio:1;left:-12%;bottom:-18%;background:var(--primary-tint)}
+.lp-art .b{width:46%;aspect-ratio:1;right:-8%;top:-12%;background:var(--marigold-tint)}
+.lp-art .ms{position:relative;font-size:clamp(56px,9vw,96px);width:auto;color:var(--primary-deep);font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 48}
+@keyframes lp-drift{from{transform:scale(1)}to{transform:scale(1.06)}}
+@media (max-width:759px){.lp-top-grid .lp-art .ms{align-self:start;margin-top:22%}}
+
+/* ---------- polish: slow photo zoom on hover, calm hero ---------- */
+@media (hover:hover) and (min-width:760px){.lp-item .lp-photo>*{transition:transform .6s var(--ease-out)}.lp-item:hover .lp-photo>*{transform:scale(1.05)}}
+.lp-top .lede{max-width:46ch}
+
+/* ---------- Plans page ---------- */
+.pl{padding-top:calc(var(--nav) + var(--s5));padding-bottom:var(--s5)}
+.pl-card{display:grid;gap:var(--s3);justify-items:center;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:28px;padding:clamp(24px,5vw,64px)}
+.pl-card h1{font-family:var(--font-display);font-weight:800;font-size:clamp(34px,5vw,52px);line-height:1.06;letter-spacing:-.03em;color:var(--ink)}
+.pl-list{display:grid;gap:var(--s2);width:100%;max-width:560px;text-align:left;margin:var(--s2) 0 0;padding:0;list-style:none}
+.pl-list li{display:flex;gap:var(--s2);align-items:flex-start;background:var(--inner);border:1px solid var(--line-soft);border-radius:var(--r-xl);padding:var(--s2) var(--s3);color:var(--ink-soft)}
+.pl-list .ms{color:var(--positive-deep);margin-top:1px}
+.pl-actions{display:flex;flex-wrap:wrap;gap:var(--s2);justify-content:center;margin-top:var(--s2)}
+@media (max-width:759px){.pl-actions,.pl-actions .btn{width:100%}.pl-actions .btn{height:52px}}
+
+/* ---------- more motion (opacity and transform only) ---------- */
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* header: slides down a little and fades in when the page opens, a little thinner once scrolled */
+.lnav .in{animation:lp-drop .6s var(--ease-out) both}
+@keyframes lp-drop{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.lnav .in{transition:height .25s var(--ease)}
+.lnav.solid .in{height:calc(var(--nav) - 12px)}
+
+/* inside the app screens, small things tick in one by one once the card has arrived */
+.lp-item:not(.pre) .lp-scr-in>*,.lp-item:not(.pre) .lp-rows>*,.lp-item:not(.pre) .lp-tiles>*,.lp-phone-wrap:not(.pre) .lp-scr-in>*,.lp-phone-wrap:not(.pre) .lp-tiles>*{animation:lp-tick .55s var(--ease-out) backwards}
+@keyframes lp-tick{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lp-scr-in>*:nth-child(1),.lp-rows>*:nth-child(1),.lp-tiles>*:nth-child(1){animation-delay:.25s!important}
+.lp-scr-in>*:nth-child(2),.lp-rows>*:nth-child(2),.lp-tiles>*:nth-child(2){animation-delay:.4s!important}
+.lp-scr-in>*:nth-child(3),.lp-rows>*:nth-child(3),.lp-tiles>*:nth-child(3){animation-delay:.55s!important}
+.lp-scr-in>*:nth-child(4),.lp-rows>*:nth-child(4),.lp-tiles>*:nth-child(4){animation-delay:.7s!important}
+.lp-scr-in>*:nth-child(5){animation-delay:.85s!important}
+
+/* the first photo drifts in a very slow zoom; a real photo does the same */
+.lp-top .lp-photo img{animation:lp-drift 18s ease-in-out infinite alternate}
+
+/* buttons: soft press on every device */
+.lp .btn{transition:transform .2s var(--ease-out),filter .2s var(--ease),box-shadow .2s var(--ease)}
+
+/* ---------- compact footer on phones ---------- */
+@media (max-width:559px){
+  .sfoot{margin-top:var(--s4);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+  .sfoot .sf-card{border-radius:20px;padding:20px 18px 14px}
+  .sfoot .sf-brand{padding-bottom:var(--s3)}
+  .sfoot .sf-logo{font-size:26px;margin-top:0}
+  .sfoot .sf-brand p{margin:10px 0 14px;font-size:14px;line-height:1.5}
+  .sfoot .sf-cta{height:48px;font-size:15px;padding:0 20px;width:100%;justify-content:center}
+  .sfoot .sf-soon{margin-top:12px;font-size:13px}
+  .sfoot .sf-col summary{min-height:50px;font-size:16px}
+  .sfoot .sf-col ul{gap:0;padding-bottom:var(--s2)}
+  .sfoot li a,.sfoot li button{font-size:15px;min-height:44px}
+  .sfoot .sf-legal{margin-top:var(--s2)}
+  .sfoot .sf-legal a{min-height:40px}
+  .sfoot .sf-bt{margin-top:var(--s2);padding-top:var(--s2);font-size:12.5px}
+}
+
+/* ---------- real photos: fade in softly, keep faces and goods in frame ---------- */
+.lp-photo img{animation:lp-fadein .9s var(--ease-out) both}
+@keyframes lp-fadein{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.lp-top .lp-photo img{object-position:50% 25%;animation:lp-fadein .9s var(--ease-out) both,lp-drift 18s ease-in-out .9s infinite alternate}
+.lp-photo.banner img{object-position:50% 55%}
+.lp-photo.portrait img,.lp-photo.square img{object-position:50% 30%}
+/* readable white words on any photo: the ink fade starts higher on short phones */
+@media (max-width:759px) and (max-height:700px){.lp-top-grid::after{background:linear-gradient(to top,color-mix(in srgb,var(--ink) 94%,transparent) 0%,color-mix(in srgb,var(--ink) 82%,transparent) 55%,transparent 90%)}}
+@media (max-width:759px){.lp-top .lp-photo img{animation:lp-fadein .9s var(--ease-out) both,lp-drift 18s ease-in-out .9s infinite alternate}}
+
+/* nav: one sliding pill for every link, Blogs included (no separate hover box on links) */
+.lnav .links a:not([aria-current="page"]):hover{background:transparent}
+.lnav .links a{transition:color .25s var(--ease)}
