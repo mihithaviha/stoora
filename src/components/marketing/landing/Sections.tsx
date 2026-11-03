@@ -16,16 +16,25 @@ const SHOW_STORIES = false;
  */
 type PhotoSlot = { src: string; width: number; height: number; alt: string } | null;
 const PHOTOS: Record<'top' | 'chat' | 'sell' | 'workshop' | 'sessions' | 'add' | 'share' | 'phone' | 'last', PhotoSlot> = {
-  top: null, chat: null, sell: null, workshop: null, sessions: null, add: null, share: null, phone: null, last: null,
+  // Existing project photos (Unsplash licence, see public/assets/home/CREDITS.md and public/assets/journal/CREDITS.md).
+  top: { src: '/assets/home/shop.webp', width: 900, height: 1350, alt: 'A small clothing boutique with a rack of hand-made clothes' },
+  chat: { src: '/assets/home/chat.webp', width: 1000, height: 667, alt: 'A shop owner smiling at a message on her phone' },
+  sell: { src: '/assets/journal/kurta-pink-720.webp', width: 720, height: 1080, alt: 'A printed cotton kurta set, shot for a shop page' },
+  workshop: { src: '/assets/journal/bowls-720.webp', width: 720, height: 1080, alt: 'Hand-made ceramic bowls laid out on a table' },
+  sessions: { src: '/assets/home/classes.webp', width: 1000, height: 562, alt: 'A tutor and a student working at a laptop' },
+  add: { src: '/assets/journal/cups-720.webp', width: 720, height: 480, alt: 'Hand-made ceramic cups, photographed for a product page' },
+  share: { src: '/assets/journal/suit-maroon-720.webp', width: 720, height: 1079, alt: 'A festive suit set, shot for a shop page' },
+  phone: null, // still needs a photo of a budget smartphone in a hand
+  last: { src: '/assets/journal/interior-1400.webp', width: 1400, height: 1750, alt: 'A calm, bright room at the end of the day' },
 };
 
 const delay = (d: number) => ({ '--d': d }) as CSSProperties;
 
-function Photo({ slot, shape, art, priority = false }: { slot: PhotoSlot; shape: 'portrait' | 'wide' | 'square' | 'banner'; art: string; priority?: boolean }) {
+function Photo({ slot, shape, art, priority = false, reveal = false }: { slot: PhotoSlot; shape: 'portrait' | 'wide' | 'square' | 'banner'; art: string; priority?: boolean; reveal?: boolean }) {
   return (
-    <div className={`lp-photo ${shape}`}>
+    <div className={`lp-photo ${shape}${reveal ? ' rv' : ''}`}>
       {slot ? (
-        <Image src={slot.src} width={slot.width} height={slot.height} alt={slot.alt} priority={priority} loading={priority ? undefined : 'lazy'} sizes="(min-width: 760px) 520px, 90vw" />
+        <Image src={slot.src} width={slot.width} height={slot.height} alt={slot.alt} priority={priority} loading={priority ? undefined : 'lazy'} sizes={priority ? '(min-width: 980px) 520px, 100vw' : '(min-width: 760px) 520px, 90vw'} />
       ) : (
         // Placeholder drawing until the licensed photo is added. It is decoration only: no name, quote or caption.
         <div className="lp-art" aria-hidden="true"><i className="a" /><i className="b" /><Ic n={art} /></div>
@@ -248,7 +257,7 @@ export function Last() {
     <section className="sec" aria-labelledby="lp-last-h">
       <div className="wrap">
         <div className="lp-frame center">
-          <Photo art="storefront" slot={PHOTOS.last} shape="banner" />
+          <Photo art="storefront" slot={PHOTOS.last} shape="banner" reveal />
           <h2 className="l-h2 rv" id="lp-last-h">Your business, open in 10 minutes.</h2>
           <div className="rv" style={delay(1)}><StartButton /></div>
         </div>

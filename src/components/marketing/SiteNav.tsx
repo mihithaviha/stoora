@@ -108,7 +108,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
             <span className="ind" ref={indRef} aria-hidden="true" />
             <span className="hov" ref={hovRef} aria-hidden="true" />
             {SECTIONS.map((s) => section(s.id, s.label, s.path))}
-            <Link href="/blogs" data-key="blogs" className={(page === 'blogs' || page === 'journal') ? 'on' : ''} aria-current={(page === 'blogs' || page === 'journal') ? 'page' : undefined}>Blogs</Link>
+            <Link href="/blogs" data-key="blogs" onPointerOver={(e) => hover(e.currentTarget)} className={(page === 'blogs' || page === 'journal') ? 'on' : ''} aria-current={(page === 'blogs' || page === 'journal') ? 'page' : undefined}>Blogs</Link>
           </nav>
           <div className="acts">
             <Link className="btn quiet sm login" href="/login">Log in</Link>

@@ -21,7 +21,7 @@
 /* phone hero: one tall card, the photo fills it, words sit on a dark ink fade */
 @media (max-width:759px){
   .lp-top{padding:calc(var(--nav) + var(--s2)) 0 var(--s3)}
-  .lp-top-grid{position:relative;display:block;min-height:min(640px,calc(100svh - var(--nav) - 24px));border-radius:24px;overflow:hidden;background:var(--inner);isolation:isolate;padding:0}
+  .lp-top-grid{position:relative;display:block;height:calc(100vh - var(--nav) - var(--s2) - var(--s3));height:calc(100svh - var(--nav) - var(--s2) - var(--s3));min-height:520px;border-radius:24px;overflow:hidden;background:var(--inner);isolation:isolate;padding:0}
   .lp-top-grid .lp-photo{position:absolute;inset:0;z-index:0;border:0;border-radius:0;aspect-ratio:auto}
   .lp-top-grid::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to top,color-mix(in srgb,var(--ink) 94%,transparent) 0%,color-mix(in srgb,var(--ink) 78%,transparent) 42%,transparent 78%)}
   .lp-top-text{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:var(--s4) var(--s3) var(--s3)}
@@ -173,3 +173,59 @@
 .pl-list .ms{color:var(--positive-deep);margin-top:1px}
 .pl-actions{display:flex;flex-wrap:wrap;gap:var(--s2);justify-content:center;margin-top:var(--s2)}
 @media (max-width:759px){.pl-actions,.pl-actions .btn{width:100%}.pl-actions .btn{height:52px}}
+
+/* ---------- more motion (opacity and transform only) ---------- */
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* header: slides down a little and fades in when the page opens, a little thinner once scrolled */
+.lnav .in{animation:lp-drop .6s var(--ease-out) both}
+@keyframes lp-drop{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.lnav .in{transition:height .25s var(--ease)}
+.lnav.solid .in{height:calc(var(--nav) - 12px)}
+
+/* inside the app screens, small things tick in one by one once the card has arrived */
+.lp-item:not(.pre) .lp-scr-in>*,.lp-item:not(.pre) .lp-rows>*,.lp-item:not(.pre) .lp-tiles>*,.lp-phone-wrap:not(.pre) .lp-scr-in>*,.lp-phone-wrap:not(.pre) .lp-tiles>*{animation:lp-tick .55s var(--ease-out) backwards}
+@keyframes lp-tick{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lp-scr-in>*:nth-child(1),.lp-rows>*:nth-child(1),.lp-tiles>*:nth-child(1){animation-delay:.25s!important}
+.lp-scr-in>*:nth-child(2),.lp-rows>*:nth-child(2),.lp-tiles>*:nth-child(2){animation-delay:.4s!important}
+.lp-scr-in>*:nth-child(3),.lp-rows>*:nth-child(3),.lp-tiles>*:nth-child(3){animation-delay:.55s!important}
+.lp-scr-in>*:nth-child(4),.lp-rows>*:nth-child(4),.lp-tiles>*:nth-child(4){animation-delay:.7s!important}
+.lp-scr-in>*:nth-child(5){animation-delay:.85s!important}
+
+/* the first photo drifts in a very slow zoom; a real photo does the same */
+.lp-top .lp-photo img{animation:lp-drift 18s ease-in-out infinite alternate}
+
+/* buttons: soft press on every device */
+.lp .btn{transition:transform .2s var(--ease-out),filter .2s var(--ease),box-shadow .2s var(--ease)}
+
+/* ---------- compact footer on phones ---------- */
+@media (max-width:559px){
+  .sfoot{margin-top:var(--s4);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+  .sfoot .sf-card{border-radius:20px;padding:20px 18px 14px}
+  .sfoot .sf-brand{padding-bottom:var(--s3)}
+  .sfoot .sf-logo{font-size:26px;margin-top:0}
+  .sfoot .sf-brand p{margin:10px 0 14px;font-size:14px;line-height:1.5}
+  .sfoot .sf-cta{height:48px;font-size:15px;padding:0 20px;width:100%;justify-content:center}
+  .sfoot .sf-soon{margin-top:12px;font-size:13px}
+  .sfoot .sf-col summary{min-height:50px;font-size:16px}
+  .sfoot .sf-col ul{gap:0;padding-bottom:var(--s2)}
+  .sfoot li a,.sfoot li button{font-size:15px;min-height:44px}
+  .sfoot .sf-legal{margin-top:var(--s2)}
+  .sfoot .sf-legal a{min-height:40px}
+  .sfoot .sf-bt{margin-top:var(--s2);padding-top:var(--s2);font-size:12.5px}
+}
+
+/* ---------- real photos: fade in softly, keep faces and goods in frame ---------- */
+.lp-photo img{animation:lp-fadein .9s var(--ease-out) both}
+@keyframes lp-fadein{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.lp-top .lp-photo img{object-position:50% 25%;animation:lp-fadein .9s var(--ease-out) both,lp-drift 18s ease-in-out .9s infinite alternate}
+.lp-photo.banner img{object-position:50% 55%}
+.lp-photo.portrait img,.lp-photo.square img{object-position:50% 30%}
+/* readable white words on any photo: the ink fade starts higher on short phones */
+@media (max-width:759px) and (max-height:700px){.lp-top-grid::after{background:linear-gradient(to top,color-mix(in srgb,var(--ink) 94%,transparent) 0%,color-mix(in srgb,var(--ink) 82%,transparent) 55%,transparent 90%)}}
+@media (max-width:759px){.lp-top .lp-photo img{animation:lp-fadein .9s var(--ease-out) both,lp-drift 18s ease-in-out .9s infinite alternate}}
+
+/* nav: one sliding pill for every link, Blogs included (no separate hover box on links) */
+.lnav .links a:not([aria-current="page"]):hover{background:transparent}
+.lnav .links a{transition:color .25s var(--ease)}
