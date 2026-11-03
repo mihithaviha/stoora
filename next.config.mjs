@@ -25,9 +25,12 @@ const nextConfig = {
     },
     // Files in public/ are not fingerprinted, so by default a browser re-checks them on every visit.
     // Fonts never change under the same name: keep them for a year. Photos and logos: a month, then refresh quietly.
-    { source: '/fonts/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
-    { source: '/assets/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=604800' }] },
-    { source: '/images/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=604800' }] }];
+    // Only on the live site: while developing, a replaced photo must show straight away. When a photo changes on the live site, give the new file a new name.
+    ...(process.env.NODE_ENV === 'production' ? [
+      { source: '/fonts/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+      { source: '/assets/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=604800' }] },
+      { source: '/images/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=604800' }] },
+    ] : [])];
   },
 };
 export default nextConfig;

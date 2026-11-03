@@ -24,6 +24,7 @@
   .lp-top{padding:calc(var(--nav) + var(--s2)) 0 var(--s3)}
   .lp-top-grid{position:relative;display:block;min-height:min(640px,calc(100svh - var(--nav) - 24px));border-radius:24px;overflow:hidden;background:var(--inner);isolation:isolate;padding:0}
   .lp-top-grid .lp-photo{position:absolute;inset:0;z-index:0;border:0;border-radius:0;aspect-ratio:auto}
+  .lp-top-grid .lp-photo img{object-position:50% 0}  /* the whole photo sits at the top of the card; any spare room is underneath, behind the dark fade and the words */
   .lp-top-grid::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(to top,color-mix(in srgb,var(--ink) 94%,transparent) 0%,color-mix(in srgb,var(--ink) 78%,transparent) 42%,transparent 78%)}
   .lp-top-text{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:var(--s4) var(--s3) var(--s3)}
   .lp-top h1,.lp-top .lede{color:#FFFFFF}
@@ -68,6 +69,10 @@
   .lp .claim .box{height:52px;border:1px solid var(--line);background:var(--surface)}
   .lp .claim .btn{margin:0;width:100%}
   .lp-plans-btn{width:100%}
+  /* sections 8 and 9: the button's wrapper spans the card, so the button really is full width (the plan: "Buttons are full width") */
+  section[aria-labelledby="lp-plans-h"] .lp-frame > .rv,
+  section[aria-labelledby="lp-last-h"] .lp-frame > .rv{width:100%}
+  section[aria-labelledby="lp-last-h"] .lp-frame > .rv .btn{width:100%}
 }
 .lp-claim-wrap{width:100%;display:flex;justify-content:center}
 .lp-claim-wrap .claim{width:100%}
@@ -174,3 +179,12 @@
 .pl-list .ms{color:var(--positive-deep);margin-top:1px}
 .pl-actions{display:flex;flex-wrap:wrap;gap:var(--s2);justify-content:center;margin-top:var(--s2)}
 @media (max-width:759px){.pl-actions,.pl-actions .btn{width:100%}.pl-actions .btn{height:52px}}
+
+/* ---------- carousel dots under a moving row of cards (phones only; on wide screens the cards are a grid, so no dots) ---------- */
+.lp-carousel-dots{display:none;justify-content:center;gap:2px;margin-top:var(--s2)}
+@media (max-width:759px){.lp-carousel-dots{display:flex}}
+.lp-carousel-dots button{position:relative;width:24px;height:24px;border:0;background:none;padding:0;cursor:pointer}
+.lp-carousel-dots button::before{content:"";position:absolute;top:8px;bottom:8px;left:8px;right:8px;border-radius:999px;background:var(--line);transition:left .3s var(--ease-out),right .3s var(--ease-out),background .3s}
+.lp-carousel-dots button[aria-current="true"]::before{left:2px;right:2px;background:var(--ink)}
+.lp-carousel-dots button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.lp-carousel-dots button::before{transition:none}}
