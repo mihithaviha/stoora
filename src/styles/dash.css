@@ -109,7 +109,7 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 .tl .ev b { display: block; font-weight: 600; } .tl .ev .cap { display: block; }
 .drop input[type="file"] { display: none; }
 .photos { display: flex; gap: 8px; flex-wrap: wrap; }
-.photos img { width: 88px; height: 88px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.photos img { width: 88px; height: 88px; object-fit: contain; background: var(--inner); border-radius: 12px; border: 1px solid var(--line); }
 .tiles.four { grid-template-columns: repeat(4, 1fr); }
 .notes { color: var(--ink-65); font-size: 14px; }
 .banner { margin: 0; }
@@ -126,7 +126,7 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 .toast .ms { font-size: 18px; }
 
 /* tables scroll sideways instead of squeezing */
-.tbox { overflow-x: auto; }
+.tbox { overflow: hidden; } /* the card stays put; only the table inside it scrolls (see .tscroll) */
 .tbox .tbl { min-width: 720px; }
 .tbar { flex-wrap: wrap; }
 
@@ -210,3 +210,92 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 
 /* Icons stay hidden until the icon font has loaded (see the seller layout), so their names never show as text. */
 html.icons-wait .ms { visibility: hidden; }
+
+/* Notification count badge centering */
+.nbell .dot, .ibtn .dot {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  padding: 0 4px !important;
+}
+
+/* The alert count sits on the corner of the round button, clear of the bell, with a thin ring to lift it off the button. */
+.ibtn .dot { top: -3px !important; right: -3px !important; min-width: 20px !important; height: 20px !important; box-shadow: 0 0 0 2px var(--surface); }
+.mobbar .ibtn .dot { top: -3px !important; right: -6px !important; }
+
+/* ---------- Search: pops down smoothly, and the results scroll ---------- */
+@keyframes d-searchin { from { opacity: 0; transform: translateY(-16px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes d-searchout { to { opacity: 0; transform: translateY(-10px) scale(.97); } }
+@keyframes d-scrimout { to { opacity: 0; } }
+@keyframes d-liin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.dapp .dspop { display: flex; flex-direction: column; max-height: calc(100dvh - 72px); transform-origin: 50% 0; animation: d-searchin .32s cubic-bezier(.2, .9, .3, 1.1) both; }
+.dapp .dspop.out { animation: d-searchout .17s ease-in both; pointer-events: none; }
+.dapp .sscrim { animation: d-fade .25s var(--ease) both; }
+.dapp .sscrim.out { animation: d-scrimout .17s ease-in both; }
+.dapp .dspop .search, .dapp .dspop .chips { flex: none; }
+.dapp .dspop .list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.dapp .dspop .list .li { animation: d-liin .3s cubic-bezier(.2, .8, .3, 1) both; animation-delay: calc(var(--i, 0) * 28ms + 90ms); }
+.dapp .dspop .search input { font-size: 16px; } /* 16px stops phones from zooming in when the box is tapped */
+@media (max-width: 900px) {
+  /* above the dark backdrop (it is z 81), so the box is not greyed out and taps reach it */
+  .dapp .dspop { position: fixed; z-index: 83; left: 12px; width: calc(100vw - 24px); margin-left: 0; top: calc(env(safe-area-inset-top, 0px) + 60px); max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 76px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dapp .dspop, .dapp .dspop.out, .dapp .sscrim, .dapp .sscrim.out, .dapp .dspop .list .li { animation-duration: .01ms !important; animation-delay: 0s !important; }
+}
+
+/* ---------- Moving between sections: the old screen fades out, the new one fades in ---------- */
+@keyframes d-screenin { from { opacity: 0; } to { opacity: 1; } }
+.dapp .dscreen { transition: opacity .15s ease, transform .35s var(--ease), border-radius .35s var(--ease); }
+.dapp .dscreen.leaving { opacity: 0; pointer-events: none; }
+.dapp .dscreen.enter { animation: d-screenin .32s ease both; }
+.dapp .nrow, .dapp .nsub { transition: background .2s ease, color .2s ease; }
+@media (prefers-reduced-motion: reduce) { .dapp .dscreen, .dapp .dscreen.enter, .dapp .dscreen.leaving { animation: none !important; transition: none !important; } .dapp .dscreen.leaving { opacity: 1; } }
+
+/* ---------- The stats strip on small screens: equal columns, one set of dividers, nothing ragged ---------- */
+@media (max-width: 900px) {
+  .dapp .mstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line-soft); }
+  .dapp .mstrip .m { flex: none; background: var(--card); border-left: 0; min-width: 0; padding: 12px 16px; }
+  .dapp .mstrip .m.lead, .dapp .mstrip .m.tail { grid-column: 1 / -1; display: flex; align-items: center; }
+  .dapp .mstrip .m.lead { padding: 14px 16px; }
+  .dapp .mstrip .m.tail { padding: 12px 16px; }
+  /* every cell reads the same: the number, then its little chart under it */
+  .dapp .mstrip .m .row { flex-direction: column; align-items: flex-start; gap: 2px !important; }
+  .dapp .mstrip .m svg { max-width: 100%; height: auto; flex: none; }
+}
+@media (max-width: 560px) {
+  .dapp .mstrip { grid-template-columns: 1fr 1fr; }
+  .dapp .mstrip .v { font-size: 19px; }
+}
+
+/* Orders, Products and others: on small screens the search box gets its own full-width row under the chips.
+   (Between about 400 and 600px wide it used to be squeezed beside the chips into a small empty circle.) */
+@media (max-width: 640px) {
+  .dapp .tbar { flex-wrap: wrap; }
+  .dapp .tbar > .sp { display: none; }
+  .dapp .tbar .search { flex: 1 1 100%; width: 100%; min-width: 0; }
+  .dapp .tbar .chips { flex: 1 1 100%; min-width: 0; }
+}
+
+/* ---------- Tables: only the table scrolls sideways; the toolbar stays, and the first columns stay in view ---------- */
+.tscroll { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--line) transparent; border-radius: 0 0 16px 16px; }
+.tscroll:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.tscroll::-webkit-scrollbar { height: 8px; }
+.tscroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+.tscroll .tbl { border-collapse: separate; border-spacing: 0; } /* so pinned cells keep their lines while the rest moves */
+.tscroll .tbl td { border-top: 0; box-shadow: inset 0 1px 0 var(--line-soft); }
+.tscroll .tbl th { box-shadow: inset 0 -1px 0 var(--line-soft); border-bottom: 0; }
+.tscroll .tbl .ck { width: 48px; min-width: 48px; max-width: 48px; box-sizing: border-box; padding-right: 0; }
+@media (max-width: 900px) {
+  /* pin the checkbox and the name (order, product, customer) on the left, so a row is never lost while scrolling across */
+  .tscroll .tbl:has(th.ck) tr > :nth-child(1) { position: sticky; left: 0; z-index: 2; background: var(--card); }
+  .tscroll .tbl:has(th.ck) tr > :nth-child(2) { position: sticky; left: 48px; z-index: 2; background: var(--card); box-shadow: inset 0 1px 0 var(--line-soft), 6px 0 8px -6px rgba(23, 28, 60, .22); }
+  .tscroll .tbl:has(th.ck) thead tr > :nth-child(2) { box-shadow: inset 0 -1px 0 var(--line-soft), 6px 0 8px -6px rgba(23, 28, 60, .22); }
+  .tscroll .tbl:not(:has(th.ck)) tr > :nth-child(1) { position: sticky; left: 0; z-index: 2; background: var(--card); box-shadow: inset 0 1px 0 var(--line-soft), 6px 0 8px -6px rgba(23, 28, 60, .22); }
+  .tscroll .tbl tr.rw:hover > :nth-child(-n+2) { background: color-mix(in srgb, var(--muted) 50%, var(--card)); }
+  .tscroll .tbl thead tr > :nth-child(-n+2) { z-index: 3; }
+}

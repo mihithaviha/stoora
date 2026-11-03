@@ -41,7 +41,7 @@ export default function CustomersPage() {
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search, or describe who you want: “bought twice”, “spent over 3000”" style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label>
             <span className="small muted">{list.length} of {db.customers.length}</span>
           </div>
-          <table className="tbl">
+          <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
             <thead><tr><th className="ck"><Chk on={allOn} onChange={(on) => setPicked(on ? list.map((c) => c.id) : [])} label="Select all customers" /></th><th>Customer</th><th>Phone</th><th>Orders</th><th className="r">Amount spent</th><th>Last order</th><th>Came from</th></tr></thead>
             <tbody>
               {list.map((c, i) => (
@@ -53,7 +53,7 @@ export default function CustomersPage() {
               ))}
               {!list.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 28 }}>{db.customers.length ? `Nobody matches “${q}”.` : 'No customers yet. They appear here after their first order.'}</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </>

@@ -29,7 +29,7 @@ export default function PlansPage() {
           </ul>
         )}
         <div className="pl-actions">
-          <Link className="btn primary" href="/signup">Start for free</Link>
+          <Link className="btn primary" href="/shop/start">Start for Free</Link>
           <TalkToUs label="Ask about plans" />
         </div>
       </section>

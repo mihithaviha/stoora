@@ -65,7 +65,7 @@
 .sfed-dot.default { width: auto; padding: 0 12px; border-radius: 50px; background: var(--inner); font-size: 12px; }
 .sfed-dot.on { box-shadow: 0 0 0 2px var(--ink); }
 .sfed-image { width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; background: var(--inner); border: 1px dashed var(--line); display: grid; place-items: center; overflow: hidden; margin-bottom: 8px; }
-.sfed-image img { width: 100%; height: 100%; object-fit: cover; }
+.sfed-image img { width: 100%; height: 100%; object-fit: contain; }
 .sfed-item { padding: 8px 0; border-top: 1px solid var(--line-soft); }
 .sfed-star { background: none; border: 0; font-size: 20px; color: var(--ink-45); }
 .sfed-star.on { color: var(--marigold); }

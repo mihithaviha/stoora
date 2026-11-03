@@ -160,13 +160,13 @@ export function JournalHome() {
             <div className="jr-close-circles" aria-hidden="true">
               {['suit-floral', 'loom', 'bowls'].map((key) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <span key={key}><img src={`/assets/journal/${key}-720.jpg`} alt="" loading="lazy" decoding="async" /></span>
+                <span key={key} style={{ ['--photo' as string]: `url(/assets/journal/${key}-tiny.webp)` }}><img src={`/assets/journal/${key}-720.webp`} alt="" loading="lazy" decoding="async" /></span>
               ))}
             </div>
             <div className="jr-close-copy">
               <h2 id="jr-close-h">From reading to selling.</h2>
               <p>Stoora gives you a shop page, your orders and your payments in one place, so what you learn here goes straight into your own storefront.</p>
-              <div className="jr-close-actions"><Link className="btn primary" href="/signup">Open your shop<Ic n="arrow_forward" c="xs" /></Link><Link className="jr-textlink" href="/how-it-works">See how it works</Link></div>
+              <div className="jr-close-actions"><Link className="btn primary" href="/shop/start">Start for Free<Ic n="arrow_forward" c="xs" /></Link><Link className="jr-textlink" href="/how-it-works">See how it works</Link></div>
             </div>
           </div>
         </div>

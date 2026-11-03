@@ -13,9 +13,9 @@ export const isUuid = (s: string) => UUID.test(s);
 const fail = (e: { message: string } | null) => { if (e) throw new Error(e.message); };
 
 /* ---------- row <-> app shapes ---------- */
-export const shopFromRow = (r: Row): Shop => ({ id: r.id, name: r.name, owner: r.owner_name ?? '', handle: r.handle, email: r.email ?? '', phone: r.phone ?? '', city: r.city ?? '', open: r.is_open, showPrices: r.show_prices, cod: r.accepts_cod, online: r.accepts_online, look: r.look, tagline: r.tagline ?? '', orderSettings: r.order_settings ?? {}, whatsappNumber: r.whatsapp_number ?? '', whatsappVerified: !!r.whatsapp_verified, showWhatsapp: r.show_whatsapp_button, upi: r.upi_id ?? '', storefront: r.storefront ?? null });
+export const shopFromRow = (r: Row): Shop => ({ id: r.id, name: r.name, category: r.category ?? undefined, owner: r.owner_name ?? '', handle: r.handle, email: r.email ?? '', phone: r.phone ?? '', city: r.city ?? '', open: r.is_open, showPrices: r.show_prices, cod: r.accepts_cod, online: r.accepts_online, look: r.look, tagline: r.tagline ?? '', orderSettings: r.order_settings ?? {}, whatsappNumber: r.whatsapp_number ?? '', whatsappVerified: !!r.whatsapp_verified, showWhatsapp: r.show_whatsapp_button, upi: r.upi_id ?? '', storefront: r.storefront ?? null });
 const publicShopFromRow = (r: Row): Shop => ({ id: r.id, name: r.name, owner: '', handle: r.handle, email: '', phone: '', city: r.city ?? '', open: r.is_open, showPrices: r.show_prices, cod: r.accepts_cod, online: r.accepts_online, look: r.look, tagline: r.tagline ?? '', orderSettings: { ...(r.closed_note ? { closedNote: r.closed_note } : {}), ...(r.delivery_fee != null ? { fee: String(r.delivery_fee) } : {}), ...(r.free_over != null ? { freeOver: String(r.free_over) } : {}) }, whatsappNumber: r.whatsapp_number ?? '', whatsappVerified: !!r.whatsapp_number, showWhatsapp: !!r.whatsapp_number, storefront: r.storefront ?? null });
-export const productFromRow = (r: Row): Product => ({ id: r.id, name: r.name, category: r.category, color: r.color ?? undefined, sizes: r.sizes ?? [], price: r.price, comparePrice: r.compare_price ?? undefined, stock: r.stock, status: r.status, soldLast30Days: r.sold_last_30 ?? 0, viewsYesterday: r.views_yesterday ?? 0, icon: r.icon ?? 'sell', description: r.description ?? undefined, photos: r.photos ?? [], cost: r.cost ?? undefined, colors: r.colors?.length ? r.colors : undefined, optionStock: r.option_stock && Object.keys(r.option_stock).length ? r.option_stock : undefined, material: r.material ?? undefined, weightGrams: r.weight_grams ?? undefined, boxCm: r.box_cm ?? undefined, tags: r.tags?.length ? r.tags : undefined, productNumber: r.product_number ?? undefined });
+export const productFromRow = (r: Row): Product => ({ id: r.id, name: r.name, category: r.category, color: r.color ?? undefined, sizes: r.sizes ?? [], price: r.price, comparePrice: r.compare_price ?? undefined, stock: r.stock, status: r.status, soldLast30Days: r.sold_last_30 ?? 0, viewsYesterday: r.views_yesterday ?? 0, icon: r.icon ?? 'sell', description: r.description ?? undefined, photos: r.photos ?? [], cost: r.cost ?? undefined, colors: r.colors?.length ? r.colors : undefined, optionStock: r.option_stock && Object.keys(r.option_stock).length ? r.option_stock : undefined, material: r.material ?? undefined, weightGrams: r.weight_grams ?? undefined, boxCm: r.box_cm ?? undefined, tags: r.tags?.length ? r.tags : undefined, productNumber: r.product_number ?? undefined, country: r.country ?? undefined, tax: r.tax ?? undefined, googleText: r.google_text ?? undefined });
 const serviceFromRow = (r: Row): Service => ({ id: r.id, name: r.name, type: r.type, price: r.price, minutes: r.minutes, next: r.next_slot ?? '', icon: r.icon, kind: r.kind ?? undefined, date: r.starts_on ?? undefined, days: r.days?.length ? r.days : undefined, times: r.times?.length ? r.times : undefined, seats: r.seats ?? undefined, place: r.place ?? undefined, fileName: r.file_name ?? undefined, filePath: r.file_path ?? undefined });
 const customerFromRow = (r: Row): Customer => ({ id: r.id, name: r.name, phone: r.phone ?? '—', city: r.city ?? '', source: r.source, orders: r.orders_count, spent: r.spent, lastOrder: r.last_order_at ? labelOf(r.last_order_at).split(',')[0] : '—' });
 const bookingFromRow = (r: Row): Booking => ({ id: r.ref, buyer: r.buyer_name, serviceId: r.service_id ?? '', when: r.when_label, day: r.day_label ?? r.when_label, paid: r.paid, status: r.status });
@@ -60,6 +60,13 @@ export async function loadOwner(sb: SupabaseClient, userId: string): Promise<Db 
 
 /** What a buyer sees at /s/<handle>: the public shop row, live products and services. null = no such shop. */
 export async function loadPublic(sb: SupabaseClient, handle: string): Promise<Db | null> {
+  // one round trip when the database has load_public_shop(); an older database falls back to the three queries below
+  const one = await sb.rpc('load_public_shop', { p_handle: handle.toLowerCase() });
+  if (!one.error) {
+    const r = one.data as { shop?: Row; products?: Row[]; services?: Row[] } | null;
+    if (!r || !r.shop) return null;
+    return emptyDb(publicShopFromRow(r.shop), { products: (r.products ?? []).map(productFromRow), services: (r.services ?? []).map(serviceFromRow) });
+  }
   const { data: shop } = await sb.from('public_shops').select('*').eq('handle', handle.toLowerCase()).maybeSingle();
   if (!shop) return null;
   const [products, services] = await Promise.all([sb.from('products').select('*').eq('shop_id', shop.id).eq('status', 'Active').order('created_at', { ascending: false }), sb.from('services').select('*').eq('shop_id', shop.id)]);
@@ -106,7 +113,7 @@ export async function publishStorefront(sb: SupabaseClient, shopId: string, conf
   fail((await sb.from('shops').update({ storefront: stored }).eq('id', shopId)).error);
   return stored;
 }
-const productRow = (p: Product, shopId: string, photos: string[]): Row => ({ shop_id: shopId, name: p.name, category: p.category, color: p.color ?? null, sizes: p.sizes, price: p.price, compare_price: p.comparePrice ?? null, stock: p.stock, status: p.status, icon: p.icon, description: p.description ?? null, cost: p.cost ?? null, colors: p.colors ?? [], option_stock: p.optionStock ?? {}, material: p.material ?? null, weight_grams: p.weightGrams ?? null, box_cm: p.boxCm ?? null, tags: p.tags ?? [], photos, updated_at: new Date().toISOString() });
+const productRow = (p: Product, shopId: string, photos: string[]): Row => ({ shop_id: shopId, name: p.name, category: p.category, color: p.color ?? null, sizes: p.sizes, price: p.price, compare_price: p.comparePrice ?? null, stock: p.stock, status: p.status, icon: p.icon, description: p.description ?? null, cost: p.cost ?? null, colors: p.colors ?? [], option_stock: p.optionStock ?? {}, material: p.material ?? null, weight_grams: p.weightGrams ?? null, box_cm: p.boxCm ?? null, tags: p.tags ?? [], country: p.country ?? 'India', tax: p.tax ?? null, google_text: p.googleText ?? null, photos, updated_at: new Date().toISOString() });
 
 /** Insert or update a product. Returns it with its real id (new products get one from the database). */
 export async function saveProduct(sb: SupabaseClient, shopId: string, p: Product, restore = false): Promise<Product> {
@@ -137,7 +144,7 @@ export async function deleteProduct(sb: SupabaseClient, id: string) { if (isUuid
 
 export async function updateShop(sb: SupabaseClient, shopId: string, patch: Partial<Shop>) {
   const row: Row = {};
-  const map: [keyof Shop, string][] = [['name', 'name'], ['handle', 'handle'], ['owner', 'owner_name'], ['email', 'email'], ['phone', 'phone'], ['city', 'city'], ['open', 'is_open'], ['showPrices', 'show_prices'], ['cod', 'accepts_cod'], ['online', 'accepts_online'], ['look', 'look'], ['tagline', 'tagline'], ['orderSettings', 'order_settings'], ['whatsappNumber', 'whatsapp_number'], ['showWhatsapp', 'show_whatsapp_button'], ['storefront', 'storefront'], ['upi', 'upi_id']];
+  const map: [keyof Shop, string][] = [['name', 'name'], ['handle', 'handle'], ['owner', 'owner_name'], ['email', 'email'], ['phone', 'phone'], ['city', 'city'], ['open', 'is_open'], ['showPrices', 'show_prices'], ['cod', 'accepts_cod'], ['online', 'accepts_online'], ['look', 'look'], ['tagline', 'tagline'], ['orderSettings', 'order_settings'], ['whatsappNumber', 'whatsapp_number'], ['showWhatsapp', 'show_whatsapp_button'], ['storefront', 'storefront'], ['upi', 'upi_id'], ['category', 'category']];
   map.forEach(([k, col]) => { if (k in patch) row[col] = k === 'upi' ? (patch.upi || null) : patch[k]; });
   if (Object.keys(row).length) fail((await sb.from('shops').update(row).eq('id', shopId)).error);
 }

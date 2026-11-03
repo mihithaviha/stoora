@@ -88,7 +88,7 @@ export default function OrdersPage() {
             <label className="search"><DI n="search" s={16} /><span className="sr">Search {isB ? 'bookings' : 'orders'}</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${isB ? 'bookings' : 'orders'}`} style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label>
           </div>
           {isB ? (
-            <table className="tbl">
+            <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
               <thead><tr><th className="ck"><Chk on={allOn} onChange={toggleAll} label="Select all bookings" /></th><th>Booking</th><th>Service</th><th>When</th><th>Buyer</th><th>Type</th><th className="r">Price</th><th>Payment</th><th>Status</th></tr></thead>
               <tbody>
                 {bookings.map((b) => {
@@ -105,9 +105,9 @@ export default function OrdersPage() {
                 })}
                 {!bookings.length && <tr><td colSpan={9} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="done" height={90} /><div style={{ marginTop: 8 }}>No bookings here.</div></td></tr>}
               </tbody>
-            </table>
+            </table></div>
           ) : (
-            <table className="tbl">
+            <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
               <thead><tr><th className="ck"><Chk on={allOn} onChange={toggleAll} label="Select all orders" /></th><th>Order</th><th>Date</th><th>Buyer</th><th>Came from</th><th className="r">Total</th><th>Payment</th><th>Shipping</th><th>Items</th></tr></thead>
               <tbody>
                 {orders.map((o) => {
@@ -123,7 +123,7 @@ export default function OrdersPage() {
                 })}
                 {!orders.length && <tr><td colSpan={9} className="muted" style={{ textAlign: 'center', padding: 28 }}><Art k="done" height={90} /><div style={{ marginTop: 8 }}>{q ? `No orders match “${q}”.` : !db.orders.length ? <>No orders yet. Share your link to get your first one.<div style={{ marginTop: 10 }}><button className="btn grey sm" type="button" onClick={() => { const link = `https://stoora.in/${db.shop.handle}`; navigator.clipboard?.writeText(link).then(() => toast('Shop link copied.')).catch(() => toast(`Your shop link is ${link}`, { icon: 'info' })); }}>Copy link</button></div></> : 'Nothing here in this view.'}</div></td></tr>}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

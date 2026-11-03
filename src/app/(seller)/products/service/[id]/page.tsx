@@ -78,7 +78,7 @@ function Editor({ id }: { id: string }) {
   useEffect(() => { if (ready && !loaded) { setF(toForm(s)); setLoaded(true); } }, [ready, loaded, s]);
   const base = useMemo(() => JSON.stringify(toForm(s)), [s]);
   const dirty = loaded && JSON.stringify(f) !== base;
-  useLeaveGuard(dirty, (href) => setLeaveTo(href));
+  const guard = useLeaveGuard(dirty, (href) => setLeaveTo(href));
 
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={3} height={100} /></div>;
   if (!isNew && !s) {
@@ -126,7 +126,7 @@ function Editor({ id }: { id: string }) {
       seats: kind === 'workshop' || kind === 'class' ? f.seats : undefined, place: kind === 'digital' ? undefined : f.place, fileName: kind === 'digital' ? f.fileName : undefined, filePath: kind === 'digital' ? s?.filePath : undefined };
     saveService(next, file.current);
     toast(isNew ? `${next.name} added.` : 'Saved.');
-    router.replace('/products?tab=services');
+    void guard.release().then(() => router.replace('/products?tab=services'));
   };
 
   return (
@@ -200,7 +200,7 @@ function Editor({ id }: { id: string }) {
       </div>
       {!isNew && <ConfirmDialog open={del} onClose={() => setDel(false)} title={`Delete ${s!.name}?`} body="Buyers won’t see it any more. Past bookings keep their details." yes="Delete" danger
         onYes={() => { deleteService(s!.id); router.push('/products?tab=services'); toast(`${s!.name} deleted.`, { icon: 'delete' }); }} />}
-      <ConfirmDialog open={leaveTo !== null} onClose={() => setLeaveTo(null)} title="Leave without saving?" body="Your changes to this service won’t be saved." yes="Leave" danger onYes={() => { if (leaveTo) router.push(leaveTo); }} />
+      <ConfirmDialog open={leaveTo !== null} onClose={() => { setLeaveTo(null); guard.stay(); }} title="Leave without saving?" body="Your changes to this service won’t be saved." yes="Leave" danger onYes={() => { if (leaveTo !== null) guard.leave(leaveTo); }} />
     </>
   );
 }

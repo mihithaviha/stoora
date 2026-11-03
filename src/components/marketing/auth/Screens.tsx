@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
-import { useAuth } from '@/lib/auth';
-import { useHandleCheck, type HandleState } from '@/lib/handle';
+import { EXPIRED, useAuth } from '@/lib/auth';
+import { queryOf, type Query } from '@/lib/query';
 import { safeNext } from '@/lib/supabase/config';
 import { Ic } from '../bits';
 import { cleanHandle } from '../landing/LandingContext';
@@ -19,9 +19,8 @@ const ERRORS: Record<string, string> = {
 const submitStyle = { height: 50 };
 
 /** The two ways in: Google, or a 6-digit code sent to a WhatsApp number. Used by Log in and by Open a shop. */
-function useSignIn(next: string, existingOnly = false) {
+function useSignIn(params: ReturnType<typeof queryOf>, next: string, existingOnly = false, startFlow = false, shop = '') {
   const router = useRouter();
-  const params = useSearchParams();
   const auth = useAuth();
   const [phone, setPhone] = useState('');
   const [tried, setTried] = useState(false);
@@ -37,7 +36,7 @@ function useSignIn(next: string, existingOnly = false) {
 
   const google = async (target = next, opts?: { sample?: boolean }) => {
     setError(''); setBusy('google');
-    const failed = await auth.signInWithGoogle('seller', target, opts);
+    const failed = await auth.signInWithGoogle('seller', target, { ...opts, back: startFlow ? `/shop/start${shop ? `?shop=${encodeURIComponent(shop)}` : ''}` : undefined });
     if (failed) { setError(failed); setBusy(''); }
   };
   const code = async (target = next) => {
@@ -49,6 +48,17 @@ function useSignIn(next: string, existingOnly = false) {
       const r = await auth.requestLoginCode(digits, false);
       if (r.unknown) { setUnknown(digits); setBusy(''); return; }
       if (!r.ok) { setError(r.error ?? 'We could not send the code. Try again.'); setBusy(''); return; }
+    } else if (startFlow) {
+      // Start for Free: is this number already used? If it is, they log in (the code is already on its way). If not, a new account is made.
+      const known = await auth.requestLoginCode(digits, false);
+      if (!known.unknown) {
+        if (!known.ok) { setError(known.error ?? 'We could not send the code. Try again.'); setBusy(''); return; }
+        router.push(`/login/verify?phone=${digits}&existing=1&next=${encodeURIComponent('/dashboard')}`); return;
+      }
+      const failed = await auth.sendCode(digits);
+      if (failed) { setError(failed); setBusy(''); return; }
+      router.push(`/login/verify?phone=${digits}&flow=start&next=${encodeURIComponent(target)}`);
+      return;
     } else {
       const failed = await auth.sendCode(digits);
       if (failed) { setError(failed); setBusy(''); return; }
@@ -83,18 +93,21 @@ function Banners({ demo, error }: { demo: boolean; error: string }) {
 function PhoneField({ id, value, onChange, error, hint = 'We send a 6-digit code to this number. No password is needed.' }: { id: string; value: string; onChange: (v: string) => void; error?: string; hint?: string }) {
   return (
     <FormField id={id} label="WhatsApp mobile number" hint={hint} error={error}>
-      <div className={`affix${error ? ' bad' : ''}`}>
-        <span aria-hidden="true">+91</span>
-        <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="98765 43210" value={value} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value.replace(/[^\d ]/g, '').slice(0, 11))} />
+      <div className="phone-row">
+        {/* the country code has its own box; Stoora is India-only for now, so it shows +91 and cannot be changed */}
+        <span className="cc-box" role="img" aria-label="Country code plus 91, India">+91</span>
+        <div className={`affix${error ? ' bad' : ''}`}>
+          <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="98765 43210" value={value} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value.replace(/[^\d ]/g, '').slice(0, 11))} />
+        </div>
       </div>
     </FormField>
   );
 }
 
-export function LoginScreen() {
-  const params = useSearchParams();
+export function LoginScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
   const next = safeNext(params.get('next'), '/dashboard');
-  const { auth, phone, setPhone, phoneError, busy, error, google, code, unknown, setUnknown, startNew, usedGoogle } = useSignIn(next, true);
+  const { auth, phone, setPhone, phoneError, busy, error, google, code, unknown, setUnknown, startNew, usedGoogle } = useSignIn(params, next, true);
   if (unknown) return (
     <AuthShell>
       <button className="link" type="button" style={{ justifySelf: 'start' }} onClick={() => setUnknown('')}><Ic n="arrow_back" c="xs" />Change number</button>
@@ -130,88 +143,46 @@ export function LoginScreen() {
           <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => google('/dashboard', { sample: true })}>Use the sample shop</button>
         </div>
       )}
-      <p className="t-body" style={{ textAlign: 'center' }}>New to Stoora? <Link href="/signup" className="link">Open a shop</Link></p>
+      <p className="t-body" style={{ textAlign: 'center' }}>New to Stoora? <Link href="/shop/start" className="link">Start for Free</Link></p>
       <p className="cap" style={{ textAlign: 'center' }}>Buying something? <Link href="/buyer/login" className="link">Buyer sign-in</Link></p>
     </AuthShell>
   );
 }
 
-/** Under the shop link box: a green tick if the link is free, a red "taken, try ..." if not. */
-function HandleStatus({ state, handle, use }: { state: HandleState; handle: string; use: (h: string) => void }) {
-  if (state.status === 'checking') return <span className="hint" role="status">Checking stoora.in/{handle}…</span>;
-  if (state.status === 'free') return <span className="hint" role="status" style={{ color: 'var(--positive-deep, var(--positive))', display: 'inline-flex', gap: 4, alignItems: 'center' }}><Ic n="check_circle" c="xs" />stoora.in/{handle} is free</span>;
-  if (state.status === 'taken') return <span className="err" role="alert"><Ic n="error" c="xs" />stoora.in/{handle} is taken{state.suggestion ? <>, try <button type="button" className="link" onClick={() => use(state.suggestion!)}>{state.suggestion}</button></> : '. Try another.'}</span>;
-  return null;
-}
-
-export function SignupScreen() {
-  const params = useSearchParams();
-  const [name, setName] = useState('');
-  const [typedHandle, setTypedHandle] = useState(() => cleanHandle(params.get('shop') ?? '').replace(/-/g, ''));
-  const [touched, setTouched] = useState(Boolean(params.get('shop')));
-  const [errors, setErrors] = useState<{ name?: string; handle?: string }>({});
-  const handle = cleanHandle(typedHandle);
-  const handleState = useHandleCheck(handle, name);
-  const target = `/onboarding?name=${encodeURIComponent(name.trim())}&handle=${encodeURIComponent(handle)}`;
-  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(target);
-
-  const shopName = (value: string) => {
-    setName(value);
-    if (value.trim()) setErrors((x) => ({ ...x, name: undefined })); // the red message goes as soon as the box is filled
-    if (!touched) {
-      const derived = cleanHandle(value).replace(/-/g, '');
-      setTypedHandle(derived);
-      if (derived.length >= 3) setErrors((x) => ({ ...x, handle: undefined })); // the link filled itself in, so its red message goes too
-    }
-  };
-  /** Both ways in need a shop name and a link first. */
-  const valid = () => {
-    const next = {
-      name: name.trim() ? undefined : 'Add your shop’s name.',
-      handle: handle.length < 3 ? 'Use at least 3 letters or numbers.' : handleState.status === 'taken' ? 'That link is taken. Pick another.' : undefined,
-    };
-    setErrors(next);
-    return !next.name && !next.handle;
-  };
-
+export function StartScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
+  const shop = cleanHandle(params.get('shop') ?? '').replace(/-/g, '');
+  // Nothing is asked up front but the way in. The store name and link come right after the code (or Google), in the shop setup.
+  const target = `/onboarding${shop ? `?handle=${encodeURIComponent(shop)}` : ''}`;
+  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(params, target, false, true, shop);
   return (
-    <AuthShell handle={handle}>
+    <AuthShell handle={shop}>
       <div className="stack tight">
-        <span className="eyebrow">Open a shop</span>
+        <span className="eyebrow">Start for Free</span>
         <h1>Start selling from one link.</h1>
+        <p className="t-body">Sign up with your WhatsApp number or with Google. No password, and no email-only sign-up.</p>
       </div>
       <Banners demo={auth.mode === 'demo'} error={error} />
-      <div className="stack">
-        <FormField id="su-shop" label="Shop name" error={errors.name}>
-          <input className={`input${errors.name ? ' bad' : ''}`} id="su-shop" autoComplete="organization" placeholder="e.g. Meera Studio" value={name} onChange={(e) => shopName(e.target.value)} aria-invalid={errors.name ? true : undefined} />
-        </FormField>
-        <FormField id="su-handle" label="Shop link" error={errors.handle}>
-          <div className={`affix${errors.handle ? ' bad' : ''}`}>
-            <span>stoora.in/</span>
-            <input id="su-handle" autoCapitalize="none" spellCheck={false} maxLength={30} placeholder="e.g. meerastudio" value={typedHandle} aria-invalid={errors.handle ? true : undefined}
-              onChange={(e) => { setTouched(true); setTypedHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); if (e.target.value.replace(/[^a-z0-9-]/g, '').length >= 3) setErrors((x) => ({ ...x, handle: undefined })); }} />
-          </div>
-          {!errors.handle ? <HandleStatus state={handleState} handle={handle} use={(h) => { setTouched(true); setTypedHandle(h); }} /> : null}
-        </FormField>
-      </div>
-      <button className="gbtn" type="button" disabled={busy !== ''} onClick={() => { if (valid()) google(target); }}><GoogleMark />{busy === 'google' ? 'Opening Google…' : 'Continue with Google'}</button>
-      <div className="or">or with a WhatsApp code</div>
-      <form className="stack" noValidate onSubmit={(e: FormEvent) => { e.preventDefault(); if (valid()) code(target); }}>
-        <PhoneField id="su-phone" value={phone} onChange={setPhone} error={phoneError} hint="" />
-        <button className="btn primary full" type="submit" style={submitStyle} disabled={busy !== ''}>{busy === 'code' ? 'Sending code…' : 'Create my shop'}</button>
+      <form className="stack" noValidate onSubmit={(e: FormEvent) => { e.preventDefault(); code(target); }}>
+        <PhoneField id="su-phone" value={phone} onChange={setPhone} error={phoneError} hint="We send a 6-digit code to this number." />
+        <button className="btn primary full" type="submit" style={submitStyle} disabled={busy !== ''}>{busy === 'code' ? 'Sending code…' : 'Get WhatsApp code'}</button>
       </form>
-      <p className="cap" style={{ textAlign: 'center' }}>By continuing you agree to the <Link href="/terms" className="link" target="_blank" rel="noopener">terms</Link> and the <Link href="/privacy" className="link" target="_blank" rel="noopener">privacy policy</Link>.</p>
+      <div className="or">or</div>
+      <button className="gbtn" type="button" disabled={busy !== ''} onClick={() => google(target)}><GoogleMark />{busy === 'google' ? 'Opening Google…' : 'Continue with Google'}</button>
+      <p className="cap" style={{ textAlign: 'center' }}>By continuing you agree to the <Link href="/terms" className="link" style={{ display: 'inline' }} target="_blank" rel="noopener">terms</Link> and the <Link href="/privacy" className="link" style={{ display: 'inline' }} target="_blank" rel="noopener">privacy policy</Link>.</p>
       <p className="t-body" style={{ textAlign: 'center' }}>Already have a shop? <Link href="/login" className="link">Log in</Link></p>
     </AuthShell>
   );
 }
 
-export function VerifyScreen() {
+export function VerifyScreen({ q }: { q: Query }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = queryOf(q);
   const auth = useAuth();
   const phone = (params.get('phone') || '').replace(/\D/g, '').slice(-10);
   const next = safeNext(params.get('next'), '/dashboard');
+  const existing = params.get('existing') === '1';
+  const isStart = params.get('flow') === 'start';
   const [code, setCode] = useState('');
   const [wrong, setWrong] = useState('');
   const [tries, setTries] = useState(0);
@@ -227,6 +198,10 @@ export function VerifyScreen() {
     setBusy(true);
     const failed = await auth.verifyCode(phone, value, 'seller');
     setBusy(false);
+    if (failed === EXPIRED) { // an old code is replaced by a new one on the spot, and it does not count as a wrong try
+      const resent = await auth.sendCode(phone); again();
+      setCode(''); setWrong(''); setNote(resent ? resent : EXPIRED); return;
+    }
     if (failed) { setWrong(failed); setTries((n) => n + 1); setCode(''); return; }
     setDone(true);
     setTimeout(() => router.push(next), 700);
@@ -254,12 +229,13 @@ export function VerifyScreen() {
   }
   return (
     <AuthShell>
-      <Link className="link" href="/login" style={{ justifySelf: 'start' }}><Ic n="arrow_back" c="xs" />Change number</Link>
+      <Link className="link" href={isStart || existing ? '/shop/start' : '/login'} style={{ justifySelf: 'start' }}><Ic n="arrow_back" c="xs" />Change number</Link>
       <div className="stack tight">
         <span className="eyebrow">Check WhatsApp</span>
         <h1>Enter the 6-digit code</h1>
         <p className="t-body">We sent a code to <b className="t-ink">{masked}</b>. It works for 10 minutes.</p>
       </div>
+      {existing && <div className="banner info" role="status"><Ic n="info" /><span>This number already has a Stoora account. Enter the code to log in.</span></div>}
       <form className="stack" onSubmit={(e: FormEvent) => { e.preventDefault(); verify(); }}>
         <OtpBoxes value={code} onChange={(v) => { setCode(v); setWrong(''); }} error={!!wrong} />
         {wrong && <p className="err" role="alert"><Ic n="error" c="xs" />{wrong} {5 - tries} {5 - tries === 1 ? 'try' : 'tries'} left.</p>}
@@ -271,6 +247,7 @@ export function VerifyScreen() {
           : <button className="link" type="button" onClick={async () => { const failed = await auth.sendCode(phone); again(); setCode(''); setWrong(''); setNote(failed ?? 'A new code is on its way.'); }}>Send a new code</button>}
       </p>
       {note && <p className="cap" style={{ textAlign: 'center' }} role="status">{note}</p>}
+      <p className="cap" style={{ textAlign: 'center' }}>Code not coming? <button className="link" type="button" onClick={() => auth.signInWithGoogle('seller', next, { back: isStart ? '/shop/start' : undefined })}>Use Google instead</button></p>
       {auth.mode === 'demo' && <div className="banner info"><Ic n="science" /><span><b>Demo:</b> no message is sent. Use code <b className="num">123456</b>.</span></div>}
     </AuthShell>
   );

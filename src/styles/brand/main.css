@@ -215,7 +215,7 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .drop.over{border-color:var(--primary);background:var(--primary-tint)}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .photos{display:flex;gap:var(--s2);flex-wrap:wrap}
-.photos img{width:88px;height:88px;object-fit:cover;border-radius:var(--r-xl);border:1px solid var(--line)}
+.photos img{width:88px;height:88px;object-fit:contain;background:var(--inner);border-radius:var(--r-xl);border:1px solid var(--line)}
 
 /* ---------- lists ---------- */
 .rows{display:grid;gap:var(--s1)}
@@ -592,6 +592,7 @@ body.mode-public::before,body.mode-auth::before{background:var(--surface)}
 .hero .admit{font-size:13px;color:var(--ink-65);display:flex;gap:var(--s1);align-items:center}
 .hero .admit i{width:8px;height:8px;border-radius:50%;background:var(--marigold);flex:none}
 .stage{position:relative;aspect-ratio:1/1.02;max-width:560px;width:100%;margin:0 auto}
+.hero-mobile-stage{display:none}
 .stage .shop{position:absolute;right:0;top:0;width:76%;max-width:100%}
 .stage .shop svg{width:100%;height:auto;display:block}
 .stage .phone{position:absolute;left:0;bottom:0;width:min(240px,44%)}
@@ -1116,7 +1117,8 @@ select.input{padding-right:46px;text-overflow:ellipsis}
 .aud-photo{display:grid;gap:var(--s4);align-items:center}
 @media (min-width:640px){.aud-photo{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}}
 .aphoto{margin:0;position:relative;border-radius:var(--r-2xl);overflow:hidden;aspect-ratio:4/3;background:var(--muted);box-shadow:var(--shadow-warm)}
-.aphoto img{width:100%;height:100%;object-fit:cover;display:block;max-width:100%}
+.aphoto img{position:relative;width:100%;height:100%;object-fit:contain;display:block;max-width:100%}
+.aphoto::before{content:"";position:absolute;inset:0;background:var(--photo) center/cover no-repeat;opacity:.85}
 .aphoto figcaption{position:absolute;left:var(--s2);bottom:var(--s2);font-size:11px;color:#FFFFFF;background:color-mix(in srgb,var(--ink) 55%,transparent);padding:2px var(--s1);border-radius:var(--pill)}
 .atext{display:grid;gap:var(--s2);align-content:center}
 .aud-panel{min-height:0}
@@ -1196,3 +1198,10 @@ h1,h2,h3,h4{overflow-wrap:break-word}
 .input::placeholder,.askbox textarea::placeholder{color:color-mix(in srgb,var(--ink-65) 80%,var(--inner))}
 .field .hint{line-height:1.45}
 .tbl td,.tbl th{font-variant-numeric:tabular-nums}
+
+/* home page calls to action: Start for Free and Log in side by side, on every screen size */
+.claim-cta .btn{height:56px;padding:0 32px;font-size:18px;white-space:nowrap}
+.hero-cta{display:flex;align-items:center;gap:var(--s2);flex-wrap:nowrap}
+.hero-cta .btn.line{height:56px;padding:0 28px;font-size:18px;white-space:nowrap;flex:none}
+@media (max-width:480px){.claim-cta .btn,.hero-cta .btn.line{height:50px;font-size:16px}.claim-cta .btn{padding:0 22px}.hero-cta .btn.line{padding:0 20px}}
+@media (max-width:359px){.hero-cta{gap:8px}.claim-cta .btn{padding:0 14px;font-size:15px}.hero-cta .btn.line{padding:0 14px;font-size:15px}}

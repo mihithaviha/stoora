@@ -2,8 +2,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Ic } from './bits';
 import { TOPICS, saveSent } from '@/lib/enquiries';
-import { getSupabase } from '@/lib/supabase/client';
-import { sendEnquiry } from '@/lib/supabase/data';
 
 /** "Talk to us": a short form in a dialog. Enquiries arrive in the admin inbox (/admin/enquiries). */
 export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
@@ -38,8 +36,10 @@ export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
     if (Object.keys(problems).length) return;
     setBusy(true);
     try {
+      // the login library is only fetched now, when a message is really sent, so no page pays for it up front
+      const { getSupabase } = await import('@/lib/supabase/client');
       const supabase = getSupabase();
-      if (supabase) await sendEnquiry(supabase, { name: form.name.trim(), contact: form.contact.trim(), topic: form.topic, message: form.message.trim() });
+      if (supabase) await (await import('@/lib/supabase/data')).sendEnquiry(supabase, { name: form.name.trim(), contact: form.contact.trim(), topic: form.topic, message: form.message.trim() });
       else {
         await new Promise((resolve) => setTimeout(resolve, 400));
         saveSent({ id: 'n' + Date.now(), ...form, when: 'Just now', status: 'New', from: 'Landing page' });

@@ -57,7 +57,7 @@ export default function MoneyPage() {
         </div>
         <div className="box tbox" style={{ marginTop: 16 }}>
           <div className="tbar"><span className="box-t">Payments</span><span className="sp" /><label className="search"><DI n="search" s={16} /><span className="sr">Search payments</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search payments" style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label></div>
-          <table className="tbl">
+          <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
             <thead><tr><th>Buyer</th><th>For</th><th>Method</th><th>When</th><th className="r">Amount</th><th>Status</th><th /></tr></thead>
             <tbody>
               {rows.map((r) => (
@@ -69,7 +69,7 @@ export default function MoneyPage() {
               ))}
               {!rows.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 28 }}>No payments yet.</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
         {db.stats.pastPayouts.length ? (
           <div className="box" style={{ marginTop: 16 }}>

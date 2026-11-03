@@ -44,6 +44,7 @@ async function page(width = 1440, height = 900) {
 }
 
 async function flow(name, fn) {
+  if (process.env.ONLY && !name.includes(process.env.ONLY)) return; // ONLY="Start for Free" runs just those flows
   const tab = await page(); const before = errors.length;
   try { await fn(tab); results.push([true, name]); } catch (e) { results.push([false, `${name}: ${e.message}`]); }
   if (errors.length > before) results.push([false, `${name}: JavaScript errors: ${errors.slice(before).join(' | ').slice(0, 300)}`]);
@@ -53,7 +54,7 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
 
 // ---- helpers for the Add product checks: fake photos, and a fake AI answer (there is no AI key here, so what is tested is the screen's own handling) ----
 const pick = (sel, specs) => `(async () => { const mk = (name, ok) => new Promise((res) => { if (!ok) { res(new File([new Uint8Array([1, 2, 3])], name, { type: 'image/jpeg' })); return; } const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const x = c.getContext('2d'); x.fillStyle = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0'); x.fillRect(0, 0, 1600, 1200); c.toBlob((b) => res(new File([b], name, { type: 'image/jpeg' })), 'image/jpeg', 0.8); }); const dt = new DataTransfer(); for (const [n, ok] of ${JSON.stringify(specs)}) dt.items.add(await mk(n, ok)); const el = document.querySelector(${JSON.stringify(sel)}); el.files = dt.files; el.dispatchEvent(new Event('change', { bubbles: true })); return dt.files.length; })()`;
-const fakeAi = (draft, status = 200) => `(() => { if (!window.__realFetch) window.__realFetch = window.fetch; window.__aiCalls = 0; window.fetch = (u, o) => String(u).includes('/api/describe-product') ? (window.__aiCalls++, Promise.resolve(new Response(${status === 200 ? JSON.stringify(JSON.stringify({ draft })) : '"{}"'}, { status: ${status} }))) : window.__realFetch(u, o); })()`;
+const fakeAi = (draft, status = 200) => `(() => { if (!window.__realFetch) window.__realFetch = window.fetch; window.__aiCalls = 0; window.fetch = (u, o) => String(u).includes('/api/v1/products/ai-draft') ? (window.__aiCalls++, Promise.resolve(new Response(${status === 200 ? JSON.stringify(JSON.stringify({ draft })) : '"{}"'}, { status: ${status} }))) : window.__realFetch(u, o); })()`;
 const photoCount = (t) => t.js(`document.querySelectorAll('.photos img').length`);
 const MUG = { title: 'Ceramic mug', description: 'A glazed ceramic mug for tea and coffee. Made of stoneware and easy to wash.', category: 'Cups', categoryIsNew: true, color: 'Blue', material: 'Stoneware', sizeKind: 'capacity', sizes: ['250 ml', '350 ml'], weightGrams: 350, boxCm: { l: 12, w: 12, h: 12 }, tags: ['mug'] };
 const KURTA = { title: 'Handblock cotton kurta', description: 'A soft cotton kurta with a hand block print. Made for everyday wear.', category: 'Kurtas', categoryIsNew: true, color: 'Indigo', material: 'Cotton', sizeKind: 'clothes', sizes: [], weightGrams: 400, tags: ['kurta'] };
@@ -306,36 +307,88 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.goto('/products?tab=services'); expect(await t.has('Pattern ebook'), 'the download is not in the services list');
     });
 
-    await flow('Sign-up: link check, error clears, no tick box (S2 to S6)', async (t) => {
-      await t.goto('/signup');
-      expect(await t.js(`document.querySelector('#su-shop').placeholder`) === 'e.g. Meera Studio', 'sample text should read "e.g. Meera Studio"');
-      expect(!(await t.js(`!!document.querySelector('#su-terms')`)) && await t.has('By continuing you agree to the'), 'the terms tick box should be a sentence');
-      await t.click('Create my shop'); expect(await t.has('Add your shop’s name'), 'name was not required');
-      await t.type('#su-shop', 'Meera Studio'); await sleep(1200);
-      expect(!(await t.has('Add your shop’s name')), 'the red message should clear once the box is filled');
-      expect(await t.has('is taken') && await t.has('try'), 'a taken link was not flagged with a suggestion');
-      await t.type('#su-shop', 'Shaurya Studio'); await sleep(1200);
-      expect(await t.has('is free'), 'a free link was not flagged');
-      expect(await t.js(`document.querySelector('button.btn.primary[type=submit]').getBoundingClientRect().bottom <= window.innerHeight`), 'Create my shop is below the screen at 1440x900');
+    await flow('Start for Free: every sign-up button says it and opens /shop/start', async (t) => {
+      await t.goto('/');
+      const labels = await t.js(`[...document.querySelectorAll('a.btn.primary, a.sf-cta')].filter((a) => (a.getAttribute('href') || '').includes('shop/start') || (a.getAttribute('href') || '').includes('signup')).map((a) => a.textContent.trim().split(String.fromCharCode(10)).join(' ') + ' > ' + a.getAttribute('href')).join(' | ')`);
+      expect(labels.includes('Start for Free') && labels.includes('> /shop/start'), 'no Start for Free button found: ' + labels);
+      expect(!/Get started|Get to Start/i.test(labels), 'an old label is left: ' + labels);
+      expect(!(await t.js(`!!document.querySelector('a[href="/signup"]')`)), 'a link still goes to /signup');
+      await t.click('Start for Free'); expect(await t.waitUrl('/shop/start'), 'the button did not open /shop/start');
+      await t.goto('/journal'); expect(await t.has('Start for Free'), 'the Journal page has no Start for Free button');
+      await t.goto('/signup'); expect(await t.waitUrl('/shop/start'), 'the old /signup address should lead to /shop/start');
     });
 
-    await flow('The public site: home, Journal and sign-up open without errors', async (t) => {
+    await flow('Start for Free: country box, new number, code, store name, then the shop setup', async (t) => {
+      await t.goto('/shop/start');
+      expect(await t.has('Start selling from one link') && await t.has('Continue with Google'), 'Start for Free screen is missing its two ways in');
+      expect(await t.js(`document.querySelector('.cc-box')?.textContent.trim() === '+91'`), 'the country code box is missing');
+      await t.click('Get WhatsApp code'); expect(await t.has('Enter your 10-digit mobile number'), 'a short number was accepted');
+      await t.type('#su-phone', '9555500001'); await t.click('Get WhatsApp code');
+      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
+      expect(!(await t.has('already has a Stoora account')), 'a new number was treated as an existing account');
+      expect(await t.has('Code not coming?') && await t.has('Use Google instead'), '"Code not coming? Use Google instead" is missing');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('000000');
+      expect(await t.waitFor('That code isn’t right. Try again.'), 'a wrong code was not rejected in the plain words');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitUrl('/onboarding', 8000), 'a new number should go to the store name');
+      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing');
+      expect(!(await t.has('link an existing email')) && !(await t.has('make a new account')), 'the old account screen appeared');
+      await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
+      await t.type('#ob-name', 'Meera Studio'); await sleep(1200);
+      expect(await t.has('is taken') && await t.has('try'), 'a taken link was not flagged with a suggestion');
+      await t.type('#ob-name', 'Shaurya Studio'); await sleep(1200);
+      expect(await t.has('is free'), 'a free link was not flagged');
+      expect(!(await t.has('Add your shop’s name')), 'the red message should clear once the box is filled');
+    });
+
+    await flow('Start for Free: a number that already has an account is sent to log in', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
+      await t.goto('/shop/start'); await t.type('#su-phone', '9876543210'); await t.click('Get WhatsApp code');
+      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
+      expect(await t.has('already has a Stoora account'), 'the person was not told the number is already used');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitUrl('/dashboard', 8000), 'an existing number should open the dashboard');
+    });
+
+    await flow('Start for Free: Use Google instead works from the code screen', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
+      await t.goto('/shop/start'); await t.type('#su-phone', '9555500002'); await t.click('Get WhatsApp code');
+      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
+      await t.click('Use Google instead'); expect(await t.waitUrl('/onboarding', 8000), 'Google did not lead on to the store name');
+      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing after Google');
+    });
+
+    await flow('The public site: home, Journal and Start for Free open without errors', async (t) => {
       await t.goto('/'); expect(await t.has('open in 10 minutes'), 'home page headline missing');
       await t.goto('/how-it-works'); await sleep(900);
       expect(await t.js(`Math.abs(document.getElementById('l-how').getBoundingClientRect().top) < 140`), '/how-it-works should open at that section');
       await t.goto('/journal'); await sleep(1500);
       expect(await t.js(`document.querySelector('.jr-orbit').classList.contains('is-ring')`), 'the story ring did not start');
-      await t.goto('/signup'); expect(await t.has('Start selling from one link'), 'sign-up screen missing');
+      await t.goto('/shop/start'); expect(await t.has('Start selling from one link'), 'Start for Free screen missing');
       await t.goto('/privacy'); expect(await t.has('Privacy policy'), 'privacy page missing');
     });
 
-    await flow('Open a shop through onboarding', async (t) => {
+    await flow('Open a shop: name, what you sell, setting up, live; Settings can change what you sell', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
       await t.goto('/onboarding'); await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
       await t.type('#ob-name', 'Test Bakes'); await t.click('Continue');
+      expect(await t.waitFor('What do you sell?'), 'the what-you-sell step is missing');
+      await t.click('Continue'); expect(await t.has('Pick one to go on.'), 'a choice was not required');
+      await t.click('Physical products'); expect(await t.waitFor('You picked Physical products'), 'the choice was not confirmed back');
+      await t.click('Digital products'); expect(await t.has('You picked Digital products'), 'the choice could not be changed');
+      await t.click('Physical products'); await t.click('Continue');
       await t.click('Continue'); await t.click('Continue'); await t.click('Publish my shop');
+      expect(await t.waitFor('Setting up Test Bakes', 4000), 'there was no setting-up screen with steps');
       expect(await t.waitFor('Test Bakes is live', 8000), 'shop was not published');
       expect(await t.has('stoora.in/test-bakes'), 'shop link was not made from the name');
       await t.goto('/s/test-bakes'); expect(await t.has('Coming soon'), 'a shop with no products should say Coming soon');
+      await t.goto('/dashboard'); expect(await t.waitFor('Add your first product'), 'a physical shop should be asked to add a product first: ' + (await t.text()).replace(/\s+/g, ' ').slice(0, 260));
+      expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'a physical shop should not show Services in the menu');
+      await t.goto('/settings/shop-details'); await t.click('Digital products'); await t.click('Save changes'); await sleep(900);
+      await t.goto('/dashboard'); expect(await t.waitFor('Add your first session or download'), 'a digital shop should be asked to add a session first');
+      expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`)) && (await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'the menu should show Services and hide Products after switching to digital');
+      await t.goto('/settings/shop-details'); await t.click('Physical products'); await t.click('Save changes'); await sleep(900);
+      await t.goto('/dashboard'); expect(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`), 'switching back should bring Products back');
     });
 
     await flow('Signed-out screens appear without a login', async (t) => {

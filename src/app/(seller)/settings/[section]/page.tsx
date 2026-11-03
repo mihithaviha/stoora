@@ -9,6 +9,7 @@ import { LEGACY_SETTINGS, SETTINGS, slug } from '@/lib/settings';
 import { cleanHandle, rs } from '@/lib/format';
 import { deliveryRule, DEFAULT_FREE_OVER } from '@/lib/delivery';
 import { WhatsAppVerify } from '@/components/WhatsAppVerify';
+import { DIGITAL, PHYSICAL } from '@/lib/shopstate';
 
 export default function SettingSection({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -61,6 +62,14 @@ function ShopDetails() {
           <Field id="g-name" label="Shop name" required error={e('name')}><input id="g-name" className={`input ${e('name') ? 'bad' : ''}`} value={f.name} onChange={(x) => setF({ ...f, name: x.target.value })} /></Field>
           <Field id="g-owner" label="Your name" optional hint="Stoora greets you with this."><input id="g-owner" className="input" value={f.owner} onChange={(x) => setF({ ...f, owner: x.target.value })} /></Field>
           <Field id="g-handle" label="Shop link" required error={e('handle')} hint={`Buyers visit stoora.in/${f.handle || '…'}`}><div className={`affix ${e('handle') ? 'bad' : ''}`}><span aria-hidden="true">stoora.in/</span><input id="g-handle" value={f.handle} onChange={(x) => setF({ ...f, handle: cleanHandle(x.target.value) })} /></div></Field>
+        </Card>
+        <Card className="stack" title="What you sell" icon="category">
+          <div role="radiogroup" aria-label="What you sell" className="chips">
+            {([[PHYSICAL, 'Physical products'], [DIGITAL, 'Digital products']] as const).map(([v, label]) => (
+              <button key={v} type="button" role="radio" aria-checked={f.category === v} className={`chip${f.category === v ? ' on' : ''}`} onClick={() => setF({ ...f, category: v })}>{label}</button>
+            ))}
+          </div>
+          <p className="cap" style={{ margin: 0 }}>Picked the wrong one? Change it here. Everything you added stays saved, and the menu shows only what fits. Switch back and it all returns.</p>
         </Card>
         <Card className="stack" title="Contact">
           <div className="grid2">

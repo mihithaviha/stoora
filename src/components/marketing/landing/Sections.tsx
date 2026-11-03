@@ -2,7 +2,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { Ic } from '../bits';
-import { ClaimForm } from './ClaimForm';
 import {
   ScreenBuilt, ScreenChat, ScreenOrders, ScreenProduct, ScreenShop, ScreenSignup, ScreenUpi, ScreenWeek,
 } from './Screens';
@@ -36,7 +35,7 @@ function Photo({ slot, shape, art, priority = false }: { slot: PhotoSlot; shape:
 }
 
 function StartButton({ className = '' }: { className?: string }) {
-  return <Link className={`btn primary ${className}`.trim()} href="/signup">Start for free</Link>;
+  return <Link className={`btn primary ${className}`.trim()} href="/shop/start">Start for Free</Link>;
 }
 
 /** The headline, with the words rising in one by one. */
@@ -58,8 +57,7 @@ export function Top() {
         <div className="lp-top-text">
           <h1 id="lp-top-h"><Words text="Your business, open in 10 minutes." /></h1>
           <p className="lede">Tell Stoora what you sell. Your AI co-founder builds the shop and helps run it.</p>
-          <div className="lp-only-desk"><ClaimForm id="claim-top" button="Start for free" /></div>
-          <StartButton className="lp-only-phone full" />
+          <StartButton />
         </div>
         <Photo art="inventory_2" slot={PHOTOS.top} shape="portrait" priority />
       </div>
@@ -252,7 +250,7 @@ export function Last() {
         <div className="lp-frame center">
           <Photo art="storefront" slot={PHOTOS.last} shape="banner" />
           <h2 className="l-h2 rv" id="lp-last-h">Your business, open in 10 minutes.</h2>
-          <div className="lp-claim-wrap rv" style={delay(1)}><ClaimForm id="claim-last" button="Start for free" /></div>
+          <div className="rv" style={delay(1)}><StartButton /></div>
         </div>
       </div>
     </section>

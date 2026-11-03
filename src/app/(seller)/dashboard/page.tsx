@@ -7,6 +7,7 @@ import { Art, type ArtKey } from '@/components/dash/Art';
 import { DI, DateChip, MStrip, Ms, PaidTag } from '@/components/dash/parts';
 import { Button, Dialog, Skeleton, useToast } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { sellsDigital } from '@/lib/shopstate';
 import { firstName, rs } from '@/lib/format';
 import { moneyWaiting, useStore } from '@/lib/store';
 
@@ -35,12 +36,15 @@ export default function Home() {
 
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={1} height={70} /><div style={{ height: 16 }} /><Skeleton rows={3} height={120} /></div>;
 
+  const digital = sellsDigital(db.shop);
   const empty = !db.products.length && !db.services.length && !db.orders.length;
   const link = `stoora.in/${db.shop.handle}`;
   const copyLink = () => navigator.clipboard?.writeText(`https://${link}`).then(() => { toast('Shop link copied.'); setLinkCopied(true); try { localStorage.setItem(LINK_KEY, '1'); } catch { /* ignore */ } }).catch(() => toast(`Your shop link is ${link}`, { icon: 'info' }));
   // what a new shop does first, each with whether it is already done (one list, one count)
   const steps: Step[] = [
-    { art: 'product', title: 'Add your first product or service', text: 'Add a photo, a name and a price. Stoora fills the rest.', cta: 'Add product', href: '/products/new', done: db.products.length + db.services.length > 0 },
+    digital
+      ? { art: 'product', title: 'Add your first session or download', text: 'Add a name, a price and when it runs.', cta: 'Add session', href: '/products/service/new', done: db.services.length > 0 }
+      : { art: 'product', title: 'Add your first product', text: 'Add a photo, a name and a price. Stoora fills the rest.', cta: 'Add product', href: '/products/new', done: db.products.length + db.services.length > 0 },
     { art: 'upi', title: 'Choose how you get paid', text: 'Add your UPI ID so buyers can pay you.', cta: 'Set up', href: '/settings/getting-paid', done: !!db.shop.upi },
     { art: 'look', title: 'Choose your shop look', text: 'Pick colours and a cover photo for your shop page.', cta: 'Choose look', href: '/storefront', done: !!db.shop.storefront },
     { art: 'link', title: 'Share your shop link', text: `${link} — share it anywhere.`, cta: 'Copy link', copy: true, done: linkCopied },

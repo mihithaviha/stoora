@@ -4,7 +4,8 @@ import '../../styles/brand/features.css';
 import '../../styles/brand/touch.css';
 import '../../styles/brand/landing.css';
 import '../../styles/brand/auth-extra.css';
-import { FONT_LINKS } from '@/components/marketing/fontLinks';
+import '../../styles/fonts.css'; // the brand fonts and the icon font, all served from this site
+import { FontPreloads } from '@/components/FontPreloads';
 
 /**
  * The public site (home, sign-in, sign-up, Journal). It is its own root layout, so it carries the brand's
@@ -22,9 +23,7 @@ export default function MarketingRootLayout({ children }: { children: React.Reac
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {FONT_LINKS.map((href) => <link key={href} rel="stylesheet" href={href} />)}
+        <FontPreloads logo />
       </head>
       <body className="mode-public">{children}</body>
     </html>
