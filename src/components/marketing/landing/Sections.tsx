@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { Ic } from '../bits';
+import { AutoSwipe } from './AutoSwipe';
 import {
   ScreenBuilt, ScreenChat, ScreenOrders, ScreenProduct, ScreenShop, ScreenSignup, ScreenUpi, ScreenWeek,
 } from './Screens';
@@ -18,21 +19,21 @@ const SHOW_STORIES = false;
  */
 type PhotoSlot = { src: string; width: number; height: number; alt: string } | null;
 const PHOTOS: Record<'top' | 'chat' | 'sell' | 'workshop' | 'sessions' | 'add' | 'share' | 'phone' | 'last', PhotoSlot> = {
-  // Image 1: the top of the page. A bright, hand-made look (the plan asks for someone packing a parcel; none of our photos shows that yet)
-  top: { src: '/assets/journal/kurta-pink-720.webp', width: 720, height: 1080, alt: 'A printed cotton kurta set, shot for a shop page' },
-  // Image 2: a person and a phone with a chat
-  chat: { src: '/assets/home/chat.webp', width: 1000, height: 667, alt: 'A woman smiling at a message on her phone' },
+  // Image 1: the top of the page. A woman packing a parcel at a table at home, in warm window light
+  top: { src: '/assets/home/hero-packing-v2.webp', width: 900, height: 1118, alt: 'A woman taping up a parcel at a wooden table at home, with boxes and bubble wrap around her' },
+  // Image 2: a hand holding a phone with a chat open, a cup of tea behind
+  chat: { src: '/assets/home/hero-chat-phone-v2.webp', width: 1100, height: 614, alt: 'A hand holding a phone with a WhatsApp chat about an order, and a glass of tea on the table' },
   // Images 3, 4, 5: who it is for
-  sell: { src: '/assets/journal/boutique-rack-720.webp', width: 720, height: 1080, alt: 'Hand-made clothes hanging on a rail in a small shop' },
-  workshop: { src: '/assets/journal/bowls-720.webp', width: 720, height: 1080, alt: 'Hand-made ceramic bowls laid out on a table' },
-  sessions: { src: '/assets/home/classes.webp', width: 1000, height: 562, alt: 'A tutor and a student working together at a laptop' },
+  sell: { src: '/assets/home/audience-sell.webp', width: 824, height: 1024, alt: 'A seller browsing handloom kurtas on a clothing rack' },
+  workshop: { src: '/assets/home/audience-workshop.webp', width: 824, height: 1024, alt: 'Students learning pottery and shaping clay at a workshop table' },
+  sessions: { src: '/assets/home/audience-sessions.webp', width: 824, height: 1024, alt: 'A calm consultation room with armchairs and a laptop open for a session' },
   // Images 6, 7: two of the three steps
-  add: { src: '/assets/journal/bottles-720.webp', width: 720, height: 1080, alt: 'A product photographed on a plain background, ready for a shop page' },
-  share: { src: '/assets/journal/suit-maroon-720.webp', width: 720, height: 1079, alt: 'A festive suit set, shot for a shop page' },
+  add: { src: '/assets/home/step-add.webp', width: 1024, height: 1024, alt: 'A person taking a photo of a handmade bowl with a phone' },
+  share: { src: '/assets/home/step-share.webp', width: 1024, height: 1024, alt: 'A seller sharing their shop link in their Instagram bio' },
   // Image 8: a phone showing a shop page (Stoora's own illustration of the shop on a phone)
-  phone: { src: '/assets/home/hero-mobile-payout.webp', width: 764, height: 1024, alt: 'A phone showing the money received by a shop, in front of a small shopfront (illustration)' },
-  // Image 9: the calm end-of-day banner
-  last: { src: '/assets/journal/cups-1400.webp', width: 1400, height: 933, alt: 'Hand-made ceramic cups in soft daylight' },
+  phone: { src: '/assets/home/steady-phone.webp', width: 1024, height: 571, alt: 'A customer browsing a Stoora shop on a mobile phone on a packing desk' },
+  // Image 9: the calm end-of-day banner: a seller smiling at her phone, parcels packed on the table
+  last: { src: '/assets/home/banner-end-of-day.webp', width: 1400, height: 593, alt: 'A woman smiling at her phone at a wooden table, with packed parcels, tape and a laptop around her in warm evening light' },
 };
 
 /** A tiny copy of each picture is the soft fill behind it, so a picture is always shown whole and never cropped. */
@@ -157,7 +158,8 @@ export function Audience() {
       <div className="wrap">
         <div className="lp-frame">
           <h2 className="l-h3 rv" id="lp-aud-h">For solo entrepreneurs and independent artists who want to grow.</h2>
-          <div className="lp-grid three swipe">
+          {/* on a phone the cards also move by themselves, one after another (AutoSwipe); on a laptop they are a plain grid */}
+          <AutoSwipe className="lp-grid three swipe" label="Who Stoora is for">
             {AUDIENCE.map((a, i) => (
               <div className="lp-item rv" style={delay(i)} key={a.title}>
                 <Photo art={a.art} slot={a.slot} shape="portrait" />
@@ -165,7 +167,7 @@ export function Audience() {
                 <p>{a.text}</p>
               </div>
             ))}
-          </div>
+          </AutoSwipe>
         </div>
       </div>
     </section>

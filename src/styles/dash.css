@@ -299,3 +299,9 @@ html.icons-wait .ms { visibility: hidden; }
   .tscroll .tbl tr.rw:hover > :nth-child(-n+2) { background: color-mix(in srgb, var(--muted) 50%, var(--card)); }
   .tscroll .tbl thead tr > :nth-child(-n+2) { z-index: 3; }
 }
+
+/* Search results: every row keeps the height its text needs, and the list scrolls. (The old grid squeezed the rows when the window was short, so long lines spilled out of their cards.) */
+.dapp .dspop .list { display: flex; flex-direction: column; gap: 8px; align-content: flex-start; padding-top: 2px; }
+.dapp .dspop .list .li { flex: none; align-items: center; min-height: 64px; }
+.dapp .dspop .list .li .sp { min-width: 0; overflow-wrap: anywhere; }
+.dapp .dspop .list .li .thumb { flex: none; align-self: center; }
