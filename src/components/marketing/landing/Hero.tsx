@@ -182,17 +182,19 @@ export function Hero(_props: { onSeeHow?: () => void }) {
           <div className="hero-mobile-stage" aria-label="Stoora sample shop illustration">
             <div className="hero-mobile-slider" onClick={() => setMobileSlide((s) => (s + 1) % 2)}>
               <img
-                src="/assets/home/hero-mobile-chat.jpg"
+                src="/assets/home/hero-mobile-chat.webp"
                 alt="Stoora WhatsApp order and enquiry illustration"
                 className={`m-slide${mobileSlide === 0 ? ' active' : ''}`}
-                loading="eager"
+                width={764} height={1024}
+                fetchPriority="high" /* the biggest thing a phone paints first: fetch it at once, not after layout */
                 decoding="async"
               />
               <img
-                src="/assets/home/hero-mobile-payout.jpg"
+                src="/assets/home/hero-mobile-payout.webp"
                 alt="Stoora UPI payment and payout illustration"
                 className={`m-slide${mobileSlide === 1 ? ' active' : ''}`}
-                loading="eager"
+                width={764} height={1024}
+                loading="lazy"
                 decoding="async"
               />
             </div>

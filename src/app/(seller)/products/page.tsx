@@ -76,7 +76,7 @@ export default function ProductsPage() {
                 {products.map((p) => (
                   <tr className="rw" key={p.id} onClick={() => router.push(`/products/${p.id}`)}>
                     <td className="ck"><Chk on={picked.includes(p.id)} onChange={(v) => toggle(p.id, v)} label={`Select ${p.name}`} /></td>
-                    <td><span className="row" style={{ gap: 10 }}><span className="thumb xs">{p.photos?.[0] ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} /> : <Ms n={p.icon} />}</span><b>{p.name}</b></span></td>
+                    <td><span className="row" style={{ gap: 10 }}><span className="thumb xs">{p.photos?.[0] ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} /> : <Ms n={p.icon} />}</span><b>{p.name}</b></span></td>
                     <td>{p.status === 'Active' ? <span className="tag ok">Active</span> : <span className="tag neutral">Draft</span>}</td>
                     <td className={p.stock <= 3 ? 'low' : ''}>{p.stock === 0 ? 'Sold out' : `${p.stock} in stock`}</td>
                     <td className="r money">{rs(p.price)}</td><td className="muted">{p.category}</td><td className="r muted">{p.soldLast30Days}</td>

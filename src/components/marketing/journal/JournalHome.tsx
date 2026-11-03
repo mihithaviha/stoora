@@ -160,7 +160,7 @@ export function JournalHome() {
             <div className="jr-close-circles" aria-hidden="true">
               {['suit-floral', 'loom', 'bowls'].map((key) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <span key={key}><img src={`/assets/journal/${key}-720.jpg`} alt="" loading="lazy" decoding="async" /></span>
+                <span key={key} style={{ ['--photo' as string]: `url(/assets/journal/${key}-tiny.webp)` }}><img src={`/assets/journal/${key}-720.webp`} alt="" loading="lazy" decoding="async" /></span>
               ))}
             </div>
             <div className="jr-close-copy">

@@ -42,7 +42,7 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
       <header className="shopbar">
         <div className="wrap">
           <button className="ibtn burger flat" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}><Icon name="menu" /></button>
-          <Link className="shopname" href={base}>{logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="shop-av" style={{ objectFit: 'cover' }} /> : <span className="shop-av" aria-hidden="true">{brandName[0]}</span>}<b>{brandName}</b></Link>
+          <Link className="shopname" href={base}>{logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="shop-av" style={{ objectFit: 'contain' }} /> : <span className="shop-av" aria-hidden="true">{brandName[0]}</span>}<b>{brandName}</b></Link>
           <nav className="links" aria-label="Shop">{links.map(([l, h]) => <Link key={l} href={h} className={path === h ? 'on' : ''}>{l}</Link>)}</nav>
           <div className="right">
             <form className="search" onSubmit={search} role="search"><Icon name="search" size="sm" /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the shop" aria-label="Search the shop" /></form>

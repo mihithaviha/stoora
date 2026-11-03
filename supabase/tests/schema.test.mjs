@@ -176,5 +176,12 @@ await db.query(`insert into storage.objects (bucket_id, name) values ('product-i
 ok(!!(await fails(`insert into storage.objects (bucket_id, name) values ('product-images', '${crypto.randomUUID()}/photo.jpg')`)), 'a seller cannot upload into another shop\'s folder');
 ok(!!(await fails(`insert into storage.objects (bucket_id, name) values ('product-images', 'not-a-uuid/photo.jpg')`)), 'a bad folder name is refused');
 
+// the public shop page loads in one trip
+await as('anon');
+const pub1 = (await q(`select public.load_public_shop('MEERA') as r`))[0].r;
+ok(pub1 && pub1.shop.handle === 'meera' && Array.isArray(pub1.products) && pub1.products.length === 5 && pub1.services.length >= 1, 'load_public_shop returns the shop, its live products and its services in one call (and ignores letter case)');
+ok(pub1.products.every((p) => p.status === 'Active') && !('owner_id' in pub1.shop), 'it returns only live products and none of the owner-only shop columns');
+ok((await q(`select public.load_public_shop('nobody-here') as r`))[0].r === null, 'an unknown shop link gives nothing');
+
 console.log(`\n${fail ? fail + ' FAILED' : 'All ' + pass + ' database checks passed'}`);
 process.exit(fail ? 1 : 0);
