@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Wordmark } from './bits';
+import { FooterColumn } from './FooterColumn';
 import { TalkToUs } from './TalkToUs';
 
 const columns: { title: string; links: [string, string][] }[] = [
@@ -23,17 +24,17 @@ export function SiteFooter() {
             <span className="sf-soon">iOS &amp; Android apps — coming soon</span>
           </div>
           {columns.map((column) => (
-            <div className="sf-col" key={column.title}>
-              <h4>{column.title}</h4>
+            <FooterColumn key={column.title} title={column.title}>
               <ul>
                 {column.links.map(([label, href]) => (
-                  <li key={label}>{href.startsWith('mailto:') ? <a href={href}>{label}</a> : <Link href={href}>{label}</Link>}</li>
+                  <li key={label} className={label === 'Privacy' || label === 'Terms' ? 'legal-li' : undefined}>{href.startsWith('mailto:') ? <a href={href}>{label}</a> : <Link href={href}>{label}</Link>}</li>
                 ))}
                 {column.title === 'Company' && <li><TalkToUs /></li>}
               </ul>
-            </div>
+            </FooterColumn>
           ))}
         </div>
+        <div className="sf-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         <div className="sf-bt">© 2026 Stoora.in · Made in India</div>
       </div>
     </footer>

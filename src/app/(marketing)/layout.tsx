@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '../../styles/brand/main.css';
 import '../../styles/brand/features.css';
 import '../../styles/brand/touch.css';
+import '../../styles/brand/landing.css';
 import '../../styles/brand/auth-extra.css';
 import { FONT_LINKS } from '@/components/marketing/fontLinks';
 

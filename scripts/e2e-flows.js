@@ -320,7 +320,7 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
     });
 
     await flow('The public site: home, Journal and sign-up open without errors', async (t) => {
-      await t.goto('/'); expect(await t.has('One link for every order'), 'home page headline missing');
+      await t.goto('/'); expect(await t.has('open in 10 minutes'), 'home page headline missing');
       await t.goto('/how-it-works'); await sleep(900);
       expect(await t.js(`Math.abs(document.getElementById('l-how').getBoundingClientRect().top) < 140`), '/how-it-works should open at that section');
       await t.goto('/journal'); await sleep(1500);
