@@ -10,31 +10,42 @@ import {
 const SHOW_STORIES = false;
 
 /**
- * The stock photos of the page plan. Each is a licensed file in /public/photos once bought (WebP, saved small).
+ * The pictures of the page plan (landing-page-wireframe, "All images"). Each is a file already in the project (WebP, saved small):
+ * photos under the Unsplash licence (credits in public/assets/home/CREDITS.md and public/assets/journal/CREDITS.md) and
+ * Stoora's own watercolour illustrations. When a better-matching photo is bought, swap the file in the slot below.
  * While a slot is null it shows a plain cream block with no text, so nothing is made up.
  * Photos carry no name, quote or "customer" caption.
  */
 type PhotoSlot = { src: string; width: number; height: number; alt: string } | null;
 const PHOTOS: Record<'top' | 'chat' | 'sell' | 'workshop' | 'sessions' | 'add' | 'share' | 'phone' | 'last', PhotoSlot> = {
-  // Existing project photos (Unsplash licence, see public/assets/home/CREDITS.md and public/assets/journal/CREDITS.md).
-  top: { src: '/assets/home/shop.webp', width: 900, height: 1350, alt: 'A small clothing boutique with a rack of hand-made clothes' },
-  chat: { src: '/assets/home/chat.webp', width: 1000, height: 667, alt: 'A shop owner smiling at a message on her phone' },
-  sell: { src: '/assets/journal/kurta-pink-720.webp', width: 720, height: 1080, alt: 'A printed cotton kurta set, shot for a shop page' },
+  // Image 1: the top of the page. A bright, hand-made look (the plan asks for someone packing a parcel; none of our photos shows that yet)
+  top: { src: '/assets/journal/kurta-pink-720.webp', width: 720, height: 1080, alt: 'A printed cotton kurta set, shot for a shop page' },
+  // Image 2: a person and a phone with a chat
+  chat: { src: '/assets/home/chat.webp', width: 1000, height: 667, alt: 'A woman smiling at a message on her phone' },
+  // Images 3, 4, 5: who it is for
+  sell: { src: '/assets/journal/boutique-rack-720.webp', width: 720, height: 1080, alt: 'Hand-made clothes hanging on a rail in a small shop' },
   workshop: { src: '/assets/journal/bowls-720.webp', width: 720, height: 1080, alt: 'Hand-made ceramic bowls laid out on a table' },
-  sessions: { src: '/assets/home/classes.webp', width: 1000, height: 562, alt: 'A tutor and a student working at a laptop' },
-  add: { src: '/assets/journal/cups-720.webp', width: 720, height: 480, alt: 'Hand-made ceramic cups, photographed for a product page' },
+  sessions: { src: '/assets/home/classes.webp', width: 1000, height: 562, alt: 'A tutor and a student working together at a laptop' },
+  // Images 6, 7: two of the three steps
+  add: { src: '/assets/journal/bottles-720.webp', width: 720, height: 1080, alt: 'A product photographed on a plain background, ready for a shop page' },
   share: { src: '/assets/journal/suit-maroon-720.webp', width: 720, height: 1079, alt: 'A festive suit set, shot for a shop page' },
-  phone: null, // still needs a photo of a budget smartphone in a hand
-  last: { src: '/assets/journal/interior-1400.webp', width: 1400, height: 1750, alt: 'A calm, bright room at the end of the day' },
+  // Image 8: a phone showing a shop page (Stoora's own illustration of the shop on a phone)
+  phone: { src: '/assets/home/hero-mobile-payout.webp', width: 764, height: 1024, alt: 'A phone showing the money received by a shop, in front of a small shopfront (illustration)' },
+  // Image 9: the calm end-of-day banner
+  last: { src: '/assets/journal/cups-1400.webp', width: 1400, height: 933, alt: 'Hand-made ceramic cups in soft daylight' },
 };
+
+/** A tiny copy of each picture is the soft fill behind it, so a picture is always shown whole and never cropped. */
+const tinyOf = (src: string) => src.replace(/-(720|1400)\.webp$/, '-tiny.webp').replace(/(?<!-tiny)\.webp$/, '-tiny.webp');
 
 const delay = (d: number) => ({ '--d': d }) as CSSProperties;
 
-function Photo({ slot, shape, art, priority = false, reveal = false }: { slot: PhotoSlot; shape: 'portrait' | 'wide' | 'square' | 'banner'; art: string; priority?: boolean; reveal?: boolean }) {
+function Photo({ slot, shape, art, priority = false }: { slot: PhotoSlot; shape: 'portrait' | 'wide' | 'square' | 'banner'; art: string; priority?: boolean }) {
   return (
-    <div className={`lp-photo ${shape}${reveal ? ' rv' : ''}`}>
+    <div className={`lp-photo ${shape}`} style={slot ? ({ ['--photo' as string]: `url(${tinyOf(slot.src)})` } as CSSProperties) : undefined}>
       {slot ? (
-        <Image src={slot.src} width={slot.width} height={slot.height} alt={slot.alt} priority={priority} loading={priority ? undefined : 'lazy'} sizes={priority ? '(min-width: 980px) 520px, 100vw' : '(min-width: 760px) 520px, 90vw'} />
+        // already small WebP files, so they are served as they are (no extra resizing step on the way)
+        <Image src={slot.src} width={slot.width} height={slot.height} alt={slot.alt} priority={priority} loading={priority ? undefined : 'lazy'} sizes="(min-width: 760px) 520px, 90vw" unoptimized />
       ) : (
         // Placeholder drawing until the licensed photo is added. It is decoration only: no name, quote or caption.
         <div className="lp-art" aria-hidden="true"><i className="a" /><i className="b" /><Ic n={art} /></div>
@@ -257,7 +268,7 @@ export function Last() {
     <section className="sec" aria-labelledby="lp-last-h">
       <div className="wrap">
         <div className="lp-frame center">
-          <Photo art="storefront" slot={PHOTOS.last} shape="banner" reveal />
+          <Photo art="storefront" slot={PHOTOS.last} shape="banner" />
           <h2 className="l-h2 rv" id="lp-last-h">Your business, open in 10 minutes.</h2>
           <div className="rv" style={delay(1)}><StartButton /></div>
         </div>
