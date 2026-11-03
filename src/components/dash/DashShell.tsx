@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Suspense, createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { DI } from './parts';
 import { useToast } from '../ui';
 import { useAuth } from '@/lib/auth';
@@ -58,15 +58,23 @@ function navKey(path: string) {
   return ({ dashboard: 'home', orders: 'orders', bookings: 'orders', products: 'products', customers: 'customers', money: 'money', analytics: 'analytics', discounts: 'discounts', storefront: 'storefront', settings: 'settings' } as Record<string, string>)[first] ?? '';
 }
 
+/** Reports the address's ?tab= value. It lives in its own Suspense so reading the address never holds back the rest of the shell. */
+function TabWatcher({ onTab }: { onTab: (t: string | null) => void }) {
+  const sp = useSearchParams();
+  const t = sp.get('tab');
+  useEffect(() => { onTab(t); }, [t, onTab]);
+  return null;
+}
+
 export function DashShell({ children }: { children: ReactNode }) {
   const path = usePathname() || '/dashboard';
-  const sp = useSearchParams();
   const router = useRouter();
   const toast = useToast();
   const auth = useAuth();
   const { db, ready } = useStore();
   const physicalOnly = sellsPhysical(db.shop); const digitalOnly = sellsDigital(db.shop); // the other kind stays saved, just out of the menu
-  const tab = sp.get('tab');
+  // the ?tab= part of the address is read by a small piece wrapped in its own Suspense (see TabWatcher), so the sidebar and top bar are part of the server's HTML
+  const [tab, setTab] = useState<string | null>(null);
   const screen = useRef<HTMLDivElement>(null);
   const lastPage = useRef('/dashboard'); // where Settings goes back to when you press it a second time
   const [overlay, setOverlay] = useState<Overlay>(null);
@@ -138,6 +146,7 @@ export function DashShell({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={ctx}>
+      <Suspense fallback={null}><TabWatcher onTab={setTab} /></Suspense>
       <div className={`dapp${settings ? ' set' : ''}${navOpen ? ' nav-open' : ''}`} onClickCapture={onLinkClick}>
         <nav className="dnav" id="nav" aria-label="Main">
           <div className="nhead"><Link href="/dashboard" aria-label="Stoora home"><div className="smark">S</div><span className="l brand">Stoora</span></Link></div>

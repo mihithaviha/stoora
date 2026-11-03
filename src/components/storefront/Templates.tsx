@@ -55,13 +55,15 @@ function Paragraphs({ text }: { text: string }) {
 /** An image. `focus` is the point that stays in view when it is cropped (for example a face). If it fails to load, a letter stands in. */
 function Img({ src, alt = '', eager = false, focus = '', zoom = 1, fallback = true }: { src: string; alt?: string; eager?: boolean; focus?: string; zoom?: number; fallback?: boolean }) {
   const [failed, setFailed] = useState(false);
+  // the sample photos come in two sizes: a small one for cards and a large one for wide places
+  const srcSet = /^\/assets\/templates\/[a-z-]+\.webp$/.test(src) ? `${src.replace('.webp', '-480.webp')} 480w, ${src} 960w` : undefined;
   if (failed) return fallback ? <span className="sf-initial" aria-hidden="true">·</span> : null;
   const style: CSSProperties = {};
   if (focus) style.objectPosition = focus;
   if (zoom > 1) { style.transform = `scale(${zoom})`; style.transformOrigin = focus || '50% 50%'; }
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} {...(eager ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} decoding="async" style={Object.keys(style).length ? style : undefined} onError={() => setFailed(true)} />
+    <img src={src} {...(srcSet ? { srcSet, sizes: eager ? '(max-width: 700px) 100vw, 960px' : '(max-width: 700px) 50vw, 480px' } : {})} alt={alt} {...(eager ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} decoding="async" style={Object.keys(style).length ? style : undefined} onError={() => setFailed(true)} />
   );
 }
 

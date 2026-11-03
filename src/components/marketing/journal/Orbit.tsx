@@ -1,6 +1,4 @@
 'use client';
-import gsap from 'gsap';
-import { Draggable } from 'gsap/Draggable';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Ic } from '../bits';
@@ -23,8 +21,16 @@ const wrap = (n: number, size: number) => ((n % size) + size) % size;
  */
 function useRing(root: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
   useEffect(() => {
+    if (!root.current || !enabled) return;
+    let dead = false;
+    let stop: (() => void) | undefined;
+    // the animation library is fetched after the page is on screen, so it never delays the first paint
+    Promise.all([import('gsap'), import('gsap/Draggable')]).then(([g, d]) => { if (!dead) stop = start(g.default, d.Draggable); });
+    return () => { dead = true; stop?.(); };
+
+    function start(gsap: typeof import('gsap').default, Draggable: typeof import('gsap/Draggable').Draggable): (() => void) | undefined {
     const el = root.current;
-    if (!el || !enabled) return;
+    if (!el) return;
     const list = el.querySelector<HTMLElement>('.jr-orbit-list');
     const dragger = el.querySelector<HTMLElement>('[data-dragger]');
     const cards = Array.from(el.querySelectorAll<HTMLElement>('.jr-ocard'));
@@ -174,6 +180,7 @@ function useRing(root: React.RefObject<HTMLDivElement | null>, enabled: boolean)
       el.style.removeProperty('perspective');
       gsap.set([list, ...cards, ...cards.map((c) => c.querySelector('img')).filter(Boolean) as Element[]], { clearProps: 'all' });
     };
+    }
   }, [root, enabled]);
 }
 

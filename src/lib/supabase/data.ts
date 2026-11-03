@@ -60,6 +60,13 @@ export async function loadOwner(sb: SupabaseClient, userId: string): Promise<Db 
 
 /** What a buyer sees at /s/<handle>: the public shop row, live products and services. null = no such shop. */
 export async function loadPublic(sb: SupabaseClient, handle: string): Promise<Db | null> {
+  // one round trip when the database has load_public_shop(); an older database falls back to the three queries below
+  const one = await sb.rpc('load_public_shop', { p_handle: handle.toLowerCase() });
+  if (!one.error) {
+    const r = one.data as { shop?: Row; products?: Row[]; services?: Row[] } | null;
+    if (!r || !r.shop) return null;
+    return emptyDb(publicShopFromRow(r.shop), { products: (r.products ?? []).map(productFromRow), services: (r.services ?? []).map(serviceFromRow) });
+  }
   const { data: shop } = await sb.from('public_shops').select('*').eq('handle', handle.toLowerCase()).maybeSingle();
   if (!shop) return null;
   const [products, services] = await Promise.all([sb.from('products').select('*').eq('shop_id', shop.id).eq('status', 'Active').order('created_at', { ascending: false }), sb.from('services').select('*').eq('shop_id', shop.id)]);

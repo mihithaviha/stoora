@@ -42,9 +42,9 @@ const k = (n: number) => ({ '--k': n }) as CSSProperties;
 function Body({ item, enter, leave }: { item: Audience; enter: boolean; leave: boolean }) {
   return (
     <div className={`aud-body aud-photo${enter ? ' enter2' : ''}${leave ? ' leave' : ''}`}>
-      <figure className="aphoto" style={k(1)}>
+      <figure className="aphoto" style={{ ...k(1), ['--photo' as string]: `url(/assets/home/${item.photo}-tiny.webp)` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/assets/home/${item.photo}.jpg`} style={{ objectPosition: item.position }} alt={item.alt} width={1200} height={800} loading="lazy" decoding="async" />
+        <img src={`/assets/home/${item.photo}.webp`} style={{ objectPosition: item.position }} alt={item.alt} width={1200} height={800} loading="lazy" decoding="async" />
         <figcaption>Illustrative photo</figcaption>
       </figure>
       <div className="atext">

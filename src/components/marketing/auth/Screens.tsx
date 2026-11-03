@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { EXPIRED, useAuth } from '@/lib/auth';
+import { queryOf, type Query } from '@/lib/query';
 import { safeNext } from '@/lib/supabase/config';
 import { Ic } from '../bits';
 import { cleanHandle } from '../landing/LandingContext';
@@ -18,9 +19,8 @@ const ERRORS: Record<string, string> = {
 const submitStyle = { height: 50 };
 
 /** The two ways in: Google, or a 6-digit code sent to a WhatsApp number. Used by Log in and by Open a shop. */
-function useSignIn(next: string, existingOnly = false, startFlow = false, shop = '') {
+function useSignIn(params: ReturnType<typeof queryOf>, next: string, existingOnly = false, startFlow = false, shop = '') {
   const router = useRouter();
-  const params = useSearchParams();
   const auth = useAuth();
   const [phone, setPhone] = useState('');
   const [tried, setTried] = useState(false);
@@ -104,10 +104,10 @@ function PhoneField({ id, value, onChange, error, hint = 'We send a 6-digit code
   );
 }
 
-export function LoginScreen() {
-  const params = useSearchParams();
+export function LoginScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
   const next = safeNext(params.get('next'), '/dashboard');
-  const { auth, phone, setPhone, phoneError, busy, error, google, code, unknown, setUnknown, startNew, usedGoogle } = useSignIn(next, true);
+  const { auth, phone, setPhone, phoneError, busy, error, google, code, unknown, setUnknown, startNew, usedGoogle } = useSignIn(params, next, true);
   if (unknown) return (
     <AuthShell>
       <button className="link" type="button" style={{ justifySelf: 'start' }} onClick={() => setUnknown('')}><Ic n="arrow_back" c="xs" />Change number</button>
@@ -149,12 +149,12 @@ export function LoginScreen() {
   );
 }
 
-export function StartScreen() {
-  const params = useSearchParams();
+export function StartScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
   const shop = cleanHandle(params.get('shop') ?? '').replace(/-/g, '');
   // Nothing is asked up front but the way in. The store name and link come right after the code (or Google), in the shop setup.
   const target = `/onboarding${shop ? `?handle=${encodeURIComponent(shop)}` : ''}`;
-  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(target, false, true, shop);
+  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(params, target, false, true, shop);
   return (
     <AuthShell handle={shop}>
       <div className="stack tight">
@@ -175,9 +175,9 @@ export function StartScreen() {
   );
 }
 
-export function VerifyScreen() {
+export function VerifyScreen({ q }: { q: Query }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = queryOf(q);
   const auth = useAuth();
   const phone = (params.get('phone') || '').replace(/\D/g, '').slice(-10);
   const next = safeNext(params.get('next'), '/dashboard');

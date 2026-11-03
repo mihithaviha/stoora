@@ -109,7 +109,7 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 .tl .ev b { display: block; font-weight: 600; } .tl .ev .cap { display: block; }
 .drop input[type="file"] { display: none; }
 .photos { display: flex; gap: 8px; flex-wrap: wrap; }
-.photos img { width: 88px; height: 88px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.photos img { width: 88px; height: 88px; object-fit: contain; background: var(--inner); border-radius: 12px; border: 1px solid var(--line); }
 .tiles.four { grid-template-columns: repeat(4, 1fr); }
 .notes { color: var(--ink-65); font-size: 14px; }
 .banner { margin: 0; }

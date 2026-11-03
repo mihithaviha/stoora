@@ -7,6 +7,7 @@ import '../../styles/dash-proto.css'; // the dashboard prototype's own rules
 import '../../styles/dash.css'; // what the app adds around them
 import '../../styles/storefront-editor.css';
 import { DashShell } from '@/components/dash/DashShell';
+import { FontPreloads } from '@/components/FontPreloads';
 import { Providers } from '@/components/Providers';
 import { SellerGate } from '@/components/SellerGate';
 
@@ -27,7 +28,7 @@ export default function SellerRootLayout({ children }: { children: React.ReactNo
     <html lang="en-IN" suppressHydrationWarning>
       <head>
         {/* Icons are hidden until the icon font is loaded, so a page never shows icon names as text ("err", "sel"). */}
-        <link rel="preload" href="/fonts/material-symbols-fallback-400.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <FontPreloads data />
         <script dangerouslySetInnerHTML={{ __html: `(function(){var d=document.documentElement;d.classList.add('icons-wait');var done=function(){d.classList.remove('icons-wait')};setTimeout(done,3000);try{document.fonts.load('24px "Material Symbols Rounded"','home').then(done,done)}catch(e){done()}})();` }} />
       </head>
       <body>
