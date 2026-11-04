@@ -135,3 +135,8 @@ body.sfed-open { overflow: hidden; }
   .sfin.tab-preview .sfin-controls { display: none; }
   .sfin .sfed-device-frame.mobile { width: 100%; }
 }
+
+/* Template cards: the buttons always sit at the bottom of their card, on one line across the row, however long the text above is */
+.sfg-body .btns { margin-top: auto; padding-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.sfg-body .btns .btn { flex: 1 1 auto; justify-content: center; white-space: nowrap; }
+.sfg-swatches { margin-bottom: 2px; }
