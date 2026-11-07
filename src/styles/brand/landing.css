@@ -188,3 +188,19 @@
 .lp-carousel-dots button[aria-current="true"]::before{left:2px;right:2px;background:var(--ink)}
 .lp-carousel-dots button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px;border-radius:8px}
 @media (prefers-reduced-motion:reduce){.lp-carousel-dots button::before{transition:none}}
+
+/* the sample phone: the two product columns are always the same width, however long a product name is */
+.lp-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.lp-tiles>*{min-width:0}
+/* the green "Paid" tag: on a phone it sits under the phone picture, so it can never cover the Pay by UPI button on the screen */
+@media (max-width:759px){.lp-paid{position:relative;right:auto;bottom:auto;display:flex;width:max-content;max-width:100%;margin:14px auto 0}}
+/* a product picture in the sample phone never grows wider than its own column (it used to push into the gap and touch its neighbour) */
+.lp-tile{grid-template-columns:minmax(0,1fr);min-width:0}
+.lp-tile-img{width:100%;max-width:100%;min-width:0}
+
+/* footer: Product column + a separate "Get in touch" block; Privacy / Terms always sit in the bottom row */
+.sfoot .sf-legal{display:flex;gap:var(--s4);margin-top:var(--s4)}
+.sfoot .sf-legal a{color:#171C3C;text-decoration:none;font-size:clamp(16px,1.15vw,20px);min-height:44px;display:inline-flex;align-items:center}
+.sfoot .sf-legal a:hover{color:#EA5B1E}
+@media (min-width:980px){.sfoot .sf-g{grid-template-columns:1.6fr 1fr 1fr}}
+@media (max-width:559px){.sfoot .sf-contact{padding-top:var(--s4)}}

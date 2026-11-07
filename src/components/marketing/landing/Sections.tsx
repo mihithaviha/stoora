@@ -130,7 +130,8 @@ export function CoFounder() {
             </div>
             <Photo art="chat" slot={PHOTOS.chat} shape="wide" />
           </div>
-          <div className="lp-grid three swipe">
+          {/* on a phone these six cards also move by themselves, one after another (AutoSwipe); on a laptop they are a plain grid */}
+          <AutoSwipe className="lp-grid three swipe" label="What your AI co-founder does">
             {COFOUNDER.map((c, i) => (
               <div className="lp-item rv" style={delay(i)} key={c.title}>
                 {c.screen}
@@ -138,7 +139,7 @@ export function CoFounder() {
                 <p>{c.text}</p>
               </div>
             ))}
-          </div>
+          </AutoSwipe>
         </div>
       </div>
     </section>

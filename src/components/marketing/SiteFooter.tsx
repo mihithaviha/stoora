@@ -5,8 +5,6 @@ import { TalkToUs } from './TalkToUs';
 
 const columns: { title: string; links: [string, string][] }[] = [
   { title: 'Product', links: [['How it works', '/how-it-works'], ['Example storefront', '/s/meera'], ['Seller dashboard', '/dashboard'], ['Bring your catalogue', '/shop/start']] },
-  { title: 'Sell', links: [['Sell crafts and products', '/shop/start'], ['Sell courses and classes', '/shop/start'], ['Sell mentoring and services', '/shop/start'], ['Create my store', '/shop/start']] },
-  { title: 'Company', links: [['Log in', '/login'], ['Privacy', '/privacy'], ['Terms', '/terms'], ['hello@stoora.in', 'mailto:hello@stoora.in']] },
 ];
 
 export function SiteFooter() {
@@ -29,10 +27,16 @@ export function SiteFooter() {
                 {column.links.map(([label, href]) => (
                   <li key={label} className={label === 'Privacy' || label === 'Terms' ? 'legal-li' : undefined}>{href.startsWith('mailto:') ? <a href={href}>{label}</a> : <Link href={href}>{label}</Link>}</li>
                 ))}
-                {column.title === 'Company' && <li><TalkToUs /></li>}
               </ul>
             </FooterColumn>
           ))}
+          <div className="sf-contact">
+            <h4>Get in touch</h4>
+            <ul>
+              <li><a href="mailto:hello@stoora.in">hello@stoora.in</a></li>
+              <li><TalkToUs /></li>
+            </ul>
+          </div>
         </div>
         <div className="sf-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         <div className="sf-bt">© 2026 Stoora.in · Made in India</div>
