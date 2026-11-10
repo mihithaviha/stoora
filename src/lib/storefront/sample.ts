@@ -11,6 +11,10 @@ export const PHOTO: Record<string, string> = {
   bowls: '/assets/templates/ceramic-bowls.webp', stack: '/assets/templates/ceramic-stack.webp', necklace: '/assets/templates/necklace.webp',
   earrings: '/assets/templates/earrings.webp', loom: '/assets/templates/loom.webp', blazer: '/assets/templates/portrait-blazer.webp',
   portrait: '/assets/templates/portrait-long.webp', tutor: '/assets/templates/tutor.webp', interior: '/assets/templates/interior.webp',
+  // the Standard storefront's sample shop
+  sIndigo: '/assets/standard/indigo.webp', sScarves: '/assets/standard/scarves.webp', sKurta: '/assets/standard/kurta-set.webp', sAjrakh: '/assets/standard/ajrakh.webp',
+  sStamps: '/assets/standard/stamps.webp', sPaisley: '/assets/standard/kurta-paisley.webp', sDye: '/assets/standard/dye.webp', sFabric: '/assets/standard/paisley.webp',
+  sWindow: '/assets/standard/craft-window.webp', sWeaving: '/assets/standard/weaving.webp',
 };
 
 /** Products are [name, price, collection, photo, focus point]. The focus point keeps the subject in view when cropped. */
@@ -20,9 +24,23 @@ interface Sample {
   shop: string; tagline: string; hero: string; focus: string; title: string; about: string; aboutImage?: string; story?: string;
   process?: [string, string][]; items?: Row[]; services?: ServiceRow[];
   subjects?: string[]; levels?: string[]; modes?: string[]; sessions?: string; credentials?: string[]; faqs?: [string, string][];
+  reviews?: [string, string][];
 }
 
 const SAMPLE: Record<TemplateId, Sample> = {
+  standard: {
+    shop: 'Mehr Studio', tagline: 'Hand block printing, Jaipur', hero: 'sWindow', focus: '50% 50%', title: 'Cotton that carries every hand that made it',
+    story: 'Mehr learned block printing from her grandmother in Sanganer. Today she runs a small studio with two master printers, and every piece passes through the same hands.\n\nColours come from indigo, madder and pomegranate. Nothing is rushed, so each batch is slightly different and that is the point.',
+    about: 'Dupattas, kurtas and stoles printed with carved wooden blocks and natural dyes.', aboutImage: 'sWeaving',
+    items: [
+      ['Indigo block-print dupatta', 2450, 'Stoles', 'sIndigo', '50% 50%'], ['Handwoven cotton stole', 1150, 'Stoles', 'sScarves', '50% 50%'],
+      ['Printed kurta set', 3200, 'Kurtas', 'sKurta', '50% 30%'], ['Ajrakh cotton stole', 950, 'Stoles', 'sAjrakh', '50% 50%'],
+      ['Wooden printing blocks', 690, 'Tools', 'sStamps', '50% 50%'], ['Paisley kurta', 1890, 'Kurtas', 'sPaisley', '50% 30%'],
+      ['Natural dye starter kit', 1250, 'Tools', 'sDye', '50% 50%'], ['Paisley cotton fabric', 420, 'Fabric', 'sFabric', '50% 50%'],
+    ],
+    faqs: [['How long does delivery take?', 'Orders ship in 3 days from Jaipur and reach most cities in 3 to 5 days after that.'], ['Can I pay cash on delivery?', 'Yes, COD is available across India. UPI, cards and netbanking are free.'], ['Will the colour fade?', 'Natural dyes soften with washing, they do not bleed. Wash cold, dry in shade and the colour lasts for years.']],
+    reviews: [['Anaya Kulkarni', 'The colour is exactly like the photo. Washed it twice and nothing bled.'], ['Rohit Sharma', 'Reached in 4 days. COD was easy and the delivery person was on time.'], ['Divya Nair', 'The stole is softer than any I own. Mehr even sent washing tips on WhatsApp.']],
+  },
   boutique: {
     shop: 'Indigo & Thread', tagline: 'Contemporary Indian wear, made in small batches', hero: 'suitMaroon', focus: '50% 38%',
     title: 'Wear the craft, keep the story', about: 'Every piece is block-printed and finished by hand in small batches, then styled for everyday life.',
@@ -130,7 +148,8 @@ export function sampleData(templateId: string): { config: StoreConfig; data: Sto
     data: {
       shop: { name: s.shop, city: 'Jaipur', handle: 'sample' },
       products: template.kind === 'services' ? [] : products,
-      services, bestsellerIds: ['s0', 's1'], ratings: {}, reviews: [], reviewSummary: { count: 0, average: 0 },
+      services, bestsellerIds: ['s0', 's1'], ratings: {},
+      reviews: (s.reviews ?? []).map(([who, comment]) => ({ rating: 5, comment, who })), reviewSummary: s.reviews ? { count: s.reviews.length, average: 5 } : { count: 0, average: 0 },
     },
   };
 }

@@ -1,9 +1,11 @@
 import type { Db, Product, Service } from '../types';
+import { metaOf } from '../catalog';
 import { defaultConfig, type StoreConfig, type StoreData, type StoreItem } from './shared';
 
 const productItem = (p: Product): StoreItem => ({
   id: p.id, name: p.name, price: p.price, was: p.comparePrice && p.comparePrice > p.price ? p.comparePrice : undefined, cat: p.category === 'Other' ? '' : p.category, stock: p.stock, img: p.photos?.[0] ?? '',
   desc: p.description ?? '', sizes: p.sizes.join(', '), tags: p.color ?? '',
+  art: { hex: metaOf(p).hex, icon: p.icon },
 });
 const serviceItem = (s: Service): StoreItem => ({ id: s.id, name: s.name, price: s.price, type: s.type, duration: s.minutes ? `${s.minutes} min` : '', where: '', next: s.next });
 
@@ -19,7 +21,7 @@ export function toStoreData(db: Db): StoreData {
 }
 
 /** The template that suits what the shop sells, before the seller has chosen one. */
-export const suggestedTemplate = (db: Db) => (db.products.length === 0 && db.services.length > 0 ? 'services' : 'boutique');
+export const suggestedTemplate = (_db?: Db) => ('standard');
 
 /** A starting design filled from the shop's own details (nothing invented). */
 export function startingConfig(db: Db, templateId: string = suggestedTemplate(db)): StoreConfig {
@@ -28,10 +30,13 @@ export function startingConfig(db: Db, templateId: string = suggestedTemplate(db
   return config;
 }
 
-/** The design to draw for a shop: its published one, with the WhatsApp number filled from the shop where the seller left it blank. */
-export function publishedConfig(db: Db): StoreConfig | null {
-  const saved = db.shop.storefront;
-  if (!saved) return null;
+/**
+ * The design to draw for a shop: the one the seller published, or (until they change anything) the Standard layout filled from
+ * the shop's own details. So every shop has the Standard storefront from the first day. The WhatsApp number comes from the shop
+ * where the seller left it blank.
+ */
+export function publishedConfig(db: Db): StoreConfig {
+  const saved = db.shop.storefront ?? startingConfig(db);
   const whatsapp = db.shop.showWhatsapp === false ? '' : (db.shop.whatsappNumber || '').replace(/\D/g, '').slice(-10);
   return { ...saved, contact: { ...saved.contact, whatsapp: saved.contact.whatsapp || whatsapp } };
 }

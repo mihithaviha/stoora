@@ -4,7 +4,7 @@ import { Button, Chips, Dialog, Icon } from '../ui';
 import { GALLERY_FILTERS, TEMPLATES, isPremium, themeById, type TemplateInfo } from '@/lib/storefront/shared';
 
 /** A small live picture of a template with sample content: the real page in a frame, scaled down to fit the card. */
-function Thumb({ template }: { template: TemplateInfo }) {
+export function Thumb({ template }: { template: TemplateInfo }) {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
   useEffect(() => {
@@ -26,7 +26,7 @@ export function Gallery({ current, onUse }: { current?: string; onUse: (id: stri
   const [full, setFull] = useState<TemplateInfo | null>(null);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   // Premium templates are not on sale yet, so they are hidden until they are (PRD decision D2)
-  const list = TEMPLATES.filter((t) => !t.premium && (filter === 'all' || t.categories.includes(filter)));
+  const list = TEMPLATES.filter((t) => !t.premium && t.id !== 'standard' && (filter === 'all' || t.categories.includes(filter)));
   return (
     <div className="stack">
       <Chips label="Template category" value={filter} onChange={setFilter} options={GALLERY_FILTERS.map(([value, label]) => ({ value, label }))} />

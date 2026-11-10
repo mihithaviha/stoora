@@ -11,7 +11,10 @@ import { PAUSED_LINE } from '@/lib/shopstate';
 import { metaOf } from '@/lib/catalog';
 import { rs } from '@/lib/format';
 import { deliveryLine } from '@/lib/delivery';
-import { publishedConfig } from '@/lib/storefront/map';
+import { publishedConfig, toStoreData } from '@/lib/storefront/map';
+import { shopAnnounce } from '@/lib/storefront/announce';
+import { StdHeader, StdFooter } from '../storefront/StandardStore';
+import { StdCartDrawer } from '../storefront/StdCart';
 import { themeVariables } from '@/lib/storefront/shared';
 import type { Product } from '@/lib/types';
 
@@ -36,8 +39,23 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
     background: 'var(--store-background)', color: 'var(--store-text)',
   } as React.CSSProperties) : undefined;
   const brandName = design?.brand.name || db.shop.name; const logo = design?.brand.logo;
+  // a shop with the Standard storefront keeps its header, bag and footer on every page
+  if (design) {
+    const c = design.contact; const wa = (design.contact.show?.whatsapp ?? true) && c.whatsapp ? c.whatsapp : '';
+    const ctx = { config: design, data: toStoreData(db), base, cartCount: bag.count, wish: bag.wish, paused: !db.shop.open, actions: { cart: () => setBagOpen(true), track: () => router.push('/buyer/orders') }, extras: { payments: { online: db.shop.online !== false, upi: true }, announce: shopAnnounce(db, bag.rule), delivery: deliveryLine(bag.rule), cod: Boolean(db.shop.cod) } };
+    const nav: [string, string][] = [['Shop', `${base}#sx-products`], ['Saved', `${base}/wishlist`], ['My orders', '/buyer/orders']];
+    return (
+      <div className="shopwrap" style={themed} data-themed="standard">
+        {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : null}
+        <div className="sx"><StdHeader ctx={ctx} nav={nav} whatsapp={wa} home={base} /></div>
+        <StdCartDrawer open={bagOpen} onClose={() => setBagOpen(false)} base={base} />
+        <main id="main" className="grow-main">{children}</main>
+        <div className="sx"><StdFooter ctx={ctx} nav={nav} rows={{ whatsapp: wa, instagram: design.social.instagram }} /></div>
+      </div>
+    );
+  }
   return (
-    <div className="shopwrap" style={themed} data-themed={design ? design.template : undefined}>
+    <div className="shopwrap" style={themed} >
       {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : <div className="announce">{deliveryLine(bag.rule)}{db.shop.city ? ` · Ships from ${db.shop.city}` : ''}</div>}
       <header className="shopbar">
         <div className="wrap">

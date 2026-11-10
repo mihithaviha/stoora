@@ -140,3 +140,33 @@ body.sfed-open { overflow: hidden; }
 .sfg-body .btns { margin-top: auto; padding-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
 .sfg-body .btns .btn { flex: 1 1 auto; justify-content: center; white-space: nowrap; }
 .sfg-swatches { margin-bottom: 2px; }
+
+/* Templates tab: gallery blurred behind a "coming soon" card */
+.sf-soon-wrap { position: relative; min-height: 420px; overflow: hidden; border-radius: 20px; }
+.sf-soon-blur { filter: blur(7px) saturate(.9); opacity: .75; pointer-events: none; user-select: none; max-height: 760px; overflow: hidden; }
+.sf-soon-card { position: absolute; inset: 0; margin: auto; width: min(420px, calc(100% - 32px)); height: fit-content; display: grid; justify-items: center; gap: 8px; text-align: center; padding: 28px 24px; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 12px 40px rgba(23, 28, 60, .16); }
+.sf-soon-card .ct { margin: 0; }
+.sf-soon-card p { margin: 0; }
+
+/* Standard storefront editor: awning colour swatches and the section order rows */
+.sfed-awnings { display: flex; flex-wrap: wrap; gap: 10px; }
+.sfed-awn { width: 56px; height: 36px; border-radius: 10px; border: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(23, 28, 60, .18); transition: transform .25s var(--ease, ease); }
+.sfed-awn:hover { transform: translateY(-1px); }
+.sfed-awn.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink, #171C3C); }
+.sfed-order { gap: 6px; }
+.sfed-order .ibtn[disabled] { opacity: .3; }
+
+/* the Standard layout card on the Templates tab: a framed preview beside the words */
+.sfcur { display: grid; gap: 0; background: var(--card); border: 1px solid var(--line-soft); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); max-width: 880px; }
+.sfcur-view { background: var(--muted, #F2EADD); padding: 16px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.sfcur-bar { display: flex; gap: 6px; padding: 8px 10px; background: #fff; border: 1px solid var(--line-soft); border-bottom: 0; border-radius: 10px 10px 0 0; }
+.sfcur-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.sfcur-view .sfg-thumb { aspect-ratio: 16 / 10; border: 1px solid var(--line-soft); border-radius: 0 0 10px 10px; background: #fff; box-shadow: 0 10px 24px -16px rgba(60, 35, 20, .5); }
+.sfcur-body { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; padding: 22px 24px; min-width: 0; }
+.sfcur-body h3 { margin: 0; font: 800 22px/1.15 var(--font-display, inherit); letter-spacing: -.02em; text-transform: none; color: var(--ink); }
+.sfcur-body p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-65); max-width: 46ch; }
+.sfcur-list { list-style: none; margin: 2px 0 4px; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--ink-soft, var(--ink)); }
+.sfcur-list li { display: flex; align-items: center; gap: 8px; }
+.sfcur-list .ms { color: var(--positive, #0FA05C); }
+.sfcur-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+@media (min-width: 760px) { .sfcur { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); } }
