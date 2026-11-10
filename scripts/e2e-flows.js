@@ -128,11 +128,11 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
     });
 
     await flow('Buyer buys something and it reaches the seller', async (t) => {
-      await t.goto('/s/meera'); await t.js(`document.querySelectorAll('.pcard')[1].querySelector('.quick').click()`); await sleep(600);
+      await t.goto('/s/meera'); await sleep(1500); await t.js(`[...document.querySelectorAll('.sx-pc')].find((c) => c.textContent.includes('Indigo kurta set')).querySelector('.sx-qa').click()`); await sleep(600);
       expect(await t.has('Add to bag'), 'quick view did not open');
       await t.click('Add to bag'); expect(await t.waitFor('Choose a size first'), 'size was not required');
       await t.click('M'); await t.click('Add to bag'); await sleep(500);
-      expect((await t.js(`document.querySelector('.cartcount')?.textContent`)) === '1', 'bag count is not 1');
+      expect((await t.js(`document.querySelector('.sx-cartn')?.textContent`)) === '1', 'bag count is not 1');
       await t.goto('/s/meera/checkout?demo=filled'); await t.click('Pay ₹2,899');
       expect(await t.waitUrl('/payment/success', 9000), 'did not reach the success screen');
       expect(await t.waitFor('Payment received'), 'success screen text missing');
@@ -195,20 +195,31 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.goto('/s/meera'); expect(!(await t.has('Shop is paused')), 'shop still says paused after unpausing');
     });
 
-    await flow('Pick a template, edit it, publish it, and the shop page uses it', async (t) => {
+    await flow('Standard storefront: edit it, publish it, and the shop page and bag use it', async (t) => {
       await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
       await t.goto('/storefront'); await sleep(2500);
-      expect(await t.js(`document.querySelectorAll('.sfg-card').length`) === 5, 'the gallery should show the 5 templates that are on sale (premium ones are hidden)');
       expect(await t.js(`!!document.querySelector('a[href="/s/meera"]')`), 'View storefront button missing');
-      await t.js(`[...document.querySelectorAll('.sfg-card button')].find((b) => b.textContent.includes('Use this template')).click()`); await sleep(3500);
+      expect(await t.js(`document.querySelectorAll('.sfg-current').length === 1 && document.querySelector('.sfg-current h3').textContent === 'Stoora Standard'`), 'the Standard layout card should be on the Templates tab');
+      expect(await t.js(`!!document.querySelector('.sf-soon-blur[inert]') && document.querySelector('.sf-soon-card h3').textContent === 'More templates are coming soon'`), 'the other templates should be blurred and marked coming soon');
+      await t.js(`[...document.querySelectorAll('.sfg-current button')].find((b) => b.textContent.includes('Edit your storefront')).click()`); await sleep(3500);
       expect(await t.js(`!!document.querySelector('.sfin')`), 'editor did not open');
       await t.js(`(() => { const el = document.querySelector('#sf-ht'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(el, 'Made by Meera'); el.dispatchEvent(new Event('input', { bubbles: true })); })()`); await sleep(1500);
       expect(await t.js(`document.querySelector('.sfed-device-frame iframe').contentDocument.body.innerText.includes('Made by Meera')`), 'the preview did not update');
+      // reorder: move Products up one place and check the preview follows; switch Reviews off
+      const order = () => t.js(`[...document.querySelector('.sfed-device-frame iframe').contentDocument.querySelectorAll('.sx main > section')].map((x) => x.id).join(',')`);
+      const before = await order();
+      await t.js(`document.querySelector('[aria-label="Move Products up"]').click()`); await sleep(500);
+      await t.js(`document.querySelector('[aria-label="Move Products up"]').click()`); await sleep(1200);
+      expect(await order() !== before, 'moving Products up should change the order in the preview');
       await t.js(`[...document.querySelectorAll('.sfed-bar button')].find((b) => b.textContent.includes('Publish')).click()`); await sleep(1800);
-      await t.goto('/s/meera'); await sleep(1500);
-      expect(await t.js(`!!document.querySelector('.sf')`) && await t.has('Made by Meera'), 'the shop page should be drawn by the template with the new headline');
-      await t.js(`[...document.querySelectorAll('.sf-card .sf-btn')].find((b) => b.textContent.includes('Add to bag')).click()`); await sleep(700);
-      expect(await t.js(`document.querySelector('.sf-float-pill.dark b').textContent`) === '1', 'the bag should hold one item');
+      await t.goto('/s/meera'); await sleep(2000);
+      expect(await t.js(`!!document.querySelector('.sx')`) && await t.has('Made by Meera'), 'the shop page should be the Standard storefront with the new headline');
+      expect(await t.js(`!!document.querySelector('.sx-awn, .sx-sf-awn svg')`), 'the shopfront awning should be drawn');
+      await t.js(`[...document.querySelectorAll('.sx-qa')].find((b) => b.textContent.includes('Quick add')).click()`); await sleep(900);
+      expect(await t.js(`document.querySelector('.sx-cartn').textContent`) === '1', 'the bag count in the header should be 1');
+      await t.js(`document.querySelector('[aria-label^="Open your bag"]').click()`); await sleep(800);
+      expect(await t.js(`document.querySelector('.sx-drawer.sx-on') !== null`) && await t.js(`document.querySelectorAll('.sx-ci').length`) === 1, 'the bag drawer should open with the one item');
+      expect(await t.js(`!!document.querySelector('.sx-drawer a[href="/s/meera/checkout"]')`), 'the drawer should lead to the real checkout');
     });
 
     await flow('Blogs admin: write, publish, edit, unpublish and delete a story; edit a built-in story and reset it', async (t) => {

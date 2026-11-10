@@ -2,13 +2,13 @@
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/CopyButton';
 import { Editor } from '@/components/storefront/Editor';
-import { Gallery } from '@/components/storefront/Gallery';
-import { Card, Chips, DemoBar, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
+import { Gallery, Thumb } from '@/components/storefront/Gallery';
+import { Button, Card, Chips, DemoBar, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
 import { rs } from '@/lib/format';
 import { useStore } from '@/lib/store';
 import { loadDraft, saveDraft } from '@/lib/storefront/draft';
 import { startingConfig } from '@/lib/storefront/map';
-import { TEMPLATES, defaultConfig, templateById, type StoreConfig } from '@/lib/storefront/shared';
+import { defaultConfig, templateById, type StoreConfig } from '@/lib/storefront/shared';
 import type { Shop } from '@/lib/types';
 
 type Tab = 'templates' | 'editor' | 'settings';
@@ -59,8 +59,34 @@ export default function StorefrontPage() {
 
       {tab === 'templates' && (
         <div className="stack">
-          <p className="t-body">{TEMPLATES.filter((t) => !t.premium).length} templates, drawn with sample shops. Pick one to open it in the editor. Your real products replace the sample ones. {live ? `You are live with ${templateById(s.storefront!.template).name}.` : 'Until you publish, buyers see the simple shop page.'}</p>
-          <Gallery current={(working ?? s.storefront)?.template} onUse={use} />
+          <article className="sfcur sfg-current" aria-label="Stoora Standard">
+            <div className="sfcur-view"><div className="sfcur-bar" aria-hidden="true"><i /><i /><i /></div><Thumb template={templateById('standard')} /></div>
+            <div className="sfcur-body">
+              <span className="bdg ok"><Icon name="check_circle" />Your layout</span>
+              <h3>Stoora Standard</h3>
+              <p>A painted shopfront, a clean product grid and the sections your shop needs. Every shop uses it from the first day, filled from your own products. {live ? 'Your changes are published.' : 'Edit it to make it yours.'}</p>
+              <ul className="sfcur-list">
+                <li><Icon name="check" size="sm" />Your products and photos</li>
+                <li><Icon name="check" size="sm" />Sections you can switch on or off</li>
+                <li><Icon name="check" size="sm" />Looks right on phones</li>
+              </ul>
+              <div className="sfcur-btns">
+                <Button kind="primary" onClick={edit}>Edit your storefront</Button>
+                {live ? <a className="btn line" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer">View live</a> : null}
+              </div>
+            </div>
+          </article>
+          <div className="sf-soon-wrap">
+            {/* More templates are coming soon: the gallery stays visible but blurred and cannot be used */}
+            <div className="stack sf-soon-blur" aria-hidden="true" inert>
+              <Gallery current={(working ?? s.storefront)?.template} onUse={use} />
+            </div>
+            <div className="sf-soon-card" role="status">
+              <Icon name="schedule" />
+              <h3 className="ct">More templates are coming soon</h3>
+              <p className="t-body">Every shop uses the Standard layout for now. More looks will follow.</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -85,7 +111,6 @@ export default function StorefrontPage() {
               {([['showPrices', 'Show prices', 'Turn off to show products without prices'], ['cod', 'Cash on delivery', 'Let buyers pay when the parcel arrives']] as const).map(([k, l, sub]) => (
                 <div key={k} className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{l}</span><span className="cap">{sub}</span></span><Switch checked={s[k]} onChange={toggle(k, l)} label={l} /></div>))}
             </Card>
-            <Card className="stack tight" title="Look of the simple shop page"><Chips label="Shop look" value={s.look} onChange={(v) => setShop({ look: v })} options={(['Warm', 'Indigo', 'Plain'] as const).map((v) => ({ value: v, label: v }))} /><p className="cap">Used until you publish a template. Products stay the same.</p></Card>
           </div>
         </div>
       )}

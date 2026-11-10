@@ -1,5 +1,6 @@
 'use client';
 import { Fragment, useMemo, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { StandardStore } from './StandardStore';
 import { templateById, themeVariables, type StoreConfig, type StoreData, type StoreItem, type TemplateId } from '@/lib/storefront/shared';
 
 /** What a shop page can plug in. A preview passes none of these, so its buttons do nothing. */
@@ -9,6 +10,8 @@ export interface StoreActions {
   book?: (id: string) => void;
   wish?: (id: string) => void;
   track?: () => void;
+  /** Open the shop's cart. */
+  cart?: () => void;
 }
 
 export interface StoreExtras {
@@ -16,6 +19,11 @@ export interface StoreExtras {
   policies?: { refund?: string; shipping?: string; privacy?: string; terms?: string };
   gstin?: string;
   pricesIncludeGst?: boolean;
+  /** Short lines for the bar at the top of the standard storefront (delivery, payments). */
+  announce?: string[];
+  /** The seller's delivery rule in a line, and whether cash on delivery is on. */
+  delivery?: string;
+  cod?: boolean;
 }
 
 export interface StoreCtx {
@@ -32,6 +40,10 @@ export interface StoreCtx {
   /** Saved items of the person looking, when the shop supports them (previews have no hearts). */
   wish?: string[] | null;
   actions?: StoreActions;
+  /** The shop's address (for example /s/meera), so cards and links open the real product, wishlist and orders pages. */
+  base?: string;
+  /** How many things are in the buyer's bag. */
+  cartCount?: number;
 }
 
 type Ui = { term: string; category: string; setCategory: (c: string) => void };
@@ -462,6 +474,8 @@ export function StoreFront({ templateId, ctx }: { templateId: string; ctx: Store
   const [term, setTerm] = useState('');
   const ui: Ui = { term, category, setCategory };
   const vars = themeVariables(ctx.config.theme, ctx.config.accent) as CSSProperties;
+  // the standard storefront is its own page: it draws everything itself, with its own colours
+  if (template.id === 'standard') return <StandardStore ctx={full} />;
   let body: ReactNode;
   switch (template.id) {
     case 'minimal': body = <Minimal ctx={full} ui={ui} onTerm={setTerm} />; break;

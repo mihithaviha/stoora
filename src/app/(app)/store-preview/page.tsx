@@ -6,6 +6,8 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { StoreFront, type StoreExtras } from '@/components/storefront/Templates';
+import { shopAnnounce } from '@/lib/storefront/announce';
+import { deliveryLine, deliveryRule } from '@/lib/delivery';
 import { useStore } from '@/lib/store';
 import { loadDraft } from '@/lib/storefront/draft';
 import { startingConfig, toStoreData } from '@/lib/storefront/map';
@@ -37,12 +39,14 @@ function Preview() {
   const frame = useMemo<Frame | null>(() => {
     if (sample) {
       const made = sampleData(sample);
-      return { config: theme ? { ...made.config, theme } : made.config, data: made.data, sample: true };
+      const extras = { payments: { online: true, upi: true }, announce: ['Free delivery on orders over ₹1,500', 'Ships from Jaipur', 'UPI, cards and netbanking', 'Cash on delivery available'], delivery: 'Free delivery on orders over ₹1,500', cod: true };
+      return { config: theme ? { ...made.config, theme } : made.config, data: made.data, extras, sample: true };
     }
     if (wantsDraft) {
       if (!ready) return null;
       const config = loadDraft(db.shop.handle) ?? db.shop.storefront ?? startingConfig(db);
-      return { config, data: visibleData(toStoreData(db), config) };
+      const rule = deliveryRule(db.shop);
+      return { config, data: visibleData(toStoreData(db), config), extras: { payments: { online: db.shop.online !== false, upi: true }, announce: shopAnnounce(db, rule), delivery: deliveryLine(rule), cod: Boolean(db.shop.cod) } };
     }
     return sent;
   }, [sample, theme, wantsDraft, ready, db, sent]);
@@ -51,7 +55,7 @@ function Preview() {
   return (
     <>
       {frame.sample && <div role="note" style={{ position: 'sticky', top: 0, zIndex: 50, background: '#171C3C', color: '#fff', padding: '8px 16px', fontSize: 13, textAlign: 'center' }}>Sample content so you can see the design. Your own products and photos replace it.</div>}
-      <StoreFront templateId={frame.config.template} ctx={{ config: frame.config, data: frame.data, extras: frame.extras, preview: true, sample: frame.sample }} />
+      <StoreFront templateId={frame.sample ? frame.config.template : 'standard'} ctx={{ config: frame.config, data: frame.data, extras: frame.extras, preview: true, sample: frame.sample }} />
     </>
   );
 }

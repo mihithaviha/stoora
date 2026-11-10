@@ -33,7 +33,7 @@ export const THEMES: Theme[] = [
   { id: 'vibrant', name: 'Vibrant & Creative', note: 'Violet, tangerine and sun', primary: '#5F3BA8', secondary: '#171C3C', accent: '#EF7F3D', background: '#FFFFFF', surface: '#FFE9B0', text: '#171C3C', muted: '#303652', border: '#E0D6CA', button: '#5F3BA8', buttonText: '#FFFFFF' },
 ];
 
-export type TemplateId = 'boutique' | 'minimal' | 'studio' | 'services' | 'signature' | 'atelier' | 'heritage' | 'signaturestudio';
+export type TemplateId = 'standard' | 'boutique' | 'minimal' | 'studio' | 'services' | 'signature' | 'atelier' | 'heritage' | 'signaturestudio';
 
 export interface TemplateInfo {
   id: TemplateId; name: string; kind: 'products' | 'services'; theme: string; categories: string[];
@@ -42,6 +42,7 @@ export interface TemplateInfo {
 
 /** The templates. `categories` are the gallery filters; `kind` decides products or services. */
 export const TEMPLATES: TemplateInfo[] = [
+  { id: 'standard', name: 'Stoora Standard', kind: 'products', theme: 'signature', categories: ['products', 'fashion', 'handmade'], suits: 'Any shop: products, handmade, fashion, classes and sessions', blurb: 'A painted shopfront, a clean product grid and the sections your shop needs. White pages, one ink band, one grey band.' },
   { id: 'boutique', name: 'Stoora Boutique', kind: 'products', theme: 'warm', categories: ['fashion', 'products'], suits: 'Boutiques, sarees, ethnic wear, jewellery, accessories, home décor', blurb: 'Editorial and premium, with a large hero image, collections and new arrivals.' },
   { id: 'minimal', name: 'Stoora Minimal', kind: 'products', theme: 'minimal', categories: ['products'], suits: 'Everyday products, beauty, skincare, accessories, general retail', blurb: 'Clean and modern. The product grid is the star, with search and category filters.' },
   { id: 'studio', name: 'Stoora Studio', kind: 'products', theme: 'vibrant', categories: ['handmade', 'products'], suits: 'Artists, handmade makers, gifts, home businesses, designers', blurb: 'Warm and personal, with your story, an image-led gallery and your process.' },
@@ -64,6 +65,25 @@ export const SECTIONS = {
   about: 'About', reviews: 'Customer reviews', faqs: 'Questions and answers', contact: 'Contact',
 } as const;
 export type SectionKey = keyof typeof SECTIONS;
+
+/** The standard storefront's sections. The seller can switch them on or off and put them in any order. */
+export const STD_SECTIONS = {
+  feat: 'Highlights strip', cats: 'Categories', products: 'Products', services: 'Classes and sessions',
+  story: 'Our story', reviews: 'Reviews', faq: 'Questions and answers', cta: 'Get in touch',
+} as const;
+export type StdSection = keyof typeof STD_SECTIONS;
+export const STD_ORDER = Object.keys(STD_SECTIONS) as StdSection[];
+/** Awning colour pairs: stops from the Stoora gradient. */
+export const AWNINGS: [string, string][] = [['#F4A24A', '#EF7F3D'], ['#EF7F3D', '#DC4A3A'], ['#D13A5B', '#8B3A9E'], ['#5F3BA8', '#262A7A'], ['#DC4A3A', '#D13A5B']];
+
+/** The layout of a design with every gap filled: the order always lists every section once, whatever was saved. */
+export function layoutOf(config: StoreConfig): { order: StdSection[]; hidden: StdSection[]; awning: [string, string] } {
+  const saved = config.layout || {};
+  const known = (saved.order || []).filter((id, i, all) => STD_ORDER.includes(id) && all.indexOf(id) === i);
+  const order = [...known, ...STD_ORDER.filter((id) => !known.includes(id))];
+  const awning = saved.awning && AWNINGS.some((a) => a[0] === saved.awning![0] && a[1] === saved.awning![1]) ? saved.awning : AWNINGS[0];
+  return { order, hidden: (saved.hidden || []).filter((id) => STD_ORDER.includes(id)), awning };
+}
 
 export const LIMITS = { text: 600, short: 120, faqs: 8, process: 4, listItems: 12, ids: 60 };
 export const FOCUS_OPTIONS = ['50% 20%', '50% 50%', '50% 80%'];
@@ -106,6 +126,8 @@ export interface StoreConfig {
   sections: Record<SectionKey, boolean>;
   featuredIds: string[]; hiddenIds: string[];
   footer: { note: string };
+  /** The standard layout: which sections show, in what order, and the awning colours. Older saved designs have none of this. */
+  layout?: { order?: StdSection[]; hidden?: StdSection[]; awning?: [string, string] };
 }
 
 /** A fresh storefront configuration. The shop's own details fill the blanks; nothing is invented. */
@@ -131,6 +153,8 @@ export function defaultConfig(templateId: string, shop: { name?: string; tagline
 export interface StoreItem {
   id: string; name: string; price: number; /** The old price, shown crossed out (only when it is higher than the price). */ was?: number; cat?: string; stock?: number | null; img?: string;
   crop?: { pos?: string; zoom?: number }; desc?: string; sizes?: string; tags?: string;
+  /** What to draw when a product has no photo yet: its colour and its icon (the same picture the rest of the shop uses). */
+  art?: { hex: string; icon: string };
   // services only
   type?: string; duration?: string; where?: string; next?: string;
 }
