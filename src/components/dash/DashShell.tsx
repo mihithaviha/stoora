@@ -160,6 +160,7 @@ export function DashShell({ children }: { children: ReactNode }) {
           {row('/money', 'money', 'wallet', 'Money')}
           {row('/analytics', 'analytics', 'chart', 'Analytics')}
           {row('/storefront', 'storefront', 'store', 'Storefront')}
+          {auth.mode === 'live' && auth.role === 'admin' ? row('/admin', 'admin', 'shield', 'Admin area') : null}
 
           <div className="nfoot">
             <Link className={'nrow' + (settings ? ' on' : '')} href="/settings" title={settings ? 'Close settings' : 'Settings'} aria-current={settings ? 'page' : undefined} aria-expanded={settings} onClick={(e) => { if (settings) { e.preventDefault(); router.push(lastPage.current); } }}><DI n="gear" s={18} /><span className="l">Settings</span></Link>

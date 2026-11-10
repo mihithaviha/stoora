@@ -44,13 +44,26 @@ Used by "Get WhatsApp code" on the login pages and by Settings > WhatsApp verifi
 2. Supabase **Authentication > Providers > Phone**: switch on, choose **Twilio**, paste the Account SID, Auth Token and Message Service SID.
 3. Without this step Google sign-in still works; the phone form shows the error Supabase returns.
 
-## 5. Make yourself an admin
+## 5. Give the team admin access (and write blogs)
 
-Admins can open `/admin` and read enquiries and data requests. Sign in once with Google, then in the SQL editor:
+Admins can open `/admin`: read enquiries and data requests, and **write, edit and publish the stories on stoora.in/blogs** (Admin > Blogs).
+Each team member signs in once with their own Google account (or phone code) at `/login`. Then, in the SQL editor, switch them on, one line per person:
 
 ```sql
-update public.profiles set role = 'admin' where email = 'you@yourcompany.com';
+update public.profiles set role = 'admin' where email in ('priya@yourcompany.com', 'rahul@yourcompany.com');
 ```
+
+To take access away again, set `role = 'seller'`. Nobody can make themselves an admin: only the SQL editor (or the service role) can change `profiles.role`.
+After signing in, an admin opens `/admin/blogs`. Anyone else sees "Admins only".
+
+What Admin > Blogs does (needs the migration `20261110000000_blog_posts.sql`):
+
+* **New story**: title, web address, topic, cover picture (from the library or uploaded), teaser, "the short answer", the story itself (paragraphs, headings, lists, tip boxes, pictures), questions and answers. Save a **draft** or **Publish**.
+* **Edit** any story at any time (Update story), see a **Preview** first, **Unpublish** to take it down, **Delete** to remove a story you wrote.
+* The ten built-in stories can be edited too: the changes are kept as an edit of that story. **Reset** brings the original back; **Hide from Blogs** switches one off.
+* Uploaded pictures go to the public `blog-images` bucket (only admins can upload).
+* Visitors only ever see published stories (row level security). The public pages refresh themselves within a minute, and at once when an admin presses Publish, Update or Delete (`POST /api/blogs/revalidate`, admins only).
+* Without Supabase (demo mode) stories are kept in the browser, so the screens can be tried without a login.
 
 ## 6. Sample data (development only)
 
@@ -75,6 +88,7 @@ select public.seed_demo_shop('<your user id>');
 | WhatsApp verification | Auth phone verification + `confirm_shop_whatsapp()` |
 | Enquiries, data requests, seller consent | `enquiries`, `enquiry_replies`, `data_requests`, `seller_consents` |
 | Admin inbox | `enquiries` (admins only) |
+| Blogs | `blog_posts`, `blog-images` bucket (admins write, everyone reads published) |
 
 Still on the device for now: the bag and wishlist (browser storage), and the admin overview numbers (sample data). Online payments are not connected: an online order is saved as "waiting for payment" and the seller marks it paid (`mark_order_paid()`). Connect Razorpay (see `../../docs/INTEGRATIONS.md`) and have its webhook set `orders.paid` with the service role key.
 

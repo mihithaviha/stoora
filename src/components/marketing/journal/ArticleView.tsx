@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Ic } from '../bits';
 import { CopyLink } from './CopyLink';
 import { CtaBand, Picture, StoryCard, TopicTag } from './parts';
-import { AUTHOR, formatDate, readTime, relatedTo, slugify, topicOf, type Article, type Block } from '@/lib/journal';
+import { AUTHOR, formatDate, readTime, slugify, topicOf, type Article, type Block } from '@/lib/journal';
 
 /** One piece of an article's body. Everything is plain text: React escapes it. */
 function BlockView({ block }: { block: Block }) {
@@ -33,7 +33,7 @@ function BlockView({ block }: { block: Block }) {
   return null;
 }
 
-export function ArticleView({ article, origin }: { article: Article; origin: string }) {
+export function ArticleView({ article, origin, related }: { article: Article; origin: string; related: Article[] }) {
   const topic = topicOf(article.topic);
   const url = `${origin}/blogs/${article.slug}`;
   const headings = article.body.filter((b) => b.h2).map((b) => b.h2 as string);
@@ -86,7 +86,7 @@ export function ArticleView({ article, origin }: { article: Article; origin: str
       <section className="jr-list jr-related" aria-labelledby="jr-rel-h">
         <div className="wrap">
           <div className="jr-list-head"><h2 className="l-h2" id="jr-rel-h">Keep reading</h2><Link className="jr-all" href="/blogs">All stories<Ic n="arrow_forward" c="xs" /></Link></div>
-          <div className="jr-grid">{relatedTo(article).map((item) => <StoryCard key={item.slug} article={item} />)}</div>
+          <div className="jr-grid">{related.map((item) => <StoryCard key={item.slug} article={item} />)}</div>
         </div>
       </section>
       <CtaBand />

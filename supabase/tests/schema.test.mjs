@@ -170,6 +170,79 @@ await as('authenticated', seller);
   await as('authenticated', seller);
 }
 
+// blogs: the team writes stories, visitors read only the published ones
+await as('authenticated', admin);
+await db.query(`insert into public.blog_posts (slug, title, excerpt, summary, photo, status) values ('first-story', 'A first story', 'Teaser', 'Short answer', 'bowls', 'published'), ('draft-story', 'A draft story', '', '', '', 'draft')`);
+ok((await q('select count(*)::int n from public.blog_posts'))[0].n === 2, 'an admin reads published stories and drafts');
+await db.query(`insert into public.blog_posts (slug, title, builtin, status) values ('product-photos-at-home', 'Edited built-in story', true, 'draft')`);
+await db.exec(`update public.blog_posts set title = 'A first story, edited' where slug = 'first-story'`);
+ok((await q(`select title, updated_at >= created_at as t from public.blog_posts where slug = 'first-story'`))[0].title === 'A first story, edited', 'an admin edits a story');
+ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('Bad Slug', 'A fine title')`)), 'a web address with capitals or spaces is refused');
+ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('first-story', 'Same address again')`)), 'two stories cannot share an address');
+ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('too-short', 'Hi')`)), 'a title under 5 letters is refused');
+ok(!!(await fails(`insert into public.blog_posts (slug, title, status) values ('odd-status', 'A fine title', 'scheduled')`)), 'only draft and published are valid');
+await as('anon');
+const seen = await q('select slug from public.blog_posts order by slug');
+ok(seen.length === 1 && seen[0].slug === 'first-story', 'a visitor sees the published story only, no drafts');
+ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('visitor-story', 'A visitor story')`)), 'a visitor cannot write a story');
+await db.exec(`update public.blog_posts set title = 'Hacked' where slug = 'first-story'`);
+await as('authenticated', admin);
+ok((await q(`select title from public.blog_posts where slug = 'first-story'`))[0].title === 'A first story, edited', 'a visitor cannot change a story');
+await as('authenticated', seller);
+ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('seller-story', 'A seller story')`)), 'a seller cannot write a story');
+await db.exec(`delete from public.blog_posts where slug = 'first-story'`);
+await as('authenticated', admin);
+ok((await q(`select count(*)::int n from public.blog_posts where slug = 'first-story'`))[0].n === 1, 'a seller cannot delete a story');
+await as('anon');
+const hiddenSlugs = (await q('select public.hidden_blog_slugs() as s')).map((r) => r.s);
+ok(hiddenSlugs.length === 1 && hiddenSlugs[0] === 'product-photos-at-home', 'the public pages can learn which built-in stories were switched off, and nothing else');
+await as('authenticated', admin);
+await db.exec(`delete from public.blog_posts where slug = 'first-story'`);
+ok((await q(`select count(*)::int n from public.blog_posts where slug = 'first-story'`))[0].n === 0, 'an admin deletes a story');
+await db.query(`insert into storage.objects (bucket_id, name) values ('blog-images', 'cover.jpg')`);
+await as('authenticated', seller);
+ok(!!(await fails(`insert into storage.objects (bucket_id, name) values ('blog-images', 'seller.jpg')`)), 'a seller cannot upload a story picture');
+
+// blogs: a built-in story deleted for good stays off the site
+await as('authenticated', admin);
+await db.query(`insert into public.blog_posts (slug, title, builtin, status) values ('packing-checklist', 'Deleted for good', true, 'removed')`);
+ok((await q(`select count(*)::int n from public.blog_posts where status = 'removed'`))[0].n === 1, 'an admin can mark a built-in story as removed');
+await as('anon');
+ok((await q(`select count(*)::int n from public.blog_posts where status = 'removed'`))[0].n === 0, 'visitors cannot read a removed story');
+const goneSlugs = (await q('select public.hidden_blog_slugs() as s')).map((r) => r.s);
+ok(goneSlugs.includes('packing-checklist') && goneSlugs.includes('product-photos-at-home'), 'hidden and removed built-in stories both stay off the public pages');
+await as('authenticated', admin);
+await db.exec(`delete from public.blog_posts where slug = 'packing-checklist'`);
+
+// blogs carousel: the team chooses the stories, everybody can read the choice
+await as('authenticated', admin);
+await db.query(`insert into public.blog_settings (key, value) values ('carousel', '[{"slug":"a"},{"slug":"b","photo":"/x.jpg"}]'::jsonb)`);
+await db.exec(`update public.blog_settings set value = '[{"slug":"c"}]'::jsonb where key = 'carousel'`);
+ok((await q(`select value from public.blog_settings where key = 'carousel'`))[0].value[0].slug === 'c', 'an admin saves and changes the carousel');
+ok(!!(await fails(`insert into public.blog_settings (key, value) values ('other', '[]'::jsonb)`)), 'only the carousel setting exists');
+ok(!!(await fails(`update public.blog_settings set value = '{"a":1}'::jsonb where key = 'carousel'`)), 'the carousel must be a list');
+await as('anon');
+ok((await q(`select count(*)::int n from public.blog_settings`))[0].n === 1, 'a visitor can read the carousel');
+ok(!!(await fails(`insert into public.blog_settings (key, value) values ('carousel', '[]'::jsonb) on conflict (key) do update set value = excluded.value`)), 'a visitor cannot change the carousel');
+await db.exec(`delete from public.blog_settings`);
+await as('authenticated', seller);
+ok(!!(await fails(`update public.blog_settings set value = '[]'::jsonb`)) || (await q(`select value from public.blog_settings where key = 'carousel'`))[0].value[0].slug === 'c', 'a seller cannot change the carousel');
+await db.exec(`delete from public.blog_settings`);
+await as('authenticated', admin);
+ok((await q(`select count(*)::int n from public.blog_settings`))[0].n === 1, 'a seller cannot delete the carousel');
+await db.exec(`delete from public.blog_settings`);
+ok((await q(`select count(*)::int n from public.blog_settings`))[0].n === 0, 'an admin puts the carousel back to the default');
+
+// finishing the setup: the app inserts the shop and reads it back in the same statement (insert ... returning)
+await as('authenticated', buyer);
+let created = null;
+try { created = (await q(`insert into public.shops (owner_id, name, handle, city) values ('${buyer}', 'Gaming', 'gaming', 'Pune') returning id, handle`))[0]; } catch (e) { created = null; }
+ok(created && created.handle === 'gaming', 'a new seller can create a shop and read it straight back (the "Publish my shop" step)');
+ok(!!(await fails(`insert into public.shops (owner_id, name, handle) values ('${other}', 'Not mine', 'notmine')`)), 'a person cannot create a shop in somebody else\'s name');
+await as('authenticated', other);
+ok((await q(`select count(*)::int n from public.shops where handle = 'gaming'`))[0].n === 0, 'another seller cannot read that shop through the shops table');
+await db.exec(`reset role; delete from public.shops where handle = 'gaming'`);
+
 // storage policy
 await as('authenticated', seller);
 await db.query(`insert into storage.objects (bucket_id, name) values ('product-images', '${shopId}/photo.jpg')`);

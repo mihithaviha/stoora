@@ -1,5 +1,5 @@
 'use client';
-// "Talk to us" enquiry form. Enquiries show up in the admin inbox (/admin/enquiries).
+// "Talk to us" enquiry form. Enquiries are saved (the admin inbox is switched off for now).
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button, Dialog, Field, Icon, useToast } from '../ui';
