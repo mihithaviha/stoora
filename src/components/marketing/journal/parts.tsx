@@ -4,6 +4,15 @@ import { formatDate, photoAlt, readTime, topicOf, type Article, type Topic } fro
 
 /** A photo with a small version for cards and a large one for wide places. Cropped with object-fit, never stretched. */
 export function Picture({ name, sizes, eager = false, soon = false, alt }: { name: string; sizes: string; eager?: boolean; soon?: boolean; alt?: string }) {
+  // a picture the team uploaded (an address or a stored copy) is used as it is; a library photo has a small and a large version
+  if (/^(https?:\/\/|\/|data:image\/)/.test(name)) {
+    return (
+      <span className="jr-pic" style={{ ['--photo' as string]: `url("${encodeURI(name).replace(/["()]/g, (c) => '%' + c.charCodeAt(0).toString(16))}")` }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={name} alt={alt ?? ''} fetchPriority={eager ? 'high' : undefined} loading={eager || soon ? undefined : 'lazy'} decoding="async" />
+      </span>
+    );
+  }
   return (
     // the whole photo is always shown, never cropped; a tiny copy of it, scaled up and soft, fills any space around it
     <span className="jr-pic" style={{ ['--photo' as string]: `url(/assets/journal/${name}-tiny.webp)` }}>

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Ic } from './bits';
 import { TOPICS, saveSent } from '@/lib/enquiries';
 
-/** "Talk to us": a short form in a dialog. Enquiries arrive in the admin inbox (/admin/enquiries). */
+/** "Talk to us": a short form in a dialog. Enquiries are saved (the admin inbox is switched off for now). */
 export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [form, setForm] = useState({ name: '', contact: '', topic: TOPICS[0] as string, message: '' });

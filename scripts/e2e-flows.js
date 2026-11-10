@@ -171,11 +171,12 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.waitFor('Verified'), 'number was not verified');
     });
 
-    await flow('Send an enquiry and see it in the admin inbox', async (t) => {
+    await flow('Send an enquiry from the landing page (the admin inbox is switched off for now)', async (t) => {
       await t.goto('/'); await t.click('Talk to us'); expect(await t.waitFor('What is this about'), 'dialog did not open');
       await t.type('#en-name', 'Test Visitor'); await t.type('#en-contact', 'visitor@example.in'); await t.type('#en-msg', 'Can I take UPI payments for my cakes?');
       await t.click('Send enquiry'); expect(await t.waitFor('We have your message'), 'enquiry was not sent');
-      await t.goto('/admin/enquiries'); expect(await t.has('Test Visitor'), 'enquiry is not in the admin inbox');
+      await t.goto('/admin'); await sleep(1200);
+      expect(await t.js(`!document.querySelector('a[href="/admin/enquiries"]')`), 'the admin menu should no longer have Enquiries');
     });
 
     await flow('Pause my shop: the words follow the switch and the shop page agrees (P0-1)', async (t) => {
@@ -219,6 +220,160 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.js(`document.querySelector('[aria-label^="Open your bag"]').click()`); await sleep(800);
       expect(await t.js(`document.querySelector('.sx-drawer.sx-on') !== null`) && await t.js(`document.querySelectorAll('.sx-ci').length`) === 1, 'the bag drawer should open with the one item');
       expect(await t.js(`!!document.querySelector('.sx-drawer a[href="/s/meera/checkout"]')`), 'the drawer should lead to the real checkout');
+    });
+
+    await flow('Blogs admin: write, publish, edit, unpublish and delete a story; edit a built-in story and reset it', async (t) => {
+      const fill = (sel, v) => t.js(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); })()`);
+      const h1 = () => t.js(`document.querySelector('h1')?.textContent || ''`);
+      const resetRow = async (slug) => { await t.goto('/admin/blogs'); await sleep(1500); await t.js(`[...document.querySelectorAll('[data-testid=blogs-table] [data-slug="${slug}"] button')].find((b) => b.textContent.trim() === 'Reset').click()`); await sleep(400); await t.click('Reset story'); await sleep(800); };
+      await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
+      await t.goto('/admin/blogs'); await sleep(1800);
+      const builtIn = await t.js(`document.querySelectorAll('[data-testid=blogs-table] [data-slug]').length`);
+      expect(builtIn === 10, 'the list should show the 10 built-in stories, saw ' + builtIn);
+      expect(await t.js(`!!document.querySelector('a[href="/admin/blogs/new"]')`), 'the New story button is missing');
+
+      // a story with nothing in it cannot be published, and says why
+      await t.goto('/admin/blogs/new'); await sleep(1500);
+      await t.click('Publish'); await sleep(500);
+      expect(await t.has('Give the story a title') && await t.has('Choose a cover picture'), 'publishing an empty story should say what is missing');
+      // write one
+      await fill('#bl-title', 'Packing parcels that arrive whole'); await sleep(200);
+      expect(await t.js(`document.querySelector('#bl-slug').value`) === 'packing-parcels-that-arrive-whole', 'the web address should follow the title');
+      await fill('#bl-photo', 'bowls');
+      await fill('#bl-excerpt', 'Four small habits that stop parcels from breaking on the way.');
+      await fill('#bl-summary', 'Wrap each item twice, use a box that fits and write the address twice.');
+      await fill('textarea[aria-label="Paragraph 1"]', 'Most breakages happen in the last mile, so pack for a bumpy ride.');
+      await t.click('Heading'); await sleep(300);
+      await fill('textarea[aria-label="Heading 2"]', 'Choose the right box');
+      await t.click('Bullet list'); await sleep(300);
+      await fill('textarea[aria-label="Bullet list 3"]', 'Leave 2 cm around the item\nFill gaps with paper\nSeal every edge');
+      await t.click('Add a question'); await sleep(300);
+      await fill('#faq-q-0', 'Do I need bubble wrap?'); await fill('#faq-a-0', 'Crumpled paper works for light items.');
+      await t.click('Save draft'); expect(await t.waitFor('Draft saved.'), 'saving the draft did not confirm');
+      await t.goto('/blogs'); await sleep(1500);
+      expect(!(await t.has('Packing parcels that arrive whole')), 'a draft must not show on the public Blogs');
+      await t.goto('/admin/blogs'); await sleep(1500);
+      expect(await t.js(`!!document.querySelector('[data-testid=blogs-table] [data-slug="packing-parcels-that-arrive-whole"]') && document.querySelector('[data-testid=blogs-table] [data-slug="packing-parcels-that-arrive-whole"]').textContent.includes('Draft')`), 'the draft should be in the list marked Draft');
+
+      // publish it
+      await t.goto('/admin/blogs/packing-parcels-that-arrive-whole'); await sleep(1500);
+      expect(await t.js(`document.querySelector('#bl-title').value`) === 'Packing parcels that arrive whole', 'the saved draft did not reopen');
+      await t.click('Preview'); await sleep(600);
+      expect(await t.js(`document.querySelector('[data-testid=blog-preview]')?.textContent.includes('Choose the right box')`), 'the preview should show the story');
+      await t.click('Write'); await sleep(300);
+      await t.click('Publish'); expect(await t.waitFor('Story published.'), 'publishing did not confirm');
+      await t.goto('/blogs'); await sleep(2000);
+      expect(await t.has('Packing parcels that arrive whole'), 'the published story should be on the Blogs page');
+      await t.goto('/blogs/packing-parcels-that-arrive-whole'); await sleep(2000);
+      expect(await h1() === 'Packing parcels that arrive whole' && await t.has('Seal every edge') && await t.has('Do I need bubble wrap?'), 'the story page is missing its title, list or question');
+
+      // edit it
+      await t.goto('/admin/blogs/packing-parcels-that-arrive-whole'); await sleep(1500);
+      await fill('#bl-title', 'Packing parcels that arrive whole, every time'); await sleep(200);
+      await t.click('Update story'); expect(await t.waitFor('Story updated.'), 'updating did not confirm');
+      await t.goto('/blogs/packing-parcels-that-arrive-whole'); await sleep(2000);
+      expect((await h1()).endsWith('every time'), 'the new title should show on the story page');
+
+      // the carousel: exactly 6 stories, each with a picture of its own; every other story is listed under it
+      await t.goto('/admin/blogs/carousel'); await sleep(1800);
+      expect(await t.js(`document.querySelectorAll('[data-slot]').length`) === 6, 'the carousel page should have 6 slides');
+      await fill('#ring-story-5', ''); await sleep(300);
+      expect(await t.has('Choose 1 more story'), 'with a slide empty the page should ask for one more story');
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Save carousel')).click()`); await sleep(500);
+      expect(!(await t.has('Carousel saved.')), 'a carousel with an empty slide must not be saved');
+      const slugs = await t.js(`[...document.querySelectorAll('#ring-story-0 option')].map((o) => o.value).filter(Boolean)`);
+      const pick6 = ['packing-parcels-that-arrive-whole', ...slugs.filter((x) => x !== 'packing-parcels-that-arrive-whole').slice(0, 5)];
+      for (let i = 0; i < 6; i++) { await fill(`#ring-story-${i}`, ''); await sleep(120); }
+      for (let i = 0; i < 6; i++) { await fill(`#ring-story-${i}`, pick6[i]); await sleep(150); }
+      await fill('#ring-photo-0', 'tutor'); await sleep(200);
+      // the card holds only a few words: too long a description is refused, and each card shows what was written for it
+      await fill('#ring-text-0', 'one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen'); await sleep(300);
+      expect(await t.has('keep the description to 15 words'), 'a description over 15 words should be refused');
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Save carousel')).click()`); await sleep(500);
+      expect(!(await t.has('Carousel saved.')), 'a carousel with a too long description must not be saved');
+      for (let i = 0; i < 6; i++) { await fill(`#ring-text-${i}`, 'Card text number ' + (i + 1) + ' for the carousel'); await sleep(120); }
+      await fill('#ring-title-0', 'A short headline'); await sleep(200);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Save carousel')).click()`);
+      expect(await t.waitFor('Carousel saved.'), 'saving the carousel did not confirm');
+      await t.goto('/blogs'); await sleep(2500);
+      expect(await t.js(`document.querySelectorAll('.jr-orbit-list li').length`) === 6, 'the carousel on Blogs should hold exactly the 6 chosen stories');
+      expect(await t.js(`[...document.querySelectorAll('.jr-orbit-list li')].some((li) => li.textContent.includes('A short headline') && li.textContent.includes('Card text number 1 for the carousel') && [...li.querySelectorAll('img')].some((i) => i.src.includes('tutor')))`), 'the first slide should show the headline, description and picture written for it');
+      expect(await t.js(`((pick6) => pick6.every((slug) => { const c = document.querySelector('.jr-grid [data-slug="' + slug + '"]'); return !c || c.hidden; }))(${JSON.stringify(pick6)})`), 'stories in the carousel should not be repeated in the list under it');
+      const rest = slugs.filter((x) => !pick6.includes(x));
+      expect(rest.length > 0 && await t.js(`((rest) => rest.some((slug) => { const c = document.querySelector('.jr-grid [data-slug="' + slug + '"]'); return c && !c.hidden; }))(${JSON.stringify(rest)})`), 'the other stories should be listed under the carousel');
+      await t.goto('/admin/blogs/carousel'); await sleep(1800);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Back to default')).click()`); await sleep(400); await t.click('Back to default'); await sleep(800);
+
+      // edit a built-in story, then reset it
+      await t.goto('/blogs/product-photos-at-home'); await sleep(1800);
+      const original = await h1();
+      await t.goto('/admin/blogs/product-photos-at-home'); await sleep(1800);
+      expect(await t.js(`document.querySelector('#bl-slug').disabled`), 'a built-in story keeps its address');
+      await fill('#bl-title', 'Photos that sell, edited by the team'); await t.click('Update story'); expect(await t.waitFor('Story updated.'), 'editing a built-in story did not save');
+      await t.goto('/blogs/product-photos-at-home'); await sleep(1800);
+      expect(await h1() === 'Photos that sell, edited by the team', 'the edited built-in story should show its new title');
+      await resetRow('product-photos-at-home');
+      await t.goto('/blogs/product-photos-at-home'); await sleep(1800);
+      expect(await h1() === original, 'Reset should bring the original built-in story back');
+
+      // hide a built-in story, then show it again
+      await t.goto('/admin/blogs/product-photos-at-home'); await sleep(1500);
+      await t.click('Delete from Blogs'); await sleep(400); await t.click('Delete story'); await sleep(900);
+      await t.goto('/blogs'); await sleep(1800);
+      expect(!(await t.js(`!!document.querySelector('[data-slug="product-photos-at-home"]') && !document.querySelector('[data-slug="product-photos-at-home"]').hidden`)), 'a hidden built-in story should leave Blogs');
+      await t.goto('/admin/blogs/product-photos-at-home'); await sleep(1500);
+      await t.click('Restore'); expect(await t.waitFor('Story is back on Blogs.'), 'restoring the deleted story did not confirm');
+      await resetRow('product-photos-at-home');
+
+      // delete a built-in story straight from the list, then restore it
+      const rowBtn = (slug, label) => t.js(`[...document.querySelectorAll('[data-testid=blogs-table] [data-slug="${slug}"] button')].find((b) => b.textContent.trim() === '${label}').click()`);
+      await t.goto('/admin/blogs'); await sleep(1500);
+      await rowBtn('packing-checklist', 'Delete'); await sleep(400); await t.click('Delete story'); await sleep(900);
+      await t.goto('/blogs'); await sleep(1800);
+      expect(!(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]') && !document.querySelector('[data-slug="packing-checklist"]').hidden`)), 'a built-in story deleted from the list should leave Blogs');
+      await t.goto('/admin/blogs'); await sleep(1500);
+      expect(await t.js(`document.querySelector('[data-testid=blogs-table] [data-slug="packing-checklist"]').textContent.includes('Hidden')`), 'a deleted built-in story should stay in the list as Hidden');
+      await rowBtn('packing-checklist', 'Restore'); await sleep(900);
+      await t.goto('/blogs'); await sleep(1800);
+      expect(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]') && !document.querySelector('[data-slug="packing-checklist"]').hidden`), 'a restored story should be back on Blogs');
+      await resetRow('packing-checklist');
+
+      // unpublish, then delete the new story
+      await t.goto('/admin/blogs/packing-parcels-that-arrive-whole'); await sleep(1500);
+      await t.click('Unpublish'); await sleep(400); await t.click('Unpublish', `document.querySelector('[role=dialog]')`); await sleep(900);
+      await t.goto('/blogs/packing-parcels-that-arrive-whole'); await sleep(1800);
+      expect(await t.has('We couldn’t find that story'), 'an unpublished story should not open for visitors');
+      await t.goto('/admin/blogs/packing-parcels-that-arrive-whole'); await sleep(1500);
+      await t.click('Delete'); await sleep(400); await t.click('Delete story'); await sleep(1200);
+      expect(await t.waitUrl('/admin/blogs', 4000) && !(await t.js(`!!document.querySelector('[data-testid=blogs-table] [data-slug="packing-parcels-that-arrive-whole"]')`)), 'the deleted story should be gone from the list');
+
+      // delete all: asks for the words first, then every story leaves Blogs (built-in ones stay in the list as Hidden)
+      await t.goto('/admin/blogs'); await sleep(1500);
+      const dlg = (label, action) => t.js(`(() => { const b = [...document.querySelectorAll('[role=dialog] button')].find((x) => x.textContent.includes(${JSON.stringify(label)})); return ${action}; })()`);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Delete all')).click()`); await sleep(400);
+      expect(await dlg('Delete 10 stories', 'b.disabled'), 'Delete all should stay switched off until the words are typed');
+      await fill('#blog-delall', 'delete all'); await sleep(200);
+      await dlg('Delete 10 stories', 'b.click()'); await sleep(2500);
+      expect(await t.js(`document.querySelectorAll('[data-testid=blogs-table] [data-slug]').length === 10 && [...document.querySelectorAll('[data-testid=blogs-table] [data-slug]')].every((r) => r.textContent.includes('Hidden'))`), 'after Delete all, all 10 built-in stories should be Hidden');
+      await t.goto('/blogs'); await sleep(2000);
+      expect(await t.has('No stories yet'), 'Blogs should say there are no stories once all are deleted');
+      await t.goto('/admin/blogs'); await sleep(1500);
+      await t.js(`[...document.querySelectorAll('[data-testid=blogs-table] [data-slug="packing-checklist"] button')].find((b) => b.textContent.trim() === 'Restore').click()`); await sleep(900);
+      await t.goto('/blogs'); await sleep(2000);
+      expect(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]')`) && !(await t.has('No stories yet')), 'a restored story should bring Blogs back');
+
+      // in Draft or hidden: delete all permanently (the words must be typed first); the story that was restored stays
+      await t.goto('/admin/blogs'); await sleep(1500);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith('Draft or hidden')).click()`); await sleep(400);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Delete all permanently')).click()`); await sleep(400);
+      expect(await dlg('for good', 'b.disabled'), 'Delete all permanently should stay switched off until the words are typed');
+      await fill('#blog-delforever', 'delete forever'); await sleep(200);
+      await dlg('for good', 'b.click()'); await sleep(2500);
+      expect(await t.js(`document.querySelectorAll('[data-testid=blogs-table] [data-slug]').length`) === 1, 'after deleting all drafts for good only the restored story should be left');
+      await t.goto('/admin/blogs/product-photos-at-home'); await sleep(1500);
+      expect(await t.has('We couldn’t find that story'), 'a story deleted for good should not open in the editor');
+      await t.goto('/blogs'); await sleep(2000);
+      expect(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]')`) && !(await t.js(`!!document.querySelector('[data-slug="product-photos-at-home"]') && !document.querySelector('[data-slug="product-photos-at-home"]').hidden`)), 'only the restored story should be on Blogs');
     });
 
     await flow('Add product: many photos at once, the cap of 8, and one broken photo (5.6 item 1)', async (t) => {

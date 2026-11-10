@@ -6,17 +6,19 @@ import { Ic } from '../bits';
 import { useReducedMotion } from '../hooks';
 import { Orbit } from './Orbit';
 import { Picture, StoryCard, TopicTag } from './parts';
-import { ARTICLES, CAROUSEL, LATEST_FIRST, PICK, SORTED, TOPICS, readTime, searchText, topicOf } from '@/lib/journal';
+import { useJournal } from './useJournal';
+import { LATEST_FIRST, TOPICS, readTime, searchText, topicOf, type Article } from '@/lib/journal';
+import type { CarouselItem } from '@/lib/journal/posts';
 
 const validTopic = (id: string | null) => (TOPICS.some((t) => t.id === id) ? (id as string) : '');
-const COUNTS = Object.fromEntries(TOPICS.map((t) => [t.id, ARTICLES.filter((a) => a.topic === t.id).length]));
-const HAYSTACK = new Map(SORTED.map((a) => [a.slug, searchText(a)]));
 
 /**
  * The Journal home: the story ring, topics with search, the latest stories, the Editor's Pick and a closing invitation.
  * Choosing a topic or typing in the search filters the list at once and updates the address, so any view can be shared.
  */
-export function JournalHome() {
+export function JournalHome({ articles, carousel = null }: { articles: Article[]; carousel?: CarouselItem[] | null }) {
+  const { sorted: SORTED, carousel: CAROUSEL, pick: PICK, counts: COUNTS, ringSlugs } = useJournal(articles, carousel);
+  const HAYSTACK = useMemo(() => new Map(SORTED.map((a) => [a.slug, searchText(a)])), [SORTED]);
   const reduced = useReducedMotion();
   const params = useSearchParams();
   const [topic, setTopic] = useState(() => validTopic(params.get('topic')));
@@ -52,7 +54,7 @@ export function JournalHome() {
     const rows = SORTED.map((article) => {
       const fits = (!topic || article.topic === topic) && (!q || (HAYSTACK.get(article.slug) ?? '').includes(q));
       // With no filter the Editor's Pick has its own feature, so its card stays out of the grid.
-      const inList = fits && (filtering || article !== PICK);
+      const inList = fits && (filtering || (article !== PICK && !ringSlugs.has(article.slug)));
       // Without a filter the grid starts with the latest few; "View all" shows the rest.
       const collapsed = inList && !filtering && !expanded && ++listed > LATEST_FIRST;
       if (inList) { inGrid += 1; shown += 1; }
@@ -60,7 +62,7 @@ export function JournalHome() {
       return { article, hidden: !inList, collapsed: Boolean(collapsed) };
     });
     return { cards: rows, shownCount: shown, inGridCount: inGrid, collapsedCount: collapsedTotal };
-  }, [topic, q, expanded, filtering]);
+  }, [topic, q, expanded, filtering, SORTED, PICK, HAYSTACK, ringSlugs]);
 
   // after "View all", focus the first story that was hidden
   useEffect(() => {
@@ -72,7 +74,7 @@ export function JournalHome() {
   const label = topic ? ` in ${topicOf(topic).name}` : '';
   const search = q ? ` matching “${q}”` : '';
   const countText = `${shownCount} ${shownCount === 1 ? 'story' : 'stories'}${label}${search}`;
-  const pickTopic = topicOf(PICK.topic);
+  const pickTopic = topicOf(PICK?.topic ?? '');
 
   const reset = () => { setTopic(''); setTyped(''); setExpanded(false); publish('', '', true); };
   const choose = (id: string) => {
@@ -81,6 +83,15 @@ export function JournalHome() {
     if (next) scrollToList();
   };
   const submit = (event: FormEvent) => { event.preventDefault(); publish(topic, typed, true); scrollToList(); };
+
+  // every story has been taken down by the team
+  if (!PICK) {
+    return (
+      <section className="jr-list" aria-labelledby="jr-none-h"><div className="wrap">
+        <div className="jr-empty"><h2 id="jr-none-h">No stories yet.</h2><p>New stories are on the way. In the meantime, you can open your shop in a few minutes.</p><Link className="btn primary" href="/shop/start">Start for Free</Link></div>
+      </div></section>
+    );
+  }
 
   return (
     <>

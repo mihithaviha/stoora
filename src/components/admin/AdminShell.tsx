@@ -8,14 +8,14 @@ import { Logo, StateScreen } from '../bits';
 import { useAuth } from '@/lib/auth';
 import { ButtonLink } from '../ui';
 
-const NAV: [string, string, string][] = [['/admin', 'dashboard', 'Overview'], ['/admin/enquiries', 'mail', 'Enquiries']];
+const NAV: [string, string, string][] = [['/admin', 'dashboard', 'Overview'], ['/admin/blogs', 'article', 'Blogs']];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname() || ''; const [menu, setMenu] = useState(false); const auth = useAuth();
   useEffect(() => setMenu(false), [path]);
   const on = (h: string) => (h === '/admin' ? path === '/admin' : path.startsWith(h));
   if (auth.mode === 'live' && auth.ready && auth.role !== 'admin') return <main id="main" style={{ minHeight: '100dvh', background: 'var(--surface)' }}><StateScreen kind="signedout" title="Admins only" text="This area is for the Stoora team. If you should have access, ask an admin to switch your account on (see supabase/README.md)." actions={<ButtonLink href="/dashboard" kind="primary">Go to my dashboard</ButtonLink>} /></main>;
-  const title = path.startsWith('/admin/enquiries') ? 'Enquiries' : 'Overview';
+  const title = path.startsWith('/admin/blogs') ? 'Blogs' : 'Overview';
   return (
     <>
       <div className="app">

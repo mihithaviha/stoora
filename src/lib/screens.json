@@ -316,16 +316,6 @@
     "path": "/admin"
   },
   {
-    "group": "Admin",
-    "name": "Enquiry inbox",
-    "path": "/admin/enquiries"
-  },
-  {
-    "group": "Admin",
-    "name": "Enquiry open",
-    "path": "/admin/enquiries/e1"
-  },
-  {
     "group": "States",
     "name": "Loading",
     "path": "/design/states/loading"
