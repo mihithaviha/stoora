@@ -211,8 +211,13 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.js(`document.querySelector('[aria-label="Move Products up"]').click()`); await sleep(500);
       await t.js(`document.querySelector('[aria-label="Move Products up"]').click()`); await sleep(1200);
       expect(await order() !== before, 'moving Products up should change the order in the preview');
+      // add a logo, then publish: the logo uploads and shows in the shop's header
+      await t.js(pick('.sfed-panel input[type=file]', [['logo.jpg', 1]])); await sleep(2000);
+      expect(await t.js(`!!document.querySelector('.sfed-panel .sfed-image img')`), 'the logo should show in the editor after it is picked');
       await t.js(`[...document.querySelectorAll('.sfed-bar button')].find((b) => b.textContent.includes('Publish')).click()`); await sleep(1800);
+      expect(!(await t.has('Couldn’t publish')), 'publishing with a logo should not fail');
       await t.goto('/s/meera'); await sleep(2000);
+      expect(await t.js(`!!document.querySelector('.sx-hdr .sx-av img')`), 'the logo should show in the shop header');
       expect(await t.js(`!!document.querySelector('.sx')`) && await t.has('Made by Meera'), 'the shop page should be the Standard storefront with the new headline');
       expect(await t.js(`!!document.querySelector('.sx-awn, .sx-sf-awn svg')`), 'the shopfront awning should be drawn');
       await t.js(`[...document.querySelectorAll('.sx-qa')].find((b) => b.textContent.includes('Quick add')).click()`); await sleep(900);

@@ -36,7 +36,7 @@ function parseCsv(text: string): string[][] {
 const guess = (headers: string[], key: string) => { const alias: Record<string, string[]> = { name: ['name', 'title', 'product'], price: ['price', 'mrp', 'rate', 'amount'], stock: ['stock', 'qty', 'quantity', 'inventory'], category: ['category', 'type'], sizes: ['sizes', 'size'] }; return headers.findIndex((h) => alias[key].includes(h.trim().toLowerCase())); };
 
 export default function ImportPage() {
-  const { saveProduct } = useStore(); const toast = useToast();
+  const { saveProduct, mode } = useStore(); const toast = useToast();
   const start = Number(useSearchParams().get('step') || 1) - 1;
   const [step, setStep] = useState(0); const [file, setFile] = useState(''); const [data, setData] = useState<string[][]>([]);
   const [map, setMap] = useState<Record<string, number>>({}); const [over, setOver] = useState(false); const [note, setNote] = useState(''); const [added, setAdded] = useState(0);
@@ -76,7 +76,7 @@ export default function ImportPage() {
 
   return (
     <>
-      <DemoBar />
+      {mode === 'demo' && <DemoBar />}
       <PageHeader title="Import products" lede="Bring a list in from a spreadsheet instead of typing each product." actions={<ButtonLink href="/products" icon="arrow_back">Back to products</ButtonLink>} />
       <div className="stack">
         <Stepper steps={STEPS} current={step} />

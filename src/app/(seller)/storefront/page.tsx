@@ -15,7 +15,7 @@ type Tab = 'templates' | 'editor' | 'settings';
 
 /** The shop's own link, and its design: pick a template, edit it beside a live preview, publish it at stoora.in/<shop>. */
 export default function StorefrontPage() {
-  const { db, ready, setShop } = useStore();
+  const { db, ready, setShop, mode } = useStore();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('templates');
   const [working, setWorking] = useState<StoreConfig | null>(null);
@@ -48,7 +48,7 @@ export default function StorefrontPage() {
 
   return (
     <>
-      <DemoBar>Demo shop: changes here are saved in this browser only.</DemoBar>
+      {mode === 'demo' && <DemoBar>Demo shop: changes here are saved in this browser only.</DemoBar>}
       <PageHeader title="Storefront" lede="Your shop page and how it looks. Choose a template, make it yours, and publish it at your own link."
         actions={<><a className="btn primary" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />View storefront</a><CopyButton text={link} label="Copy shop link" done="Shop link copied." /></>} />
       <div className="seg" role="tablist" aria-label="Storefront" style={{ marginBottom: 'var(--s3)', maxWidth: 520 }}>

@@ -51,6 +51,11 @@ ok(!!(await fails(`insert into public.shops (owner_id, name, handle) values ('${
 ok(!!(await fails(`insert into public.shops (owner_id, name, handle) values ('${other}', 'Bad', 'Bad Handle')`)), 'a bad shop link is refused');
 ok(!!(await fails(`update public.shops set whatsapp_verified = true where owner_id = '${seller}'`)), 'a seller cannot mark their own WhatsApp as verified');
 ok(!!(await fails(`update public.shops set next_order_no = 1 where owner_id = '${seller}'`)), 'a seller cannot change order numbering');
+ok(!(await fails(`update public.shops set storefront = '{"template":"standard","brand":{"logo":"https://x/logo.jpg"}}'::jsonb where owner_id = '${seller}'`)), 'a seller can publish their storefront design (the "Publish" button)');
+await as('authenticated', other);
+await db.exec(`update public.shops set storefront = '{"template":"hacked"}'::jsonb where owner_id = '${seller}'`);
+await as('authenticated', seller);
+ok((await q(`select storefront ->> 'template' as t from public.shops where owner_id = '${seller}'`))[0].t === 'standard', 'another seller cannot change someone else\'s storefront');
 await db.exec('reset role'); await db.exec(`delete from public.shops where owner_id = '${seller}'`);
 const shopId = (await q(`select public.seed_demo_shop('${seller}') as id`))[0].id;
 ok(!!shopId, 'seed_demo_shop() builds the sample shop');

@@ -7,7 +7,7 @@ import { plural, rs } from '@/lib/format';
 
 type Kind = 'All' | 'Orders' | 'Stock' | 'Money';
 export default function NotificationsPage() {
-  const { db } = useStore(); const [kind, setKind] = useState<Kind>('All');
+  const { db, mode } = useStore(); const [kind, setKind] = useState<Kind>('All');
   // Alerts from the shop plus ones worked out from the current data, so they stay true as you act.
   const items = [
     ...db.alerts.map((a) => ({ ...a, kind: (a.icon === 'inventory_2' ? 'Stock' : 'Orders') as Kind })),
@@ -19,7 +19,7 @@ export default function NotificationsPage() {
   const list = items.filter((i) => kind === 'All' || i.kind === kind);
   return (
     <>
-      <DemoBar />
+      {mode === 'demo' && <DemoBar />}
       <PageHeader title="Notifications" lede="Things in your shop that may need you." />
       <div className="stack">
         <Chips label="Show" value={kind} onChange={setKind} options={(['All', 'Orders', 'Money', 'Stock'] as Kind[]).map((k) => ({ value: k, label: k, count: items.filter((i) => k === 'All' || i.kind === k).length }))} />
