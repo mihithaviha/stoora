@@ -189,11 +189,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       weightGrams: f.weight ? Number(f.weight) : undefined, boxCm: f.box ?? p?.boxCm ?? DEFAULT_BOX, tags: f.tags.length ? f.tags : undefined,
       status: shown ? 'Active' : 'Draft', // no photo: saved hidden
       photos: f.photos } as Product;
-    setTimeout(() => {
-      try { saveProduct(next); } catch { setBusy(false); toast('Couldn’t save. Your browser storage may be full — remove a photo and try again.', { icon: 'error' }); return; }
+    setTimeout(async () => {
+      let saved: Product | null;
+      try { saved = await saveProduct(next); } catch { setBusy(false); toast('Couldn’t save. Your browser storage may be full — remove a photo and try again.', { icon: 'error' }); return; }
       setBusy(false);
-      toast(!hasPhoto ? `${next.name} saved, hidden. Add a photo to show it in your shop.` : isNew ? `${next.name} added.` : 'Saved.');
-      if (isNew) void guard.release().then(() => router.replace(`/products/${next.id}`)); else setF(toForm(next));
+      if (!saved) return; // the database refused it; the message is already on screen and the form keeps what was typed
+      toast(!hasPhoto ? `${saved.name} saved, hidden. Add a photo to show it in your shop.` : isNew ? `${saved.name} added.` : 'Saved.');
+      // a new product now has its real id: its page is there
+      if (isNew) void guard.release().then(() => router.replace(`/products/${saved.id}`)); else setF(toForm(saved));
     }, 250);
   };
 

@@ -37,7 +37,8 @@ interface Store {
   placeBuyerOrder: (o: BuyerOrderInput) => Promise<{ id: number }>;
   createShop: (s: NewShopInput) => Promise<string | null>;
   updateOrder: (id: number, patch: Partial<Order>) => void;
-  saveProduct: (p: Product) => void;
+  /** Saves a product. With a real database it resolves with the saved product (which has its real id) once it is stored, or with null after saying why it could not be saved. */
+  saveProduct: (p: Product) => Promise<Product | null>;
   deleteProduct: (id: string) => Product | undefined;
   restoreProduct: (p: Product) => void;
   /** Add or change a class, session or download. */
@@ -174,7 +175,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateOrder: (id, patch) => { setDb((d) => ({ ...d, orders: d.orders.map((o) => (o.id === id ? { ...o, ...patch } : o)) })); save((c, sid) => remote.patchOrder(c, sid, id, patch), 'paid' in patch); },
     saveProduct: (p) => {
       setDb((d) => ({ ...d, products: d.products.some((x) => x.id === p.id) ? d.products.map((x) => (x.id === p.id ? p : x)) : [p, ...d.products] }));
-      save(async (c, sid) => { const saved = await remote.saveProduct(c, sid, p); setDb((d) => ({ ...d, products: d.products.map((x) => (x.id === p.id ? saved : x)) })); });
+      if (!sb || !shopId) return Promise.resolve(p);
+      // A new product gets its real id from the database, so the screen waits for it (the page of the product is at that id).
+      return remote.saveProduct(sb, shopId, p)
+        .then((saved) => { setDb((d) => ({ ...d, products: d.products.map((x) => (x.id === p.id ? saved : x)) })); return saved; })
+        .catch((e: Error) => { toast(`Couldn’t save: ${e.message}`, { icon: 'error' }); loadOwnerNow(); return null; });
     },
     deleteProduct: (id) => { const p = db.products.find((x) => x.id === id); setDb((d) => ({ ...d, products: d.products.filter((x) => x.id !== id) })); save((c) => remote.deleteProduct(c, id)); return p; },
     saveService: (s, file) => {
@@ -205,7 +210,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     markBookingPaid: (id) => { setDb((d) => ({ ...d, bookings: d.bookings.map((b) => (b.id === id ? { ...b, paid: true } : b)) })); save((c, sid) => remote.markBookingPaid(c, sid, id)); },
     resetDemo: () => { if (!live) { setDemo(demoDb()); setDismissed([]); } },
     reload: async () => { if (view === 'owner') await loadOwnerNow(); else if (view === 'public') await loadPublicNow(handle); else await loadBuyerNow(); },
-  }), [live, ready, needsShop, db, product, createOrder, placeBuyerOrder, createShop, dismissedIdeas, setDb, save, view, handle, loadOwnerNow, loadPublicNow, loadBuyerNow]);
+  }), [live, ready, needsShop, db, product, createOrder, placeBuyerOrder, createShop, dismissedIdeas, setDb, save, sb, shopId, toast, view, handle, loadOwnerNow, loadPublicNow, loadBuyerNow]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
