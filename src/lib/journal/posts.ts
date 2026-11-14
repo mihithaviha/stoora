@@ -33,7 +33,7 @@ export const articleToPost = (a: Article): BlogPost => ({
 });
 
 export const blankPost = (): BlogPost => ({
-  id: '', slug: '', title: '', excerpt: '', summary: '', topic: TOPICS[0].id, photo: '', published: new Date().toISOString().slice(0, 10), minutes: 3,
+  id: '', slug: '', title: '', excerpt: '', summary: '', topic: TOPICS[0].id, photo: '', published: (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })(), minutes: 3,
   body: [{ p: '' }], faq: [], carousel: null, pick: null, status: 'draft', builtin: false,
 });
 

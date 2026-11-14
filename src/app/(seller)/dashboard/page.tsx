@@ -7,7 +7,7 @@ import { Art, type ArtKey } from '@/components/dash/Art';
 import { DI, DateChip, MStrip, Ms, PaidTag } from '@/components/dash/parts';
 import { Button, Dialog, Skeleton, useToast } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import { sellsDigital } from '@/lib/shopstate';
+import { sellsDigital, sellsPhysical } from '@/lib/shopstate';
 import { firstName, rs } from '@/lib/format';
 import { moneyWaiting, useStore } from '@/lib/store';
 
@@ -37,6 +37,7 @@ export default function Home() {
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={1} height={70} /><div style={{ height: 16 }} /><Skeleton rows={3} height={120} /></div>;
 
   const digital = sellsDigital(db.shop);
+  const physical = sellsPhysical(db.shop); // a physical-products shop has no bookings, so none are shown
   const empty = !db.products.length && !db.services.length && !db.orders.length;
   const link = `stoora.in/${db.shop.handle}`;
   const copyLink = () => navigator.clipboard?.writeText(`https://${link}`).then(() => { toast('Shop link copied.'); setLinkCopied(true); try { localStorage.setItem(LINK_KEY, '1'); } catch { /* ignore */ } }).catch(() => toast(`Your shop link is ${link}`, { icon: 'info' }));
@@ -103,7 +104,7 @@ export default function Home() {
         </div>
       ) : null}
       <MStrip lead={<DateChip label="Today" />}
-        items={[['Visits', String(db.stats.visitsToday), strip('visits')], ['Sales', rs(db.stats.salesToday), strip('sales')], ['Orders', String(todayOrders), strip('orders')], ['Bookings', String(bookingsToday)]]}
+        items={[['Visits', String(db.stats.visitsToday), strip('visits')], ['Sales', rs(db.stats.salesToday), strip('sales')], ['Orders', String(todayOrders), strip('orders')], ...(physical ? [] : [['Bookings', String(bookingsToday)] as [string, string]])]}
         tail={mode === 'demo' ? <span className="dlive"><i /> 2 on your shop now</span> : undefined} />
       <div className="box dhero">
         <h1 className="h1 big">{greeting()}, {firstName(db.shop.owner) || 'there'}!</h1>
@@ -119,20 +120,22 @@ export default function Home() {
               {left.length ? <button className="btn main" type="button" onClick={() => setIdeas(true)}>See today’s ideas</button> : null}
             </div>
           ) : null}
+          {!physical ? (
           <div className="box">
-            <div className="box-h"><span className="box-t"><DI n="cal" s={16} /> Coming up</span><Link className="link small" href="/orders?tab=bookings">See all ›</Link></div>
-            <div className="todo">
-              {next.length ? next.map((b) => {
-                const s = db.services.find((x) => x.id === b.serviceId);
-                return (
-                  <Link className="trow" key={b.id} href={`/bookings/${b.id}`}>
-                    <span className="ic" style={{ background: 'color-mix(in srgb,var(--positive) 12%,var(--card))', fontSize: 18 }}><Ms n={s?.icon ?? 'event'} /></span>
-                    <span className="sp"><b>{s?.name ?? 'Booking'}</b><span className="tiny muted">{b.when} · {b.buyer}</span></span><PaidTag paid={b.paid} />
-                  </Link>
-                );
-              }) : <p className="small muted" style={{ margin: 0 }}>No bookings coming up.</p>}
+              <div className="box-h"><span className="box-t"><DI n="cal" s={16} /> Coming up</span><Link className="link small" href="/orders?tab=bookings">See all ›</Link></div>
+              <div className="todo">
+                {next.length ? next.map((b) => {
+                  const s = db.services.find((x) => x.id === b.serviceId);
+                  return (
+                    <Link className="trow" key={b.id} href={`/bookings/${b.id}`}>
+                      <span className="ic" style={{ background: 'color-mix(in srgb,var(--positive) 12%,var(--card))', fontSize: 18 }}><Ms n={s?.icon ?? 'event'} /></span>
+                      <span className="sp"><b>{s?.name ?? 'Booking'}</b><span className="tiny muted">{b.when} · {b.buyer}</span></span><PaidTag paid={b.paid} />
+                    </Link>
+                  );
+                }) : <p className="small muted" style={{ margin: 0 }}>No bookings coming up.</p>}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
         <div style={{ display: 'grid', gap: 16 }}>
           <Link className="box tapbox" href="/money" style={{ textAlign: 'left', width: '100%' }}>

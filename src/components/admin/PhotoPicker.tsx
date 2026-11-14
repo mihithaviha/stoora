@@ -4,6 +4,7 @@ import { Button } from '../ui';
 import { PHOTOS } from '@/lib/journal';
 import { uploadImage } from '@/lib/journal/admin-store';
 import { isUrlPhoto } from '@/lib/journal/posts';
+import { Select } from '../Select';
 
 /** The picture a story (or a carousel place) shows: a library photo key, or the address of one the team uploaded. */
 export const photoSrc = (key: string) => (isUrlPhoto(key) ? key : key ? `/assets/journal/${key}-720.webp` : '');
@@ -24,10 +25,8 @@ export function PhotoPicker({ id, value, onChange, onError, empty = 'No picture 
         </div>
         <div className="stack tight grow" style={{ minWidth: 200 }}>
           <label className="flabel" htmlFor={id}>From the library</label>
-          <select id={id} className="input" value={inLibrary ? value : ''} onChange={(e) => onChange(e.target.value)}>
-            <option value="">{value && !inLibrary ? 'Your own picture' : 'Choose a picture'}</option>
-            {Object.entries(PHOTOS).map(([key, alt]) => <option key={key} value={key}>{alt.length > 58 ? alt.slice(0, 57) + '…' : alt}</option>)}
-          </select>
+          <Select id={id} value={inLibrary ? value : ''} onChange={onChange} placeholder={value && !inLibrary ? 'Your own picture' : 'Choose a picture'}
+            options={[{ value: '', label: value && !inLibrary ? 'Your own picture' : 'Choose a picture' }, ...Object.entries(PHOTOS).map(([key, alt]) => ({ value: key, label: alt.length > 58 ? alt.slice(0, 57) + '…' : alt }))]} />
           <div className="btns">
             <Button small icon="upload" busy={busy} busyLabel="Uploading…" onClick={() => file.current?.click()}>Upload your own</Button>
             {value ? <Button small kind="quiet" onClick={() => onChange('')}>{removeLabel}</Button> : null}

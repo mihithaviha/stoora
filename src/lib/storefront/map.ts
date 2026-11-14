@@ -1,5 +1,6 @@
 import type { Db, Product, Service } from '../types';
 import { metaOf } from '../catalog';
+import { sellsDigital, sellsPhysical } from '../shopstate';
 import { defaultConfig, type StoreConfig, type StoreData, type StoreItem } from './shared';
 
 const productItem = (p: Product): StoreItem => ({
@@ -15,7 +16,8 @@ export function toStoreData(db: Db): StoreData {
   const best = [...live].sort((a, b) => b.soldLast30Days - a.soldLast30Days).filter((p) => p.soldLast30Days > 0).slice(0, 4).map((p) => p.id);
   return {
     shop: { name: db.shop.name, city: db.shop.city, handle: db.shop.handle },
-    products: live.map(productItem), services: db.services.map(serviceItem),
+    // a shop that sells physical products shows no services, and one that sells digital products shows no products
+    products: sellsDigital(db.shop) ? [] : live.map(productItem), services: sellsPhysical(db.shop) ? [] : db.services.map(serviceItem),
     bestsellerIds: best, ratings: {}, reviews: [], reviewSummary: { count: 0, average: 0 },
   };
 }

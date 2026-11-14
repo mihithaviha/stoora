@@ -2,10 +2,11 @@
 // Products and services: the headline numbers, then one table (the dashboard prototype's Products screen).
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Art } from '@/components/dash/Art';
 import { Chk, DI, DSeg, DateChip, MStrip, Ms, TopRow } from '@/components/dash/parts';
 import { Skeleton, useToast } from '@/components/ui';
+import { shopKind } from '@/lib/shopstate';
 import { downloadCsv } from '@/lib/csv';
 import { rs } from '@/lib/format';
 import { useStore } from '@/lib/store';
@@ -14,7 +15,15 @@ export default function ProductsPage() {
   const { db, ready } = useStore();
   const router = useRouter();
   const toast = useToast();
-  const isS = useSearchParams().get('tab') === 'services';
+  const tab = useSearchParams().get('tab');
+  // a shop that sells physical products sees Products only; one that sells digital products sees Services only (sessions, classes, downloads)
+  const kind = shopKind(db.shop);
+  const isS = kind === 'digital' ? true : kind === 'physical' ? false : tab === 'services';
+  useEffect(() => {
+    if (!ready) return;
+    if (kind === 'physical' && tab) router.replace('/products', { scroll: false });
+    if (kind === 'digital' && tab !== 'services') router.replace('/products?tab=services', { scroll: false });
+  }, [ready, kind, tab, router]);
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
 
@@ -52,7 +61,7 @@ export default function ProductsPage() {
           : <MStrip lead={<DateChip label="This week" />} items={[['Sold', `${sold} items`], ['Low on stock', <span key="l" className={low ? 'low' : ''}>{low} {low === 1 ? 'item' : 'items'}</span>], ['Out of stock', <span key="o" className={out ? 'low' : ''}>{out} {out === 1 ? 'item' : 'items'}</span>], ['Views', views.toLocaleString('en-IN')]]} />}
         <div className="box tbox">
           <div className="tbar">
-            {seg}<span className="sp" />
+            {kind === 'both' ? seg : <b className="t-ink" style={{ padding: '0 8px', fontSize: 15 }}>{isS ? 'Services' : 'Products'}</b>}<span className="sp" />
             <label className="search"><DI n="search" s={16} /><span className="sr">Search {isS ? 'services' : 'products'}</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${isS ? 'services' : 'products'}`} style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label>
           </div>
           {isS ? (

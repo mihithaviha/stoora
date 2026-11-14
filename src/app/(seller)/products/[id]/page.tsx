@@ -13,6 +13,7 @@ import { useLeaveGuard } from '@/lib/leave-guard';
 import { DEFAULT_BOX, KINDS, kindFor, weightNote, type Draft, type SizeKind } from '@/lib/product-ai';
 import { useStore } from '@/lib/store';
 import type { Product } from '@/lib/types';
+import { Select } from '@/components/Select';
 
 const AI_DAILY = 20;
 const AI_WAIT_MS = 15_000;
@@ -138,9 +139,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }, [loaded, isNew, photosBusy, f.photos.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // With AI off, a title or category typed by the seller still points to the right sizes (until they choose themselves).
-  const guessKind = () => {
+  const guessKind = (category = f.category) => {
     if (touchedOptions.current) return;
-    const kind = kindFor(f.category, f.name);
+    const kind = kindFor(category, f.name);
     if (kind === f.kind) return;
     const info = KINDS[kind];
     setF((x) => ({ ...x, kind, hasOptions: kind !== 'none', sizes: info.preset, optionStock: Object.fromEntries(info.preset.map((s) => [s, ''])), color: info.colour ? x.color : '' }));
@@ -233,12 +234,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <Line id="pf-desc" label="Description" value={f.description} onChange={(v) => set({ description: v })} placeholder="What is it made of? Who is it for?" area />
               <div className="field" style={{ margin: 0, paddingBottom: 12 }}>
                 <label htmlFor="pf-cat">Category</label>
-                <select id="pf-cat" className="input" value={catValue} onChange={(x) => { if (x.target.value === '__new') { setNewCat(true); set({ category: inList ? '' : f.category }); } else { setNewCat(false); set({ category: x.target.value }); } }} onBlur={guessKind}>
-                  {!catValue ? <option value="">Choose a category</option> : null}
-                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                  <option value="__new">+ New category</option>
-                </select>
-                {catValue === '__new' ? <input id="pf-newcat" className="input" style={{ marginTop: 8 }} aria-label="New category name" placeholder="e.g. Kurtas" maxLength={40} value={f.category} onChange={(x) => set({ category: x.target.value })} onBlur={guessKind} /> : null}
+                <Select id="pf-cat" value={catValue} placeholder="Choose a category"
+                  onChange={(v) => { if (v === '__new') { setNewCat(true); set({ category: inList ? '' : f.category }); } else { setNewCat(false); set({ category: v }); guessKind(v); } }}
+                  options={[...categories.map((c) => ({ value: c, label: c })), { value: '__new', label: '+ New category' }]} />
+                {catValue === '__new' ? <input id="pf-newcat" className="input" style={{ marginTop: 8 }} aria-label="New category name" placeholder="e.g. Kurtas" maxLength={40} value={f.category} onChange={(x) => set({ category: x.target.value })} onBlur={() => guessKind()} /> : null}
               </div>
               {info.colour ? <Line id="pf-color" label="Colour" value={f.color} onChange={(v) => set({ color: v })} placeholder="e.g. Indigo blue" /> : null}
               <Line id="pf-mat" label="Material" value={f.material} onChange={(v) => set({ material: v })} placeholder="e.g. Cotton" />

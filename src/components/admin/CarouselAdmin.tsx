@@ -10,6 +10,7 @@ import { CAROUSEL_SIZE, RING, buildJournal, mergeArticles, wordCount, type Carou
 import type { Article } from '@/lib/journal';
 import { useLeaveGuard } from '@/lib/leave-guard';
 import { getSupabase } from '@/lib/supabase/client';
+import { Select } from '../Select';
 
 interface Slot { slug: string; photo: string; title: string; text: string }
 const blank = (): Slot => ({ slug: '', photo: '', title: '', text: '' });
@@ -111,10 +112,7 @@ export function CarouselAdmin() {
               <input id={`ring-title-${i}`} className="input" maxLength={RING.titleChars} value={slot.title} placeholder={story ? story.title : 'The story’s own title is used'} onChange={(e) => set(i, { title: e.target.value })} />
               <span className="hint">{wordCount(slot.title)} of {RING.titleWords} words. Leave empty to use the story’s title.</span>
               <label className="flabel" htmlFor={`ring-story-${i}`}>Opens this story</label>
-              <select id={`ring-story-${i}`} className="input" value={slot.slug} onChange={(e) => set(i, { slug: e.target.value })}>
-                <option value="">Choose the story the card opens</option>
-                {options.map((a) => <option key={a.slug} value={a.slug}>{a.title}</option>)}
-              </select>
+              <Select id={`ring-story-${i}`} value={slot.slug} placeholder="Choose the story the card opens" onChange={(v) => set(i, { slug: v })} options={[{ value: '', label: 'Choose the story the card opens' }, ...options.map((a) => ({ value: a.slug, label: a.title }))]} />
               <span className="flabel">Picture</span>
               <PhotoPicker id={`ring-photo-${i}`} value={slot.photo} fallback={story?.photo ?? ''} empty="Choose a story first" removeLabel="Use the story’s cover"
                 onChange={(v) => set(i, { photo: v })} onError={(m) => toast(m, { icon: 'error' })} />

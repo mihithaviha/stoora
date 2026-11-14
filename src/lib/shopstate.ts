@@ -8,3 +8,5 @@ export const PHYSICAL = 'Physical products';
 export const DIGITAL = 'Digital products';
 export const sellsDigital = (s: { category?: string }) => s.category === DIGITAL;
 export const sellsPhysical = (s: { category?: string }) => s.category === PHYSICAL;
+/** What a shop works with: physical products (the Products screen only), digital products (the Services screen only: sessions, classes, downloads), or both. */
+export const shopKind = (s: { category?: string }): 'physical' | 'digital' | 'both' => (sellsPhysical(s) ? 'physical' : sellsDigital(s) ? 'digital' : 'both');

@@ -8,6 +8,7 @@ import { Stepper } from '@/components/bits';
 import { useStore } from '@/lib/store';
 import { plural, toNum } from '@/lib/format';
 import type { Product } from '@/lib/types';
+import { Select } from '@/components/Select';
 
 const STEPS = ['Upload', 'Match columns', 'Review', 'Done'];
 const FIELDS: [keyof Row, string, boolean][] = [['name', 'Product name', true], ['price', 'Price (₹)', true], ['stock', 'Stock', false], ['category', 'Category', false], ['sizes', 'Sizes', false]];
@@ -96,7 +97,7 @@ export default function ImportPage() {
             <p className="t-body">Tell Stoora which column holds what. We matched the ones we recognised.</p>
             <div className="mapgrid">{FIELDS.map(([k, label, req]) => (
               <div className="field" key={k}><label htmlFor={`map-${k}`}>{label} {req ? <span className="req">Required</span> : <span className="opt">Optional</span>}</label>
-                <select id={`map-${k}`} className={`input ${req && !(map[k] >= 0) ? 'flag' : ''}`} value={map[k] ?? -1} onChange={(e) => setMap({ ...map, [k]: Number(e.target.value) })}><option value={-1}>{req ? 'Choose a column' : 'Skip this'}</option>{data[0].map((h, i) => <option key={i} value={i}>{h || `Column ${i + 1}`}</option>)}</select></div>))}</div>
+                <Select id={`map-${k}`} className={req && !(map[k] >= 0) ? 'flag' : ''} aria-invalid={req && !(map[k] >= 0) ? true : undefined} value={String(map[k] ?? -1)} onChange={(v) => setMap({ ...map, [k]: Number(v) })} options={[{ value: '-1', label: req ? 'Choose a column' : 'Skip this' }, ...data[0].map((h, i) => ({ value: String(i), label: h || `Column ${i + 1}` }))]} /></div>))}</div>
             <div><b className="t-ink">Preview</b><div className="csv" style={{ marginTop: 'var(--s1)' }}><table><thead><tr>{data[0].map((h, i) => <th key={i}>{h}</th>)}</tr></thead><tbody>{data.slice(1, 4).map((r, i) => <tr key={i}>{data[0].map((_, j) => <td key={j}>{r[j]}</td>)}</tr>)}</tbody></table></div></div>
             {missing.length > 0 && <div className="banner warn"><Icon name="warning" /><span>Choose a column for: {missing.map(([, l]) => l).join(', ')}.</span></div>}
             <div className="wiz-foot"><Button icon="arrow_back" onClick={() => { setStep(0); setData([]); }}>Choose another file</Button><Button kind="primary" disabled={missing.length > 0} onClick={() => setStep(2)}>Review products</Button></div>
