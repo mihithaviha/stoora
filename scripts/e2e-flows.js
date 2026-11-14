@@ -200,7 +200,7 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.goto('/storefront'); await sleep(2500);
       expect(await t.js(`!!document.querySelector('a[href="/s/meera"]')`), 'View storefront button missing');
       expect(await t.js(`document.querySelectorAll('.sfg-current').length === 1 && document.querySelector('.sfg-current h3').textContent === 'Stoora Standard'`), 'the Standard layout card should be on the Templates tab');
-      expect(await t.js(`!!document.querySelector('.sf-soon-blur[inert]') && document.querySelector('.sf-soon-card h3').textContent === 'More templates are coming soon'`), 'the other templates should be blurred and marked coming soon');
+      expect(await t.js(`!document.querySelector('.sf-soon-wrap, .sfg-grid')`) && !(await t.has('coming soon')), 'the blurred "more templates coming soon" section should be gone from the Templates tab');
       await t.js(`[...document.querySelectorAll('.sfg-current button')].find((b) => b.textContent.includes('Edit your storefront')).click()`); await sleep(3500);
       expect(await t.js(`!!document.querySelector('.sfin')`), 'editor did not open');
       await t.js(`(() => { const el = document.querySelector('#sf-ht'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(el, 'Made by Meera'); el.dispatchEvent(new Event('input', { bubbles: true })); })()`); await sleep(1500);
