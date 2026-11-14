@@ -67,7 +67,8 @@ function useSections(ctx: StoreCtx) {
   const available: Record<StdSection, boolean> = {
     feat: features.length > 0,
     cats: cats.some((x) => x.image) && hasProducts,
-    products: true,
+    // a shop with only services (digital) has no products shelf to show
+    products: hasProducts || !hasServices,
     services: hasServices,
     story: Boolean(story),
     reviews: reviews.length > 0,

@@ -9,6 +9,7 @@ import { Skeleton, useToast } from '@/components/ui';
 import { downloadCsv } from '@/lib/csv';
 import { rs } from '@/lib/format';
 import { orderFilters, useStore, type OrderFilter } from '@/lib/store';
+import { sellsPhysical } from '@/lib/shopstate';
 
 const FILTERS = Object.keys(orderFilters) as OrderFilter[];
 const WHEN = ['Today', 'Upcoming', 'Past', 'Cancelled'] as const;
@@ -18,7 +19,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const toast = useToast();
-  const tab = sp.get('tab') === 'bookings' ? 'bookings' : 'orders';
+  const tab = sp.get('tab') === 'bookings' && !sellsPhysical(db.shop) ? 'bookings' : 'orders';
   const filter = (FILTERS.find((f) => f === sp.get('filter')) ?? 'All') as OrderFilter;
   const [q, setQ] = useState('');
   const [when, setWhen] = useState<(typeof WHEN)[number]>('Upcoming');
@@ -78,7 +79,7 @@ export default function OrdersPage() {
         {strip}
         <div className="box tbox">
           <div className="tbar">
-            {seg}
+            {sellsPhysical(db.shop) ? <b className="t-ink" style={{ padding: '0 8px', fontSize: 15 }}>Orders</b> : seg}
             <div className="chips">
               {isB
                 ? WHEN.map((c) => <button key={c} className={`chip${c === when ? ' on' : ''}`} type="button" onClick={() => setWhen(c)}>{c}</button>)

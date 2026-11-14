@@ -11,6 +11,8 @@ import { ConfirmDialog, EmptyState, Skeleton, useToast } from '@/components/ui';
 import { useLeaveGuard } from '@/lib/leave-guard';
 import { useStore } from '@/lib/store';
 import type { Service } from '@/lib/types';
+import { Select } from '@/components/Select';
+import { DatePicker } from '@/components/DatePicker';
 
 type Kind = NonNullable<Service['kind']>;
 const KIND_INFO: Record<Kind, { label: string; text: string; icon: string; type: Service['type'] }> = {
@@ -29,7 +31,8 @@ const WHERE = ['Online', 'At my studio', 'At buyer’s home'];
 type Form = { name: string; price: string; minutes: string; days: string[]; times: string[]; date: string; seats: number; place: string; fileName: string };
 const toForm = (s?: Service): Form => ({ name: s?.name ?? '', price: s ? String(s.price) : '', minutes: s ? String(s.minutes || 60) : '60', days: s?.days ?? [], times: s?.times ?? (s ? [] : ['7:00 am']), date: s?.date ?? '', seats: s?.seats ?? 10, place: s?.place ?? 'Online', fileName: s?.fileName ?? '' });
 
-const today = () => new Date().toISOString().slice(0, 10);
+// today's date where the seller is (not the UTC date, which is a day behind in India for the first hours of the day)
+const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
 const niceDate = (d: string) => { const x = new Date(d + 'T00:00:00'); return Number.isNaN(x.getTime()) ? d : x.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }); };
 /** The line the shop page shows for when it runs, built from what the seller picked. */
 const nextLine = (k: Kind, f: Form) => {
@@ -146,7 +149,7 @@ function Editor({ id }: { id: string }) {
                 <div className="field sp" style={{ flex: '1 1 140px' }}><label htmlFor="sv-price">Price</label><div className="money-in" style={e('price') ? { borderColor: 'var(--negative)' } : undefined}><span>₹</span><input id="sv-price" inputMode="numeric" placeholder="499" value={f.price} onChange={(x) => set({ price: x.target.value.replace(/[^\d,]/g, '') })} /></div>{e('price') ? <span className="err" role="alert">{e('price')}</span> : null}</div>
                 {kind !== 'digital' ? (
                   <div className="field sp" style={{ flex: '1 1 140px' }}><label htmlFor="sv-min">Duration</label>
-                    <select id="sv-min" className="input" value={f.minutes} onChange={(x) => set({ minutes: x.target.value })}>{['30', '45', '60', '75', '90', '120', '180', '240'].map((m) => <option key={m} value={m}>{Number(m) >= 60 && Number(m) % 60 === 0 ? `${Number(m) / 60} hr` : `${m} min`}</option>)}{!['30', '45', '60', '75', '90', '120', '180', '240'].includes(f.minutes) ? <option value={f.minutes}>{f.minutes} min</option> : null}</select>
+                    <Select id="sv-min" value={f.minutes} onChange={(v) => set({ minutes: v })} options={[...['30', '45', '60', '75', '90', '120', '180', '240'].map((m) => ({ value: m, label: Number(m) >= 60 && Number(m) % 60 === 0 ? `${Number(m) / 60} hr` : `${m} min` })), ...(!['30', '45', '60', '75', '90', '120', '180', '240'].includes(f.minutes) ? [{ value: f.minutes, label: `${f.minutes} min` }] : [])]} />
                     {e('minutes') ? <span className="err" role="alert">{e('minutes')}</span> : null}
                   </div>
                 ) : null}
@@ -174,12 +177,12 @@ function Editor({ id }: { id: string }) {
               <div className="card">
                 <div className="box-h"><span className="box-t">{kind === 'workshop' ? 'Date and time' : 'Time slots'}</span></div>
                 {kind === 'workshop' ? (
-                  <div className="field"><label htmlFor="sv-date">Date</label><input id="sv-date" type="date" className={`input${e('date') ? ' bad' : ''}`} min={today()} value={f.date} onChange={(x) => set({ date: x.target.value })} style={{ maxWidth: 220 }} />{e('date') ? <span className="err" role="alert">{e('date')}</span> : null}</div>
+                  <div className="field"><label htmlFor="sv-date">Date</label><DatePicker id="sv-date" aria-invalid={e('date') ? true : undefined} min={today()} value={f.date} onChange={(v) => set({ date: v })} style={{ maxWidth: 260 }} />{e('date') ? <span className="err" role="alert">{e('date')}</span> : null}</div>
                 ) : (
                   <div className="field"><label>Days</label><div className="chips" role="group" aria-label="Days">{DAYS.map((d) => <button key={d} type="button" className={`chip${f.days.includes(d) ? ' on' : ''}`} aria-pressed={f.days.includes(d)} onClick={() => toggle('days', d, DAYS)}>{d}</button>)}</div>{e('days') ? <span className="err" role="alert">{e('days')}</span> : null}</div>
                 )}
                 {kind === 'workshop' ? (
-                  <div className="field"><label htmlFor="sv-time">Start time</label><select id="sv-time" className="input" style={{ maxWidth: 220 }} value={f.times[0] ?? ''} onChange={(x) => set({ times: [x.target.value] })}>{TIMES.map((t) => <option key={t}>{t}</option>)}</select>{e('times') ? <span className="err" role="alert">{e('times')}</span> : null}</div>
+                  <div className="field"><label htmlFor="sv-time">Start time</label><Select id="sv-time" style={{ maxWidth: 220 }} value={f.times[0] ?? ''} onChange={(v) => set({ times: [v] })} options={TIMES.map((t) => ({ value: t, label: t }))} />{e('times') ? <span className="err" role="alert">{e('times')}</span> : null}</div>
                 ) : (
                   <div className="field"><label>Time slots</label><div className="chips wrap" role="group" aria-label="Time slots">{TIMES.map((t) => <button key={t} type="button" className={`chip${f.times.includes(t) ? ' on' : ''}`} aria-pressed={f.times.includes(t)} onClick={() => toggle('times', t, TIMES)}>{t}</button>)}</div>{e('times') ? <span className="err" role="alert">{e('times')}</span> : null}</div>
                 )}

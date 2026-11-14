@@ -122,9 +122,10 @@ a.li:hover { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
 .sheet .h2 { font-family: var(--display); font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .sheet-f { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
-.toast { position: fixed; top: 14px; left: 50%; bottom: auto; right: auto; transform: translateX(-50%); z-index: 200; background: var(--ink); color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; animation: d-drop .4s var(--spring); box-shadow: var(--float); }
-.toast button { color: var(--marigold); font-weight: 700; margin-left: 6px; }
-.toast .ms { font-size: 18px; }
+/* the dashboard's toast sits at the top. "body .toast" outranks the shop's own ".toast" rule (bottom: ...) whichever style sheet loads last, so it can never stretch from top to bottom */
+body .toast { position: fixed; top: 14px; min-height: 0; height: auto; left: 50%; bottom: auto; right: auto; transform: translateX(-50%); z-index: 200; background: var(--ink); color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; animation: d-drop .4s var(--spring); box-shadow: var(--float); }
+body .toast button { color: var(--marigold); font-weight: 700; margin-left: 6px; height: auto; padding: 0; }
+body .toast .ms { font-size: 18px; }
 
 /* tables scroll sideways instead of squeezing */
 .tbox { overflow: hidden; } /* the card stays put; only the table inside it scrolls (see .tscroll) */

@@ -17,6 +17,8 @@ import {
 import type { Block } from '@/lib/journal';
 import { useLeaveGuard } from '@/lib/leave-guard';
 import { getSupabase } from '@/lib/supabase/client';
+import { Select } from '../Select';
+import { DatePicker } from '../DatePicker';
 
 type Kind = 'p' | 'h2' | 'h3' | 'ul' | 'ol' | 'callout' | 'image' | 'table';
 const KINDS: [Kind, string, string][] = [['p', 'Paragraph', 'notes'], ['h2', 'Heading', 'title'], ['h3', 'Subheading', 'text_fields'], ['ul', 'Bullet list', 'format_list_bulleted'], ['ol', 'Numbered list', 'format_list_numbered'], ['callout', 'Tip box', 'lightbulb'], ['image', 'Picture', 'image']];
@@ -43,7 +45,7 @@ function BlockEditor({ block, index, count, onChange, onMove, onRemove, onError 
         <label className="sr" htmlFor={`bk-kind-${index}`}>Type of block {n}</label>
         {kind === 'table'
           ? <span className="cap grow">Table (kept as it is)</span>
-          : <select id={`bk-kind-${index}`} className="input" style={{ width: 'auto', minWidth: 160 }} value={kind} onChange={(e) => switchTo(e.target.value as Kind)}>{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}
+          : <Select id={`bk-kind-${index}`} style={{ minWidth: 180 }} value={kind} onChange={(v) => switchTo(v as Kind)} options={KINDS.map(([k, l]) => ({ value: k, label: l }))} />}
         <span className="grow" />
         <button type="button" className="ibtn sm" aria-label={`Move block ${n} up`} disabled={index === 0} onClick={() => onMove(-1)}><Icon name="arrow_upward" size="sm" /></button>
         <button type="button" className="ibtn sm" aria-label={`Move block ${n} down`} disabled={index === count - 1} onClick={() => onMove(1)}><Icon name="arrow_downward" size="sm" /></button>
@@ -196,8 +198,8 @@ export function BlogEditor({ slug }: { slug: string }) {
                 onChange={(e) => { setSlugTouched(true); set({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }); }} />
             </Field>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-              <Field id="bl-topic" label="Topic"><select id="bl-topic" className="input" value={post.topic} onChange={(e) => set({ topic: e.target.value })}>{TOPICS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></Field>
-              <Field id="bl-date" label="Published on" error={shownError('published')}><input id="bl-date" className="input" type="date" value={post.published} onChange={(e) => set({ published: e.target.value })} /></Field>
+              <Field id="bl-topic" label="Topic"><Select id="bl-topic" value={post.topic} onChange={(v) => set({ topic: v })} options={TOPICS.map((t) => ({ value: t.id, label: t.name }))} /></Field>
+              <Field id="bl-date" label="Published on" error={shownError('published')}><DatePicker id="bl-date" value={post.published} onChange={(v) => set({ published: v })} /></Field>
             </div>
             <Field id="bl-photo" label="Cover picture" required={published || tried} error={shownError('photo')}>
               <PhotoPicker id="bl-photo" value={post.photo} onChange={(v) => set({ photo: v })} onError={(m) => toast(m, { icon: 'error' })} />

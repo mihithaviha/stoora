@@ -11,6 +11,7 @@ import { shopBase } from '@/components/shop/ShopChrome';
 import { useBag } from '@/lib/bag';
 import { useStore } from '@/lib/store';
 import { rs } from '@/lib/format';
+import { Select } from '@/components/Select';
 
 type Pay = 'upi' | 'card' | 'cod';
 const STATES = ['Rajasthan', 'Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'Gujarat', 'Uttar Pradesh', 'West Bengal', 'Kerala', 'Other'];
@@ -78,7 +79,7 @@ export default function Checkout() {
               <Field id="co-pin" label="Pincode" required error={e('pin')}><input id="co-pin" className={`input ${e('pin') ? 'bad' : ''}`} inputMode="numeric" maxLength={6} value={f.pin} onChange={(x) => setF({ ...f, pin: x.target.value.replace(/\D/g, '') })} autoComplete="postal-code" /></Field>
               <Field id="co-city" label="City" required error={e('city')}><input id="co-city" className={`input ${e('city') ? 'bad' : ''}`} value={f.city} onChange={set('city')} autoComplete="address-level2" /></Field>
             </div>
-            <Field id="co-state" label="State"><select id="co-state" className="input" value={f.state} onChange={set('state')}>{STATES.map((s) => <option key={s}>{s}</option>)}</select></Field>
+            <Field id="co-state" label="State"><Select id="co-state" value={f.state} onChange={(v) => setF((x) => ({ ...x, state: v }))} options={STATES.map((s) => ({ value: s, label: s }))} /></Field>
             <Field id="co-note" label="Note for the seller" optional><textarea id="co-note" className="input" rows={2} value={f.note} onChange={set('note')} placeholder="Gift wrap, landmark, best time to call…" /></Field>
           </Card>
           <Card className="stack tight" title="3. Payment" icon="payments">

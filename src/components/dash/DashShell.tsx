@@ -238,14 +238,16 @@ function SearchPop({ onClose, go }: { onClose: () => void; go: (href: string) =>
       { href: '/orders/new', kind: 'Orders' as const, icon: 'plus', t: 'Create order', s: 'Add an order yourself' },
     ];
     const t = q.trim().toLowerCase();
-    return all.filter((r) => (kind === 'All' || r.kind === kind) && (!t || `${r.t} ${r.s} ${r.kind}`.toLowerCase().includes(t))).slice(0, 8);
+    // the kind of thing the shop does not sell is not offered (physical: no services or bookings; digital: no products)
+    const hidden: string[] = sellsPhysical(db.shop) ? ['Services', 'Bookings'] : sellsDigital(db.shop) ? ['Products'] : [];
+    return all.filter((r) => !hidden.includes(r.kind) && (kind === 'All' || r.kind === kind) && (!t || `${r.t} ${r.s} ${r.kind}`.toLowerCase().includes(t))).slice(0, 8);
   }, [db, q, kind]);
   return (
     <>
       <div className={`dscrim sscrim${leaving ? ' out' : ''}`} onClick={close} style={{ background: 'rgba(23,28,60,.3)' }} />
       <div className={`dspop${leaving ? ' out' : ''}`} role="dialog" aria-modal="true" aria-label="Search">
         <div className="search"><DI n="search" s={18} /><input ref={input} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" placeholder="Search orders, products, customers…" onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) go(results[0].href); }} /><kbd>Esc</kbd></div>
-        <div className="chips" style={{ padding: '12px 14px 10px' }}>{KINDS.map((k) => <button key={k} className={`chip${kind === k ? ' on' : ''}`} type="button" onClick={() => setKind(k)}>{k}</button>)}</div>
+        <div className="chips" style={{ padding: '12px 14px 10px' }}>{KINDS.filter((k) => !(sellsPhysical(db.shop) && (k === 'Services' || k === 'Bookings')) && !(sellsDigital(db.shop) && k === 'Products')).map((k) => <button key={k} className={`chip${kind === k ? ' on' : ''}`} type="button" onClick={() => setKind(k)}>{k}</button>)}</div>
         <div className="list" style={{ padding: '0 14px 14px' }} aria-live="polite">
           {results.length ? results.map((r, i) => (
             <button key={r.kind + r.href} className="li" type="button" onClick={() => go(r.href)} style={{ ['--i' as string]: i, ...(i === 0 ? { background: 'var(--muted)' } : {}) }}>

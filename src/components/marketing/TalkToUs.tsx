@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Ic } from './bits';
 import { TOPICS, saveSent } from '@/lib/enquiries';
+import { Select } from '../Select';
 
 /** "Talk to us": a short form in a dialog. Enquiries are saved (the admin inbox is switched off for now). */
 export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
@@ -59,7 +60,7 @@ export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
       <div className="field">
         <label htmlFor={id}>{label}</label>
         {control === 'textarea' ? <textarea className={`input${error ? ' bad' : ''}`} rows={4} {...common} />
-          : control === 'select' ? <select className="input" {...common}>{TOPICS.map((t) => <option key={t}>{t}</option>)}</select>
+          : control === 'select' ? <Select id={id} value={form[key]} onChange={(v) => setForm({ ...form, [key]: v })} options={TOPICS.map((t) => ({ value: t, label: t }))} />
           : <input className={`input${error ? ' bad' : ''}`} autoComplete={key === 'name' ? 'name' : 'email'} {...common} />}
         {hint && !error ? <span className="hint">{hint}</span> : null}
         {error ? <span className="err" role="alert"><Ic n="error" c="xs" />{error}</span> : null}

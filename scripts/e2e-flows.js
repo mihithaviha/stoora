@@ -228,7 +228,7 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
     });
 
     await flow('Blogs admin: write, publish, edit, unpublish and delete a story; edit a built-in story and reset it', async (t) => {
-      const fill = (sel, v) => t.js(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); })()`);
+      const fill = (sel, v) => t.js(`(async () => { const el = document.querySelector(${JSON.stringify(sel)}); if (el.getAttribute('role') === 'combobox') { el.click(); await new Promise((r) => setTimeout(r, 150)); const opt = [...document.querySelectorAll('#' + CSS.escape(el.id) + '-list [role=option]')].find((o) => o.dataset.value === ${JSON.stringify(v)}); if (!opt) throw new Error('no option ' + ${JSON.stringify(v)} + ' in ' + el.id); opt.click(); await new Promise((r) => setTimeout(r, 80)); return; } const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
       const h1 = () => t.js(`document.querySelector('h1')?.textContent || ''`);
       const resetRow = async (slug) => { await t.goto('/admin/blogs'); await sleep(1500); await t.js(`[...document.querySelectorAll('[data-testid=blogs-table] [data-slug="${slug}"] button')].find((b) => b.textContent.trim() === 'Reset').click()`); await sleep(400); await t.click('Reset story'); await sleep(800); };
       await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
@@ -286,7 +286,9 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.has('Choose 1 more story'), 'with a slide empty the page should ask for one more story');
       await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Save carousel')).click()`); await sleep(500);
       expect(!(await t.has('Carousel saved.')), 'a carousel with an empty slide must not be saved');
-      const slugs = await t.js(`[...document.querySelectorAll('#ring-story-0 option')].map((o) => o.value).filter(Boolean)`);
+      await t.js(`document.querySelector('#ring-story-0').click()`); await sleep(300);
+      const slugs = await t.js(`[...document.querySelectorAll('#ring-story-0-list [role=option]')].map((o) => o.dataset.value).filter(Boolean)`);
+      await t.js(`document.querySelector('#ring-story-0').click()`); await sleep(200);
       const pick6 = ['packing-parcels-that-arrive-whole', ...slugs.filter((x) => x !== 'packing-parcels-that-arrive-whole').slice(0, 5)];
       for (let i = 0; i < 6; i++) { await fill(`#ring-story-${i}`, ''); await sleep(120); }
       for (let i = 0; i < 6; i++) { await fill(`#ring-story-${i}`, pick6[i]); await sleep(150); }
@@ -381,6 +383,57 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]')`) && !(await t.js(`!!document.querySelector('[data-slug="product-photos-at-home"]') && !document.querySelector('[data-slug="product-photos-at-home"]').hidden`)), 'only the restored story should be on Blogs');
     });
 
+    await flow('Drop-down: opens softly, picks with the mouse and the keyboard, closes with Escape or a click outside, and shows on top of a dialog', async (t) => {
+      await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
+      await t.goto('/products/service/new?kind=workshop'); await sleep(1500);
+      const key = (sel, k) => t.js(`document.querySelector(${JSON.stringify(sel)}).dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(k)}, bubbles: true }))`);
+      const shown = (id) => t.js(`document.getElementById('${id}-list').classList.contains('open') && document.getElementById('${id}').getAttribute('aria-expanded') === 'true'`);
+      expect(await t.js(`parseFloat(getComputedStyle(document.getElementById('sv-min-list')).transitionDuration) > 0`), 'opening should be animated (a fade and slide)');
+      expect(await t.js(`document.querySelectorAll('select').length`) === 0, 'the form should use the Stoora drop-down, not the browser one');
+      // mouse
+      await t.js(`document.getElementById('sv-min').click()`); await sleep(500);
+      expect(await shown('sv-min') && await t.js(`document.getElementById('sv-min').getAttribute('aria-expanded')`) === 'true', 'clicking should open the list');
+      expect(await t.js(`document.querySelectorAll('#sv-min-list [role=option]').length`) === 8, 'the list should show all 8 durations');
+      expect(await t.js(`document.querySelector('#sv-min-list [aria-selected=true]').textContent.includes('1 hr')`), 'the current choice should be marked');
+      await t.js(`[...document.querySelectorAll('#sv-min-list [role=option]')].find((o) => o.textContent.includes('2 hr')).click()`); await sleep(500);
+      expect(await t.js(`document.getElementById('sv-min').textContent.trim()`) === '2 hr' && !(await shown('sv-min')), 'choosing an option should set it and close the list');
+      // keyboard: arrows open and move, Enter picks, Escape closes
+      await t.js(`document.getElementById('sv-time').focus()`);
+      await key('#sv-time', 'ArrowDown'); await sleep(400);
+      expect(await shown('sv-time'), 'the arrow key should open the list');
+      const before = await t.js(`document.getElementById('sv-time').textContent.trim()`);
+      await key('#sv-time', 'ArrowDown'); await key('#sv-time', 'Enter'); await sleep(500);
+      expect(await t.js(`document.getElementById('sv-time').textContent.trim()`) !== before && !(await shown('sv-time')), 'arrow down and Enter should pick the next option');
+      await key('#sv-time', 'ArrowDown'); await sleep(300); await key('#sv-time', 'Escape'); await sleep(500);
+      expect(!(await shown('sv-time')), 'Escape should close the list');
+      // a click outside closes it
+      await t.js(`document.getElementById('sv-min').click()`); await sleep(400);
+      await t.js(`document.querySelector('h1, h2').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`); await sleep(500);
+      expect(!(await shown('sv-min')), 'a click outside should close the list');
+      // the date box opens a calendar with the same soft panel
+      const cal = () => t.js(`document.getElementById('sv-date-cal').classList.contains('open')`);
+      await t.js(`document.getElementById('sv-date').click()`); await sleep(500);
+      expect(await cal() && await t.js(`document.querySelectorAll('#sv-date-cal .dp-day').length >= 35`), 'clicking the date box should open a calendar');
+      expect(await t.js(`(() => { const d = new Date(); d.setDate(d.getDate() - 1); const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const b = document.querySelector('#sv-date-cal [data-day="' + v + '"]'); return !b || b.disabled })()`), 'days before today should not be pickable for a workshop');
+      const title = await t.js(`document.querySelector('#sv-date-cal .dp-title').textContent`);
+      await t.js(`document.querySelector('#sv-date-cal [aria-label="Next month"]').click()`); await sleep(300);
+      expect(await t.js(`document.querySelector('#sv-date-cal .dp-title').textContent`) !== title, 'the arrow should show the next month');
+      await t.js(`[...document.querySelectorAll('#sv-date-cal .dp-day:not(.out):not(:disabled)')][14].click()`); await sleep(500);
+      expect(/^\d{4}-\d{2}-\d{2}$/.test(await t.js(`document.getElementById('sv-date').dataset.value`)) && !(await cal()), 'picking a day should set the date and close the calendar');
+      expect((await t.js(`document.getElementById('sv-date').textContent`)).trim().length > 6 && !(await t.js(`document.getElementById('sv-date').textContent.includes('Choose a date')`)), 'the date box should show the chosen date');
+      await t.js(`document.getElementById('sv-date').click()`); await sleep(400);
+      await t.js(`document.querySelector('#sv-date-cal [aria-label="Previous month"]').click()`); await sleep(200);
+      await t.js(`document.querySelector('#sv-date-cal').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`); await sleep(400);
+      expect(!(await cal()), 'Escape should close the calendar');
+      // inside a dialog the list is not cut off
+      await t.goto('/orders/1010'); await sleep(1500);
+      await t.js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Refund'))?.click()`); await sleep(700);
+      if (await t.js(`!!document.getElementById('rf-why')`)) {
+        await t.js(`document.getElementById('rf-why').click()`); await sleep(500);
+        expect(await shown('rf-why') && await t.js(`(() => { const r = document.getElementById('rf-why-list').getBoundingClientRect(); return r.height > 80 && r.bottom <= innerHeight + 1 && r.top >= 0 })()`), 'the list in the refund dialog should be fully visible');
+      }
+    });
+
     await flow('Add product: many photos at once, the cap of 8, and one broken photo (5.6 item 1)', async (t) => {
       await t.goto('/products/new'); await t.js(fakeAi(MUG, 503)); // AI off: only the photos are tested here
       await t.js(pick('#pf-photos', [['a.jpg', 1], ['b.jpg', 1], ['c.jpg', 1], ['d.jpg', 1], ['e.jpg', 1]])); await sleep(1800);
@@ -404,7 +457,7 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.js(`[...document.querySelectorAll('.chip')].some((c) => c.textContent === '250 ml' && c.getAttribute('aria-pressed') === 'true')`), 'ml sizes were not suggested');
       expect(await t.js(`document.querySelector('#pf-stock') === null`), 'stock for each size should replace the single stock box');
       expect(await t.js(`document.querySelector('#pf-weight').value`) === '350', 'weight guess missing');
-      expect(await t.js(`document.querySelector('#pf-cat').value`) === '__new', 'a new category should be suggested through "+ New category"');
+      expect(await t.js(`document.querySelector('#pf-cat').dataset.value`) === '__new', 'a new category should be suggested through "+ New category"');
     });
 
     await flow('Add product: kurta sizes are XS to XXL and stock per size adds up (5.6 item 3)', async (t) => {
@@ -555,9 +608,21 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.goto('/s/test-bakes'); expect(await t.has('Coming soon'), 'a shop with no products should say Coming soon');
       await t.goto('/dashboard'); expect(await t.waitFor('Add your first product'), 'a physical shop should be asked to add a product first: ' + (await t.text()).replace(/\s+/g, ' ').slice(0, 260));
       expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'a physical shop should not show Services in the menu');
+      // physical: the Products screen only, no Services or Bookings anywhere
+      await t.goto('/products'); await sleep(1200);
+      expect(!(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`)) && await t.has('Add product') && !(await t.has('Add service')), 'a physical shop should see Products only on the Products screen');
+      await t.goto('/products?tab=services'); await sleep(1500);
+      expect(!(await t.js('location.search')).includes('services') && await t.has('Add product'), 'the services address should send a physical shop back to Products');
+      await t.goto('/orders'); await sleep(1200);
+      expect(!(await t.js(`!!document.querySelector('[aria-label="Orders or bookings"]')`)), 'a physical shop should not see an Orders or Bookings switch');
+      await t.goto('/dashboard'); await sleep(1500);
+      expect(!(await t.has('Coming up')) && !(await t.js(`[...document.querySelectorAll('.mstrip, .dstrip, [class*=strip]')].some((x) => x.textContent.includes('Bookings'))`)), 'a physical shop should not see Bookings on the dashboard');
       await t.goto('/settings/shop-details'); await t.click('Digital products'); await t.click('Save changes'); await sleep(900);
       await t.goto('/dashboard'); expect(await t.waitFor('Add your first session or download'), 'a digital shop should be asked to add a session first');
       expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`)) && (await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'the menu should show Services and hide Products after switching to digital');
+      // digital: the Services screen only
+      await t.goto('/products'); await sleep(1500);
+      expect((await t.js('location.search')).includes('tab=services') && await t.has('Add service') && !(await t.has('Add product')) && !(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`)), 'a digital shop should see Services only on the Products screen');
       await t.goto('/settings/shop-details'); await t.click('Physical products'); await t.click('Save changes'); await sleep(900);
       await t.goto('/dashboard'); expect(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`), 'switching back should bring Products back');
     });

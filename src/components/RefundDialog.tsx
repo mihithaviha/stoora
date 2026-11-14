@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Dialog, Field, Icon, Switch } from './ui';
 import { rs } from '@/lib/format';
 import type { Order, Refund } from '@/lib/types';
+import { Select } from '@/components/Select';
 
 const REASONS = ['Buyer changed their mind', 'Item damaged or wrong', 'Out of stock', 'Order cancelled', 'Other'];
 
@@ -34,7 +35,7 @@ export function RefundDialog({ open, onClose, order, alreadyRefunded, onRefund }
           <button type="button" role="tab" aria-selected={mode === 'part'} className={mode === 'part' ? 'on' : ''} onClick={() => setMode('part')}>Part refund</button>
         </div>
         {mode === 'part' && <Field id="rf-amt" label="Amount to refund" required error={tried && error ? error : undefined}><div className={`affix ${tried && error ? 'bad' : ''}`}><span aria-hidden="true">₹</span><input id="rf-amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(left)} /></div></Field>}
-        <Field id="rf-why" label="Reason" required><select id="rf-why" className="input" value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select></Field>
+        <Field id="rf-why" label="Reason" required><Select id="rf-why" value={reason} onChange={setReason} options={REASONS.map((r) => ({ value: r, label: r }))} /></Field>
         <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Tell the buyer</span><span className="cap">Sends a short message that the refund has started.</span></span><Switch checked={notify} onChange={setNotify} label="Tell the buyer" /></div>
       </div>
     </Dialog>

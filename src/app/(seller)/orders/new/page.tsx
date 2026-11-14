@@ -9,6 +9,7 @@ import { Button, Dialog, Skeleton, useToast } from '@/components/ui';
 import { rs } from '@/lib/format';
 import { useStore } from '@/lib/store';
 import type { Source } from '@/lib/types';
+import { Select } from '@/components/Select';
 
 const SOURCES: Source[] = ['WhatsApp', 'Instagram', 'In person', 'Phone call'];
 type Line = { productId: string; qty: number; size?: string };
@@ -68,7 +69,7 @@ export default function CreateOrder() {
                   <div className="row" key={l.productId} style={{ padding: '12px 0', borderTop: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
                     <div className="thumb" style={{ width: 40, height: 40 }}><Ms n={p.icon} /></div>
                     <div className="sp small"><b>{p.name}</b>{p.sizes.length ? (
-                      <div style={{ marginTop: 4 }}><select className="input" style={{ height: 32, fontSize: 13, width: 'auto' }} aria-label={`Size for ${p.name}`} value={l.size ?? ''} onChange={(e) => setLines((cur) => cur.map((x, n) => (n === i ? { ...x, size: e.target.value || undefined } : x)))}><option value="">No size</option>{p.sizes.map((z) => <option key={z}>{z}</option>)}</select></div>
+                      <div style={{ marginTop: 4 }}><Select size="sm" style={{ minWidth: 130 }} aria-label={`Size for ${p.name}`} value={l.size ?? ''} onChange={(v) => setLines((cur) => cur.map((x, n) => (n === i ? { ...x, size: v || undefined } : x)))} options={[{ value: '', label: 'No size' }, ...p.sizes.map((z) => ({ value: z, label: z }))]} /></div>
                     ) : null}</div>
                     <div className="dstep"><button type="button" aria-label="One less" onClick={() => setQty(i, -1)}>−</button><input value={l.qty} readOnly aria-label="Quantity" /><button type="button" aria-label="One more" onClick={() => setQty(i, 1)}>+</button></div>
                     <span className="small muted" style={{ width: 90, textAlign: 'right' }}>{rs(p.price)} × {l.qty}</span>
@@ -101,7 +102,7 @@ export default function CreateOrder() {
                 <div className="dsec-h">Buyer</div>
                 <div className="row" style={{ marginBottom: 12 }}>{buyer.name ? <DAv name={buyer.name} /> : <div className="av" style={{ background: 'var(--ink-45)' }} aria-hidden="true">?</div>}<div className="sp small muted">{buyer.name ? 'Details below' : 'Who is this order for?'}</div></div>
                 {db.customers.length ? (
-                  <div className="field"><label htmlFor="co-past">Past buyer</label><select id="co-past" className="input" value="" onChange={(e) => pastBuyer(e.target.value)}><option value="">Pick someone you’ve sold to…</option>{db.customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+                  <div className="field"><label htmlFor="co-past">Past buyer</label><Select id="co-past" value="" placeholder="Pick someone you’ve sold to…" onChange={(v) => pastBuyer(v)} options={db.customers.map((c) => ({ value: c.id, label: c.name }))} /></div>
                 ) : null}
                 <div className="field"><label htmlFor="co-name">Name</label><input id="co-name" className={`input${nameError ? ' bad' : ''}`} value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} autoComplete="off" />{nameError ? <span className="err" role="alert">{nameError}</span> : null}</div>
                 <div className="field"><label htmlFor="co-phone">Phone</label><input id="co-phone" className="input" inputMode="tel" value={buyer.phone} onChange={(e) => setBuyer({ ...buyer, phone: e.target.value })} /></div>

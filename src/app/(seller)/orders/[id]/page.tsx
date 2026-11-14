@@ -9,6 +9,7 @@ import { RefundDialog } from '@/components/RefundDialog';
 import { Badge, Button, ConfirmDialog, Dialog, EmptyState, Field, Skeleton, useToast } from '@/components/ui';
 import { rs } from '@/lib/format';
 import { useStore } from '@/lib/store';
+import { Select } from '@/components/Select';
 
 const COURIERS = ['Delhivery', 'India Post', 'Blue Dart', 'DTDC', 'Shiprocket', 'Hand delivered'];
 
@@ -92,7 +93,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
               {shipping ? (
                 <>
                   <div className="row" style={{ gap: 12, alignItems: 'flex-start', marginTop: 12 }}>
-                    <div className="field sp"><label htmlFor="ship-c">Courier</label><select id="ship-c" className="input" value={ship.courier} onChange={(e) => setShip({ ...ship, courier: e.target.value })}>{COURIERS.map((c) => <option key={c}>{c}</option>)}</select></div>
+                    <div className="field sp"><label htmlFor="ship-c">Courier</label><Select id="ship-c" value={ship.courier} onChange={(v) => setShip({ ...ship, courier: v })} options={COURIERS.map((c) => ({ value: c, label: c }))} /></div>
                     {ship.courier !== 'Hand delivered' ? (
                       <div className="field sp"><label htmlFor="ship-t">Tracking number</label><input id="ship-t" className={`input${err ? ' bad' : ''}`} placeholder="e.g. DL4482190" value={ship.tracking} onChange={(e) => { setShip({ ...ship, tracking: e.target.value }); setErr(''); }} />{err ? <span className="err" role="alert">{err}</span> : null}</div>
                     ) : null}
