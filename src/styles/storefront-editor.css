@@ -141,12 +141,6 @@ body.sfed-open { overflow: hidden; }
 .sfg-body .btns .btn { flex: 1 1 auto; justify-content: center; white-space: nowrap; }
 .sfg-swatches { margin-bottom: 2px; }
 
-/* Templates tab: gallery blurred behind a "coming soon" card */
-.sf-soon-wrap { position: relative; min-height: 420px; overflow: hidden; border-radius: 20px; }
-.sf-soon-blur { filter: blur(7px) saturate(.9); opacity: .75; pointer-events: none; user-select: none; max-height: 760px; overflow: hidden; }
-.sf-soon-card { position: absolute; inset: 0; margin: auto; width: min(420px, calc(100% - 32px)); height: fit-content; display: grid; justify-items: center; gap: 8px; text-align: center; padding: 28px 24px; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 12px 40px rgba(23, 28, 60, .16); }
-.sf-soon-card .ct { margin: 0; }
-.sf-soon-card p { margin: 0; }
 
 /* Standard storefront editor: awning colour swatches and the section order rows */
 .sfed-awnings { display: flex; flex-wrap: wrap; gap: 10px; }

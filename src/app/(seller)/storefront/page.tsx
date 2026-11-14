@@ -2,13 +2,13 @@
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/CopyButton';
 import { Editor } from '@/components/storefront/Editor';
-import { Gallery, Thumb } from '@/components/storefront/Gallery';
+import { Thumb } from '@/components/storefront/Gallery';
 import { Button, Card, Chips, DemoBar, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
 import { rs } from '@/lib/format';
 import { useStore } from '@/lib/store';
 import { loadDraft, saveDraft } from '@/lib/storefront/draft';
 import { startingConfig } from '@/lib/storefront/map';
-import { defaultConfig, templateById, type StoreConfig } from '@/lib/storefront/shared';
+import { templateById, type StoreConfig } from '@/lib/storefront/shared';
 import type { Shop } from '@/lib/types';
 
 type Tab = 'templates' | 'editor' | 'settings';
@@ -33,15 +33,6 @@ export default function StorefrontPage() {
   const link = `https://stoora.in/${s.handle}`;
   const live = Boolean(s.storefront);
 
-  /** Start (or keep) editing with a template. The shop's own details fill the blanks. */
-  const use = (id: string) => {
-    const base = working ?? s.storefront ?? startingConfig(db, id);
-    const target = templateById(id);
-    const next: StoreConfig = base.template === id ? base : { ...base, template: target.id, theme: target.theme, hero: { ...base.hero, cta: templateById(base.template).kind === target.kind ? base.hero.cta : defaultConfig(id).hero.cta } };
-    saveDraft(handle, next);
-    setWorking(next);
-    setTab('editor');
-  };
   const edit = () => { setWorking((w) => w ?? s.storefront ?? startingConfig(db)); setTab('editor'); };
 
   const toggle = (k: 'showPrices' | 'cod', label: string) => (v: boolean) => { setShop({ [k]: v } as Partial<Shop>); toast(`${label}: ${v ? 'on' : 'off'}.`, { undo: () => setShop({ [k]: !v } as Partial<Shop>) }); };
@@ -76,17 +67,6 @@ export default function StorefrontPage() {
               </div>
             </div>
           </article>
-          <div className="sf-soon-wrap">
-            {/* More templates are coming soon: the gallery stays visible but blurred and cannot be used */}
-            <div className="stack sf-soon-blur" aria-hidden="true" inert>
-              <Gallery current={(working ?? s.storefront)?.template} onUse={use} />
-            </div>
-            <div className="sf-soon-card" role="status">
-              <Icon name="schedule" />
-              <h3 className="ct">More templates are coming soon</h3>
-              <p className="t-body">Every shop uses the Standard layout for now. More looks will follow.</p>
-            </div>
-          </div>
         </div>
       )}
 
