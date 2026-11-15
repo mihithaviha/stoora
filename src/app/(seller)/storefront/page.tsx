@@ -2,13 +2,12 @@
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/CopyButton';
 import { Editor } from '@/components/storefront/Editor';
-import { Thumb } from '@/components/storefront/Gallery';
-import { Button, Card, Chips, DemoBar, Icon, PageHeader, Skeleton, Switch, useToast } from '@/components/ui';
-import { rs } from '@/lib/format';
+import { ShopSign } from '@/components/storefront/ShopSign';
+import { Card, DemoBar, Icon, Skeleton, Switch, useToast } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { loadDraft, saveDraft } from '@/lib/storefront/draft';
 import { startingConfig } from '@/lib/storefront/map';
-import { templateById, type StoreConfig } from '@/lib/storefront/shared';
+import type { StoreConfig } from '@/lib/storefront/shared';
 import type { Shop } from '@/lib/types';
 
 type Tab = 'templates' | 'editor' | 'settings';
@@ -40,34 +39,40 @@ export default function StorefrontPage() {
   return (
     <>
       {mode === 'demo' && <DemoBar>Demo shop: changes here are saved in this browser only.</DemoBar>}
-      <PageHeader title="Storefront" lede="Your shop page and how it looks. Choose a template, make it yours, and publish it at your own link."
-        actions={<><a className="btn primary" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />View storefront</a><CopyButton text={link} label="Copy shop link" done="Shop link copied." /></>} />
-      <div className="seg" role="tablist" aria-label="Storefront" style={{ marginBottom: 'var(--s3)', maxWidth: 520 }}>
+      <header className="sfx-head">
+        <div>
+          <h1>Storefront</h1>
+          <p>Your shop page and how it looks. Choose a template, make it yours, and publish it at your own link.</p>
+        </div>
+        <div className="sfx-acts">
+          <a className="sfx-btn sfx-go" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />View storefront</a>
+          <CopyButton text={link} label="Copy shop link" done="Shop link copied." />
+        </div>
+      </header>
+      <div className="sfx-tabs" role="tablist" aria-label="Storefront">
         {([['templates', 'Templates'], ['editor', 'Editor'], ['settings', 'Shop settings']] as [Tab, string][]).map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => (id === 'editor' ? edit() : setTab(id))}>{label}</button>
+          <button key={id} role="tab" aria-selected={tab === id} className="sfx-tab" onClick={() => (id === 'editor' ? edit() : setTab(id))}>{label}</button>
         ))}
       </div>
 
       {tab === 'templates' && (
-        <div className="stack">
-          <article className="sfcur sfg-current" aria-label="Stoora Standard">
-            <div className="sfcur-view"><div className="sfcur-bar" aria-hidden="true"><i /><i /><i /></div><Thumb template={templateById('standard')} /></div>
-            <div className="sfcur-body">
-              <span className="bdg ok"><Icon name="check_circle" />Your layout</span>
-              <h3>Stoora Standard</h3>
-              <p>A painted shopfront, a clean product grid and the sections your shop needs. Every shop uses it from the first day, filled from your own products. {live ? 'Your changes are published.' : 'Edit it to make it yours.'}</p>
-              <ul className="sfcur-list">
-                <li><Icon name="check" size="sm" />Your products and photos</li>
-                <li><Icon name="check" size="sm" />Sections you can switch on or off</li>
-                <li><Icon name="check" size="sm" />Looks right on phones</li>
-              </ul>
-              <div className="sfcur-btns">
-                <Button kind="primary" onClick={edit}>Edit your storefront</Button>
-                {live ? <a className="btn line" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer">View live</a> : null}
-              </div>
+        <article className="sfx-card sfg-current" aria-label="Stoora Standard">
+          <div className="sfx-art"><ShopSign handle={s.handle} name={s.name} /></div>
+          <div className="sfx-body">
+            <span className="sfx-badge"><Icon name="check_circle" size="sm" />Your layout</span>
+            <h2>Stoora Standard</h2>
+            <p>A painted shopfront, a clean product grid and the sections your shop needs. Every shop uses it from the first day, filled from your own products. {live ? 'Your changes are published.' : 'Edit it to make it yours.'}</p>
+            <ul className="sfx-list">
+              <li><Icon name="check" size="sm" />Your products and photos</li>
+              <li><Icon name="check" size="sm" />Sections you can switch on or off</li>
+              <li><Icon name="check" size="sm" />Looks right on phones</li>
+            </ul>
+            <div className="sfx-cta">
+              <button type="button" className="sfx-btn sfx-go big" onClick={edit}>Edit your storefront</button>
+              {live ? <a className="sfx-btn big" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer">View live</a> : null}
             </div>
-          </article>
-        </div>
+          </div>
+        </article>
       )}
 
       {tab === 'editor' && (working
