@@ -150,17 +150,58 @@ body.sfed-open { overflow: hidden; }
 .sfed-order { gap: 6px; }
 .sfed-order .ibtn[disabled] { opacity: .3; }
 
-/* the Standard layout card on the Templates tab: a framed preview beside the words */
-.sfcur { display: grid; gap: 0; background: var(--card); border: 1px solid var(--line-soft); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); max-width: 880px; }
-.sfcur-view { background: var(--muted, #F2EADD); padding: 16px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.sfcur-bar { display: flex; gap: 6px; padding: 8px 10px; background: #fff; border: 1px solid var(--line-soft); border-bottom: 0; border-radius: 10px 10px 0 0; }
-.sfcur-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
-.sfcur-view .sfg-thumb { aspect-ratio: 16 / 10; border: 1px solid var(--line-soft); border-radius: 0 0 10px 10px; background: #fff; box-shadow: 0 10px 24px -16px rgba(60, 35, 20, .5); }
-.sfcur-body { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; padding: 22px 24px; min-width: 0; }
-.sfcur-body h3 { margin: 0; font: 800 22px/1.15 var(--font-display, inherit); letter-spacing: -.02em; text-transform: none; color: var(--ink); }
-.sfcur-body p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-65); max-width: 46ch; }
-.sfcur-list { list-style: none; margin: 2px 0 4px; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--ink-soft, var(--ink)); }
-.sfcur-list li { display: flex; align-items: center; gap: 8px; }
-.sfcur-list .ms { color: var(--positive, #0FA05C); }
-.sfcur-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-@media (min-width: 760px) { .sfcur { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); } }
+
+/* ---------- Storefront page: header, tabs and the Standard layout card (design: "Storefront – Templates") ---------- */
+.sfx-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+.sfx-head > div:first-child { flex: 1 1 380px; min-width: 0; display: grid; gap: 8px; }
+.sfx-head h1 { margin: 0; font: 800 clamp(30px, 4vw, 40px)/1.1 var(--font-display, inherit); letter-spacing: -.02em; color: #141a3c; }
+.sfx-head p { margin: 0; font-size: 17px; line-height: 1.5; color: #6b5547; max-width: 620px; }
+.sfx-acts { display: flex; flex-wrap: wrap; gap: 12px; }
+.sfx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid #e4d8c8; background: #fff; color: #141a3c; font: 700 16px/1 var(--font-sans, inherit); text-decoration: none; cursor: pointer; transition: transform .2s cubic-bezier(.2,.8,0,1), box-shadow .25s, background .2s; }
+.sfx-btn:hover { background: #fffaf2; transform: translateY(-1px); }
+.sfx-btn:active { transform: translateY(0) scale(.985); }
+.sfx-btn.sfx-go { border: 0; background: linear-gradient(90deg, #cc4b0b, #b0286f); color: #fff; box-shadow: 0 12px 26px -16px #b0286f; }
+.sfx-btn.sfx-go:hover { background: linear-gradient(90deg, #cc4b0b, #b0286f); box-shadow: 0 16px 30px -14px #b0286f; }
+.sfx-btn.big { min-height: 52px; padding: 0 28px; font-size: 17px; }
+.sfx-btn:focus-visible, .sfx-tab:focus-visible { outline: 3px solid rgba(176, 40, 111, .35); outline-offset: 2px; }
+.sfx-tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #eadfd0; margin-bottom: 28px; }
+.sfx-tab { min-height: 48px; padding: 0 20px; background: transparent; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; font: 600 16px/1 var(--font-sans, inherit); color: #6b5547; cursor: pointer; transition: color .2s, border-color .25s; }
+.sfx-tab:hover { color: #141a3c; }
+.sfx-tab[aria-selected="true"] { border-bottom-color: #cc4b0b; color: #141a3c; font-weight: 700; }
+.sfx-card { display: flex; flex-wrap: wrap; border: 1px solid #eadfd0; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(20, 26, 60, .04), 0 12px 32px rgba(20, 26, 60, .06); }
+.sfx-art { flex: 1 1 460px; min-width: 0; min-height: 380px; box-sizing: border-box; padding: 20px; background: #f6f5f4; display: flex; align-items: center; justify-content: center; }
+.sfx-body { flex: 1 1 420px; min-width: 0; box-sizing: border-box; padding: 44px; background: #fff; display: flex; flex-direction: column; gap: 20px; justify-content: center; }
+.sfx-badge { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 6px 14px 6px 10px; border-radius: 999px; background: #e3f4ea; color: #0b6b3a; font: 700 14px/1.2 var(--font-sans, inherit); }
+.sfx-body h2 { margin: 0; font: 800 clamp(26px, 3vw, 32px)/1.15 var(--font-display, inherit); letter-spacing: -.02em; color: #141a3c; text-transform: none; }
+.sfx-body p { margin: 0; font-size: 16px; line-height: 1.65; color: #6b5547; }
+.sfx-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #eee5d8; }
+.sfx-list li { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #eee5d8; font: 600 16px/1.3 var(--font-sans, inherit); color: #141a3c; }
+.sfx-list .ms { color: #0f8a4b; font-size: 22px; }
+.sfx-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 640px) { .sfx-body { padding: 28px 22px; } .sfx-art { min-height: 300px; padding: 12px; } }
+/* the painted shopfront moves gently; people who turned motion off see it standing still */
+.sfx-rise { animation: sfx-rise 1s cubic-bezier(.2,.8,.2,1) both; }
+.sfx-sign { transform-box: fill-box; transform-origin: 50% 100%; animation: sfx-drop .9s .35s cubic-bezier(.3,1.4,.5,1) both, sfx-swing 5s 1.3s ease-in-out infinite; }
+.sfx-sway { transform-box: fill-box; transform-origin: 50% 0%; animation: sfx-sway 3.6s ease-in-out infinite; }
+.sfx-bob { animation: sfx-bob 3s ease-in-out infinite; }
+.sfx-flower { transform-box: fill-box; transform-origin: 50% 100%; animation: sfx-grow .8s .9s cubic-bezier(.3,1.5,.5,1) both, sfx-flower 3.2s 1.7s ease-in-out infinite; }
+.sfx-pulse { transform-box: fill-box; transform-origin: 50% 50%; animation: sfx-pulse 2.4s ease-in-out infinite; }
+.sfx-coin { animation: sfx-coin 4.2s ease-out infinite; opacity: 0; }
+.sfx-twinkle { transform-box: fill-box; transform-origin: 50% 50%; animation: sfx-twinkle 2.6s ease-in-out infinite; }
+.sfx-glow { transform-box: fill-box; transform-origin: 50% 50%; animation: sfx-glow 4s ease-in-out infinite; }
+.sfx-shine { animation: sfx-shine 5.5s ease-in-out infinite; }
+@keyframes sfx-rise { from { opacity: 0; transform: translateY(30px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes sfx-drop { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: none; } }
+@keyframes sfx-grow { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+@keyframes sfx-swing { 0%, 100% { transform: rotate(-.9deg); } 50% { transform: rotate(.9deg); } }
+@keyframes sfx-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes sfx-bob { 0%, 100% { transform: translateY(-2.5px); } 50% { transform: translateY(3px); } }
+@keyframes sfx-flower { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes sfx-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes sfx-coin { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-70px); } }
+@keyframes sfx-twinkle { 0%, 100% { opacity: .25; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes sfx-glow { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes sfx-shine { 0%, 55% { transform: translateX(0); } 100% { transform: translateX(260px); } }
+@media (prefers-reduced-motion: reduce) { .sfx-rise, .sfx-sign, .sfx-sway, .sfx-bob, .sfx-flower, .sfx-pulse, .sfx-coin, .sfx-twinkle, .sfx-glow, .sfx-shine { animation: none; } .sfx-coin { opacity: 0; } }
+.sfx-acts .btn { min-height: 48px; padding: 0 22px; border-radius: 999px; font-size: 16px; font-weight: 700; background: #fff; border: 1px solid #e4d8c8; color: #141a3c; }
+@media (max-width: 640px) { .sfx-tabs { flex-wrap: nowrap; gap: 0; overflow-x: auto; scrollbar-width: none; } .sfx-tab { padding: 0 14px; white-space: nowrap; flex: none; } .sfx-acts > * { flex: 1 1 auto; } }
