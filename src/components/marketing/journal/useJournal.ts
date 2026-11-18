@@ -23,7 +23,9 @@ export function useJournal(initial: Article[], initialCarousel: CarouselItem[] |
     sync();
     window.addEventListener('stoora-blogs', sync);
     window.addEventListener('storage', sync);
-    return () => { window.removeEventListener('stoora-blogs', sync); window.removeEventListener('storage', sync); };
+    // a scheduled story goes live by itself once its time comes, so re-check every so often even with nothing else changing
+    const t = window.setInterval(sync, 30000);
+    return () => { window.removeEventListener('stoora-blogs', sync); window.removeEventListener('storage', sync); window.clearInterval(t); };
   }, []);
   return useMemo(() => buildJournal(articles, chosen), [articles, chosen]);
 }

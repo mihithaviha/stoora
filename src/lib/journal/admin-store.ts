@@ -29,6 +29,7 @@ export async function listPosts(): Promise<BlogPost[]> {
 const rowOf = (p: BlogPost) => ({
   slug: p.slug, title: p.title.trim(), excerpt: p.excerpt.trim(), summary: p.summary.trim(), topic: p.topic, photo: p.photo, published: p.published, minutes: p.minutes,
   body: p.body, faq: p.faq, carousel: p.carousel ?? null, pick: p.pick?.trim() || null, status: p.status, builtin: p.builtin,
+  scheduled_at: p.status === 'scheduled' ? p.scheduledAt ?? null : null,
 });
 
 /** Save a new post (no id yet) or changes to an existing one. Returns what was stored. */

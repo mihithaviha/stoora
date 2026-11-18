@@ -7,11 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArticleView } from '../marketing/journal/ArticleView';
 import { PhotoPicker } from './PhotoPicker';
-import { Badge, Button, ConfirmDialog, DemoBar, EmptyState, Field, Icon, Segmented, Skeleton, Switch, useToast } from '../ui';
+import { Badge, Button, ConfirmDialog, DemoBar, Dialog, EmptyState, Field, Icon, Segmented, Skeleton, Switch, useToast } from '../ui';
 import { TOPICS } from '@/lib/journal';
 import { deletePost, listPosts, savePost } from '@/lib/journal/admin-store';
 import {
-  LIMITS, articleToPost, blankPost, builtinBySlug, cleanBody, estimateMinutes, postToArticle, problemsOf, slugify,
+  LIMITS, articleToPost, blankPost, builtinBySlug, cleanBody, estimateMinutes, isPostDue, postToArticle, problemsOf, slugify,
   type BlogPost,
 } from '@/lib/journal/posts';
 import type { Block } from '@/lib/journal';
@@ -19,6 +19,28 @@ import { useLeaveGuard } from '@/lib/leave-guard';
 import { getSupabase } from '@/lib/supabase/client';
 import { Select } from '../Select';
 import { DatePicker } from '../DatePicker';
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+/** The date and time boxes (local time) from a stored ISO moment, so they can be edited. */
+const splitLocal = (value?: string | null) => {
+  const d = value ? new Date(value) : null;
+  if (!d || Number.isNaN(d.getTime())) { const t = new Date(Date.now() + 86400000); t.setHours(9, 0, 0, 0); return { date: `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`, time: '09:00' }; }
+  return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}` };
+};
+/** The date and time boxes (local time) joined back into a stored ISO moment, or null if either is missing or invalid. */
+const joinLocal = (date: string, time: string): string | null => {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const tm = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!dm || !tm) return null;
+  const d = new Date(Number(dm[1]), Number(dm[2]) - 1, Number(dm[3]), Number(tm[1]), Number(tm[2]), 0, 0);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+/** How a scheduled moment reads to the seller, in their own local time. */
+const formatLocal = (value?: string | null) => {
+  const d = value ? new Date(value) : null;
+  if (!d || Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+};
 
 type Kind = 'p' | 'h2' | 'h3' | 'ul' | 'ol' | 'callout' | 'image' | 'table';
 const KINDS: [Kind, string, string][] = [['p', 'Paragraph', 'notes'], ['h2', 'Heading', 'title'], ['h3', 'Subheading', 'text_fields'], ['ul', 'Bullet list', 'format_list_bulleted'], ['ol', 'Numbered list', 'format_list_numbered'], ['callout', 'Tip box', 'lightbulb'], ['image', 'Picture', 'image']];
@@ -90,10 +112,14 @@ export function BlogEditor({ slug }: { slug: string }) {
   const [missing, setMissing] = useState(false);
   const [view, setView] = useState<'write' | 'preview'>('write');
   const [tried, setTried] = useState(false);
-  const [busy, setBusy] = useState<'' | 'draft' | 'publish' | 'delete'>('');
+  const [busy, setBusy] = useState<'' | 'draft' | 'publish' | 'schedule' | 'delete'>('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [confirm, setConfirm] = useState<'' | 'delete' | 'unpublish'>('');
   const [leaveTo, setLeaveTo] = useState<string | null>(null);
+  const [schedOpen, setSchedOpen] = useState(false);
+  const [schedDate, setSchedDate] = useState('');
+  const [schedTime, setSchedTime] = useState('09:00');
+  const [schedTried, setSchedTried] = useState(false);
   const live = Boolean(getSupabase());
 
   // open the story: a story written here, an edit of a built-in story, or a built-in story to start editing
@@ -124,27 +150,42 @@ export function BlogEditor({ slug }: { slug: string }) {
   const set = (patch: Partial<BlogPost>) => setPost((p) => ({ ...p, ...patch }));
   const setBody = (body: Block[]) => set({ body });
   const taken = useMemo(() => all.filter((p) => p.id !== post.id).map((p) => p.slug), [all, post.id]);
-  const errors = useMemo(() => problemsOf(post, taken, post.status === 'published' || tried), [post, taken, tried]);
+  const errors = useMemo(() => problemsOf(post, taken, post.status !== 'draft' || tried), [post, taken, tried]);
   const shownError = (k: string) => (tried ? errors[k] : undefined);
   const minutes = estimateMinutes(cleanBody(post.body), post.summary);
   const builtin = post.builtin;
 
-  const save = async (status: 'draft' | 'published') => {
+  const save = async (status: 'draft' | 'published' | 'scheduled', scheduledAt?: string | null) => {
     setTried(true);
-    const next: BlogPost = { ...post, status, body: cleanBody(post.body), minutes: estimateMinutes(cleanBody(post.body), post.summary), faq: post.faq.filter((f) => f.q.trim() || f.a.trim()).map((f) => ({ q: f.q.trim(), a: f.a.trim() })), carousel: post.carousel ?? null, pick: post.pick?.trim() || null };
-    const found = problemsOf(next, taken, status === 'published');
+    const next: BlogPost = {
+      ...post, status, body: cleanBody(post.body), minutes: estimateMinutes(cleanBody(post.body), post.summary),
+      faq: post.faq.filter((f) => f.q.trim() || f.a.trim()).map((f) => ({ q: f.q.trim(), a: f.a.trim() })), carousel: post.carousel ?? null, pick: post.pick?.trim() || null,
+      scheduledAt: status === 'scheduled' ? (scheduledAt ?? post.scheduledAt ?? null) : null,
+    };
+    const found = problemsOf(next, taken, status !== 'draft');
     if (Object.keys(found).length) {
-      toast(status === 'published' ? 'Fix the highlighted parts first.' : 'Fix the highlighted parts to save.', { icon: 'error' });
+      toast(status === 'draft' ? 'Fix the highlighted parts to save.' : 'Fix the highlighted parts first.', { icon: 'error' });
       document.querySelector<HTMLElement>('[aria-invalid="true"], .err')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    setBusy(status === 'published' ? 'publish' : 'draft');
+    setBusy(status === 'published' ? 'publish' : status === 'scheduled' ? 'schedule' : 'draft');
     try {
       const stored = await savePost(next);
       setPost(stored); setSaved(JSON.stringify(stored)); setAll((l) => (l.some((x) => x.id === stored.id) ? l.map((x) => (x.id === stored.id ? stored : x)) : [stored, ...l]));
-      toast(status === 'published' ? (post.status === 'published' ? 'Story updated. Visitors see the changes now.' : builtin ? 'Story is back on Blogs.' : 'Story published.') : (builtin ? 'Story deleted from Blogs. You can restore it from the list.' : 'Draft saved.'), { icon: status === 'published' ? 'public' : 'save' });
+      const message = status === 'published' ? (isPostDue(post) ? 'Story updated. Visitors see the changes now.' : builtin ? 'Story is back on Blogs.' : 'Story published.')
+        : status === 'scheduled' ? `Story scheduled for ${formatLocal(stored.scheduledAt)}.`
+        : builtin ? 'Story deleted from Blogs. You can restore it from the list.' : 'Draft saved.';
+      toast(message, { icon: status === 'published' ? 'public' : status === 'scheduled' ? 'schedule' : 'save' });
       if (stored.slug !== slug) { await guard.release(); router.replace(`/admin/blogs/${stored.slug}`); }
     } catch (e) { toast(`Couldn’t save: ${(e as Error).message}`, { icon: 'error' }); } finally { setBusy(''); }
+  };
+  const openSchedule = () => { const s = splitLocal(post.scheduledAt); setSchedDate(s.date); setSchedTime(s.time); setSchedTried(false); setSchedOpen(true); };
+  const confirmSchedule = async () => {
+    setSchedTried(true);
+    const iso = joinLocal(schedDate, schedTime);
+    if (!iso || new Date(iso).getTime() <= Date.now()) return;
+    setSchedOpen(false);
+    await save('scheduled', iso);
   };
 
   const remove = async () => {
@@ -157,7 +198,10 @@ export function BlogEditor({ slug }: { slug: string }) {
   if (!loaded) return <Skeleton rows={4} height={72} />;
   if (missing) return <EmptyState icon="search_off" title="We couldn’t find that story" text="It may have been deleted." action={<Link className="btn primary" href="/admin/blogs">Back to Blogs</Link>} />;
 
-  const published = post.status === 'published';
+  const published = isPostDue(post);
+  const pending = post.status === 'scheduled' && !published;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
   const previewArticle = postToArticle({ ...post, body: cleanBody(post.body), minutes });
   const move = (i: number, by: -1 | 1) => { const next = [...post.body]; const j = i + by; if (j < 0 || j >= next.length) return; [next[i], next[j]] = [next[j], next[i]]; setBody(next); };
 
@@ -167,23 +211,33 @@ export function BlogEditor({ slug }: { slug: string }) {
       <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
         <Link className="btn line sm" href="/admin/blogs"><Icon name="arrow_back" size="sm" />All stories</Link>
         <h1 className="h2 grow" style={{ margin: 0, minWidth: 180 }}>{isNew && !post.title ? 'New story' : post.title || 'Untitled story'}</h1>
-        <Badge tone={published ? 'ok' : 'warn'} icon={published ? 'check_circle' : builtin ? 'visibility_off' : 'edit_note'}>{published ? 'Published' : builtin ? 'Hidden' : 'Draft'}</Badge>
+        <Badge tone={published ? 'ok' : pending ? 'offer' : 'warn'} icon={published ? 'check_circle' : pending ? 'schedule' : builtin ? 'visibility_off' : 'edit_note'}>{published ? 'Published' : pending ? 'Scheduled' : builtin ? 'Hidden' : 'Draft'}</Badge>
         {dirty ? <span className="cap" role="status">Unsaved changes</span> : <span className="cap" role="status">All changes saved</span>}
       </div>
+
+      {pending ? (
+        <div className="banner info" style={{ marginBottom: 'var(--s3)' }}>
+          <Icon name="schedule" />
+          <span>Scheduled to go live on <b>{formatLocal(post.scheduledAt)}</b>.</span>
+          <Button small kind="line" onClick={openSchedule}>Edit schedule</Button>
+        </div>
+      ) : null}
 
       <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
         <Segmented label="Write or preview" value={view} onChange={setView} options={[{ value: 'write', label: 'Write' }, { value: 'preview', label: 'Preview' }]} />
         <span className="grow" />
         {published
           ? <><Button kind="primary" icon="public" busy={busy === 'publish'} busyLabel="Saving…" onClick={() => save('published')}>Update story</Button><Button icon="visibility_off" disabled={!!busy} onClick={() => setConfirm('unpublish')}>{builtin ? 'Delete from Blogs' : 'Unpublish'}</Button></>
-          : <><Button icon="save" busy={busy === 'draft'} busyLabel="Saving…" onClick={() => save('draft')}>Save draft</Button><Button kind="primary" icon="public" busy={busy === 'publish'} busyLabel={builtin ? 'Restoring…' : 'Publishing…'} onClick={() => save('published')}>{builtin ? 'Restore' : 'Publish'}</Button></>}
+          : pending
+            ? <><Button kind="primary" icon="public" busy={busy === 'publish'} busyLabel="Publishing…" onClick={() => save('published')}>Publish now</Button><Button icon="edit_note" disabled={!!busy} onClick={() => setConfirm('unpublish')}>Save as draft</Button></>
+            : <><Button icon="save" busy={busy === 'draft'} busyLabel="Saving…" onClick={() => save('draft')}>Save draft</Button><Button icon="schedule" busy={busy === 'schedule'} busyLabel="Saving…" onClick={openSchedule}>Schedule</Button><Button kind="primary" icon="public" busy={busy === 'publish'} busyLabel={builtin ? 'Restoring…' : 'Publishing…'} onClick={() => save('published')}>{builtin ? 'Restore' : 'Publish'}</Button></>}
         {published && !dirty ? <Link className="btn quiet" href={`/blogs/${post.slug}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" size="sm" />View</Link> : null}
         {post.id ? <Button kind="quiet" icon="delete" disabled={!!busy} onClick={() => setConfirm('delete')}>{builtin ? 'Reset to original' : 'Delete'}</Button> : null}
       </div>
 
       {view === 'preview' ? (
         <div className="card flush" style={{ overflow: 'hidden' }}>
-          <p className="cap" style={{ padding: 'var(--s3)', margin: 0 }}>This is how the story will look. {published ? 'It is live.' : 'It is not live yet.'}</p>
+          <p className="cap" style={{ padding: 'var(--s3)', margin: 0 }}>This is how the story will look. {published ? 'It is live.' : pending ? `It goes live on ${formatLocal(post.scheduledAt)}.` : 'It is not live yet.'}</p>
           <div className="jr" data-testid="blog-preview" style={{ pointerEvents: 'none' }}><ArticleView article={previewArticle} origin="https://stoora.in" related={[]} /></div>
         </div>
       ) : (
@@ -257,9 +311,25 @@ export function BlogEditor({ slug }: { slug: string }) {
         title={builtin ? 'Go back to the original story?' : 'Delete this story?'} yes={builtin ? 'Reset story' : 'Delete story'}
         body={builtin ? 'Your changes to this built-in story are removed and the original comes back.' : 'It is removed from Blogs and cannot be brought back.'} onYes={() => void remove()} />
       <ConfirmDialog open={confirm === 'unpublish'} onClose={() => setConfirm('')}
-        title={builtin ? 'Delete this story from Blogs?' : 'Unpublish this story?'} yes={builtin ? 'Delete story' : 'Unpublish'}
-        body={builtin ? 'Visitors will no longer see it. It stays in the list as Hidden, so you can restore it any time.' : 'Visitors will no longer see it. It stays here as a draft.'} onYes={() => void save('draft')} />
+        title={pending ? 'Cancel the schedule?' : builtin ? 'Delete this story from Blogs?' : 'Unpublish this story?'} yes={pending ? 'Save as draft' : builtin ? 'Delete story' : 'Unpublish'}
+        body={pending ? 'It will not be published automatically. It stays here as a draft until you publish or schedule it again.' : builtin ? 'Visitors will no longer see it. It stays in the list as Hidden, so you can restore it any time.' : 'Visitors will no longer see it. It stays here as a draft.'} onYes={() => void save('draft')} />
       <ConfirmDialog open={leaveTo !== null} onClose={() => { setLeaveTo(null); guard.stay(); }} title="Leave without saving?" body="Your changes to this story won’t be saved." yes="Leave" danger onYes={() => { if (leaveTo !== null) guard.leave(leaveTo); }} />
+
+      <Dialog open={schedOpen} onClose={() => setSchedOpen(false)} title="Schedule this story"
+        footer={<><Button onClick={() => setSchedOpen(false)}>Cancel</Button><Button kind="primary" icon="schedule" busy={busy === 'schedule'} busyLabel="Scheduling…" onClick={() => void confirmSchedule()}>Schedule</Button></>}>
+        <div className="stack">
+          <p className="cap" style={{ margin: 0 }}>It goes live by itself at this moment, in your own time zone. You can still edit or cancel it any time before then.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+            <Field id="sched-date" label="Date" error={schedTried && !/^\d{4}-\d{2}-\d{2}$/.test(schedDate) ? 'Choose a date.' : undefined}>
+              <DatePicker id="sched-date" value={schedDate} onChange={setSchedDate} min={todayStr} />
+            </Field>
+            <Field id="sched-time" label="Time">
+              <input id="sched-time" type="time" className="input" value={schedTime} onChange={(e) => setSchedTime(e.target.value)} />
+            </Field>
+          </div>
+          {schedTried && joinLocal(schedDate, schedTime) && new Date(joinLocal(schedDate, schedTime)!).getTime() <= Date.now() ? <span className="err" role="alert"><Icon name="error" size="xs" />Choose a time in the future.</span> : null}
+        </div>
+      </Dialog>
     </>
   );
 }
