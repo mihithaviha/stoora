@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { AppIcon, Ic, Wordmark } from './bits';
+import { Ic, Wordmark } from './bits';
 import { useReducedMotion } from './hooks';
 import { SECTIONS } from './sections';
 
@@ -103,7 +103,7 @@ export function SiteNav({ onHome = false, page = 'home', onSection, activeSectio
     <>
       <header className={`lnav${solid ? ' solid' : ''}`} id="lnav">
         <div className="wrap in">
-          <Link className="logo" href="/" aria-label="stoora.in home"><AppIcon /><Wordmark /></Link>
+          <Link className="logo" href="/" aria-label="stoora.in home"><Wordmark /></Link>
           <nav className="links" aria-label="Sections" ref={linksRef} onPointerOut={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover(null); }}>
             <span className="ind" ref={indRef} aria-hidden="true" />
             <span className="hov" ref={hovRef} aria-hidden="true" />

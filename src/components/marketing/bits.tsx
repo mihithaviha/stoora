@@ -37,6 +37,3 @@ export function Wordmark({ className = '' }: { className?: string }) {
   return <span className={`wordmark ${className}`.trim()}>stoora<i>.in</i></span>;
 }
 
-export function AppIcon({ style }: { style?: CSSProperties }) {
-  return <span className="appicon" aria-hidden="true" style={style}>S</span>;
-}

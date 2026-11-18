@@ -33,7 +33,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <>
       <div className="app">
         <aside className="side" aria-label="Admin menu"><div className="side-in">
-          <div className="brand"><span className="appicon" aria-hidden="true">S</span><span className="wordmark">stoora<i>.in</i></span></div>
+          <div className="brand"><span className="wordmark">stoora<i>.in</i></span></div>
           <div className="ngroup">Admin</div>
           {NAV.map(([h, i, l]) => <Link key={h} className={`nav ${on(h) ? 'on' : ''}`} href={h} aria-current={on(h) ? 'page' : undefined} title={l}><Icon name={i} /><span className="lbl">{l}</span></Link>)}
           <div className="side-foot"><Link className="nav" href="/dashboard" title="Seller view"><Icon name="storefront" /><span className="lbl">Seller view</span></Link><Link className="nav" href="/" title="Back to site"><Icon name="arrow_back" /><span className="lbl">Back to site</span></Link></div>
@@ -53,7 +53,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </nav>
       {menu && (
         <div className="drawer" role="dialog" aria-modal="true" aria-label="Menu">
-          <nav className="panel" aria-label="Admin"><div className="brand" style={{ paddingLeft: 'var(--s2)' }}><span className="appicon" aria-hidden="true">S</span><span className="wordmark" style={{ color: 'var(--on-ink)' }}>stoora<i>.in</i></span></div>
+          <nav className="panel" aria-label="Admin"><div className="brand" style={{ paddingLeft: 'var(--s2)' }}><span className="wordmark" style={{ color: 'var(--on-ink)' }}>stoora<i>.in</i></span></div>
             {NAV.map(([h, i, l]) => <Link key={h} className={`nav dnav ${on(h) ? 'on' : ''}`} href={h}><Icon name={i} /><span className="grow"><span>{l}</span></span></Link>)}
             <Link className="nav dnav" href="/dashboard"><Icon name="storefront" /><span className="grow"><span>Seller view</span></span></Link>
             <div className="foot"><button className="btn" onClick={() => setMenu(false)} style={{ padding: '0 var(--s3)' }}><Icon name="close" />Close</button></div></nav>

@@ -17,7 +17,6 @@ a, button, summary, select, label, input, textarea, [role="button"], [role="tab"
   .jr-pick-in:hover .jr-pick-img img { transform: none; }
   .jr-topic:hover, .choice:hover, .aud-tab:hover, .btn.cta:hover,
   button.li:hover, .tapbox:hover, .tile:not(.static):hover, .trow:hover, .sf-card:hover { transform: none; }
-  .lnav .logo:hover .appicon { transform: none; }
 
   /* instead, a quick press */
   .btn:active, .ibtn:active, .mini:active, .chip:active, .seg button:active,

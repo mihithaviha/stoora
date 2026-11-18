@@ -22,7 +22,6 @@ function Frame({ crumb, children }: { crumb: string; children: ReactNode }) {
   return (
     <div className="frame rv">
       <div className="bar2">
-        <span className="appicon" style={{ width: 22, height: 22, fontSize: 12, borderRadius: 7 }}>S</span>
         <span className="wordmark">stoora<i>.in</i></span><span>›</span><span>{crumb}</span>
       </div>
       <div className="vp" ref={viewRef}><div className="in2 force-wide" inert aria-hidden="true">{children}</div></div>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import Link from 'next/link';
-import { AppIcon, Av, Bdg, Ic, Src } from '../bits';
+import { Av, Bdg, Ic, Src } from '../bits';
 import { useOnScreen, usePageVisible, useReducedMotion } from '../hooks';
 import { ShopFront } from '../ShopFront';
 import { ClaimForm } from './ClaimForm';
@@ -15,7 +15,7 @@ function WaHead({ name, sub, who }: { name: string; sub: string; who?: string })
   return (
     <div className="wa-h">
       <span className="wa-b"><Ic n="arrow_back" c="sm" /></span>
-      {who ? <Av name={who} /> : <span className="smark" style={{ width: 30, height: 30, fontSize: 13 }}>S</span>}
+      <Av name={who ?? 'Stoora'} />
       <div className="wa-n"><b>{name}</b><small>{sub}</small></div>
       <span className="wa-i"><Ic n="call" c="sm" /><Ic n="more_vert" c="sm" /></span>
     </div>

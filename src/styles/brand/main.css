@@ -69,7 +69,6 @@ p{margin:0}
 .page.narrow{max-width:820px}
 .wordmark{font-family:var(--font-logo);font-weight:900;letter-spacing:-.03em;font-size:22px;line-height:1;color:var(--ink);font-variation-settings:"opsz" 72}
 .wordmark i{font-style:normal;color:var(--primary)}
-.appicon{width:34px;height:34px;border-radius:10px;background:var(--gradient-warm);display:grid;place-items:center;color:#FFFFFF;font-family:var(--font-display);font-weight:800;font-size:19px;flex:none;letter-spacing:-.02em}
 .smark{width:30px;height:30px;border-radius:50%;background:var(--gradient-warm);display:grid;place-items:center;color:#FFFFFF;font-family:var(--font-display);font-weight:800;font-size:16px;flex:none}
 .smark.xs{width:22px;height:22px;font-size:12px}
 
@@ -560,7 +559,6 @@ body.mode-public::before,body.mode-auth::before{background:var(--surface)}
 .lnav.solid{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line-soft)}
 .lnav .in{height:var(--nav);display:flex;align-items:center;gap:var(--s3)}
 .lnav .logo{display:flex;align-items:center;gap:var(--s2);text-decoration:none;flex:none}
-.lnav .logo .appicon{width:32px;height:32px;font-size:18px}
 .lnav .links{display:none;position:relative;margin:0 auto;padding:4px;border-radius:var(--pill);background:color-mix(in srgb,var(--card) 70%,transparent);border:1px solid var(--line-soft)}
 .lnav .links button{position:relative;z-index:1;height:38px;padding:0 var(--s3);border-radius:var(--pill);font-size:14px;color:var(--ink-soft);transition:color .2s}
 .lnav .links button:hover,.lnav .links button.on{color:var(--ink)}
@@ -970,8 +968,6 @@ svg.paint .p2{mix-blend-mode:multiply}
 .lnav .links button.on{font-weight:500}
 .lnav .hov{position:absolute;top:4px;left:0;height:38px;border-radius:var(--pill);background:color-mix(in srgb,var(--muted) 80%,transparent);opacity:0;z-index:0;transition:transform .35s var(--ease-out),width .35s var(--ease-out),opacity .25s}
 .lnav .ind{z-index:0}
-.lnav .logo .appicon{transition:transform .5s var(--spring)}
-.lnav .logo:hover .appicon{transform:rotate(-8deg) scale(1.05)}
 .lnav .login{position:relative}
 .lnav .login::after{content:"";position:absolute;left:var(--s3);right:var(--s3);bottom:9px;height:1px;background:currentColor;transform:scaleX(0);transition:transform .3s var(--ease-out)}
 .lnav .login:hover{background:none}
