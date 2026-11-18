@@ -1,6 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ProductPhotos } from '../dash/ProductPhotos';
+import { KIND_LABEL, kindData, type SfKind } from '@/lib/storefront/kind';
+import { PHYS_LOOKS } from './phys/theme';
 import { Button, Dialog, Icon, Switch, useToast } from '../ui';
 import { shopAnnounce } from '@/lib/storefront/announce';
 import { deliveryLine, deliveryRule } from '@/lib/delivery';
@@ -57,7 +60,8 @@ function ImageSlot({ label, value, onChange, onError }: { label: string; value: 
  * The storefront editor: a panel of controls beside a live preview of the real shop page (in a frame, so the seller's colours
  * never touch the dashboard). Changes save to this browser as a draft; Publish puts them on the shop's own address.
  */
-export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () => void }) {
+/** `kind` is set only for an admin looking at one of the two storefronts: the preview then shows that layout (with sample content where the shop has none). */
+export function Editor({ initial, onBack, kind = null }: { initial: StoreConfig; onBack: () => void; kind?: SfKind | null }) {
   const { db, publishStorefront } = useStore();
   const toast = useToast();
   // every live shop uses the Standard layout; designs saved with an older template move over, keeping their words and photos
@@ -75,8 +79,12 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
   const handle = db.shop.handle;
   const live = Boolean(db.shop.storefront);
 
-  const data = useMemo(() => visibleData(toStoreData(db), config), [db, config]);
-  const layout = layoutOf(config);
+  const adminView = useMemo(() => (kind ? kindData(db, kind) : null), [db, kind]);
+  const data = useMemo(() => visibleData(adminView ? adminView.data : toStoreData(db), config), [db, config, adminView]);
+  const adminNote = kind && adminView ? `Admin view: ${KIND_LABEL[kind]}${adminView.sample ? ', with sample products' : ''}. Your published shop does not change.` : undefined;
+  // a shop of physical products and a shop of classes each list only the sections that make sense for them
+  const physical = data.services.length === 0;
+  const layout = layoutOf(config, physical);
 
   /** Change the working copy: remember it for undo and save it soon. */
   const change = useCallback((fn: (c: StoreConfig) => StoreConfig) => {
@@ -112,8 +120,8 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
   // send the working copy to the preview frame whenever it changes, and when the frame says it is ready
   const push = useCallback(() => {
     const rule = deliveryRule(db.shop);
-    frame.current?.contentWindow?.postMessage({ type: 'render', config, data, extras: { payments: { online: db.shop.online !== false, upi: true }, announce: shopAnnounce(db, rule), delivery: deliveryLine(rule), cod: Boolean(db.shop.cod) } }, window.location.origin);
-  }, [config, data, db]);
+    frame.current?.contentWindow?.postMessage({ type: 'render', config, data, extras: { payments: { online: db.shop.online !== false, upi: true }, announce: shopAnnounce(db, rule), delivery: deliveryLine(rule), cod: Boolean(db.shop.cod) }, note: adminNote }, window.location.origin);
+  }, [config, data, db, adminNote]);
   useEffect(() => { push(); }, [push]);
   useEffect(() => {
     const onMessage = (event: MessageEvent) => { if (event.origin === window.location.origin && event.data?.type === 'ready') push(); };
@@ -125,7 +133,8 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
   const problems = (): string[] => {
     const found: string[] = [];
     if (!(config.brand.name || db.shop.name).trim()) found.push('Give your shop a name (Shop name and logo).');
-    if (!data.products.length && !data.services.length) found.push('Show at least one product or service. Add one in your dashboard, or switch one back on under Products to show.');
+    const real = visibleData(toStoreData(db), config);
+    if (!real.products.length && !real.services.length) found.push('Show at least one product or service. Add one in your dashboard, or switch one back on under Products to show.');
     return found;
   };
 
@@ -147,9 +156,10 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
     toast(failed ? `Couldn’t go back to the default: ${failed}` : 'Back to the default layout. Your changes were removed from the live shop.', { icon: failed ? 'error' : 'storefront' });
   };
 
+  const setPromo = (patch: Partial<NonNullable<StoreConfig['promo']>>) => change((c) => ({ ...c, promo: { title: '', sub: '', cta: '', image: '', ...c.promo, ...patch } }));
   const reset = () => change(() => ({ ...defaultConfig('standard', { name: db.shop.name, tagline: db.shop.tagline }), contact: config.contact }));
   /** Write the layout back in full so the saved design always lists every section. */
-  const setLayout = (patch: Partial<ReturnType<typeof layoutOf>>) => change((c) => ({ ...c, layout: { ...layoutOf(c), ...patch } }));
+  const setLayout = (patch: Partial<ReturnType<typeof layoutOf>>) => change((c) => ({ ...c, layout: { ...layoutOf(c, physical), ...patch } }));
   const moveSection = (i: number, by: -1 | 1) => { const order = [...layout.order]; const j = i + by; if (j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; setLayout({ order }); };
   const toggleSection = (id: StdSection) => setLayout({ hidden: layout.hidden.includes(id) ? layout.hidden.filter((x) => x !== id) : [...layout.hidden, id] });
 
@@ -197,7 +207,7 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
                 </div>
               ))}
             </Section>
-            <Section title="Awning colours" open>
+            {!physical ? <Section title="Awning colours" open>
               <div className="sfed-awnings" role="group" aria-label="Awning colours">
                 {AWNINGS.map((pair, n) => {
                   const on = pair[0] === layout.awning[0] && pair[1] === layout.awning[1];
@@ -205,17 +215,42 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
                 })}
               </div>
               <span className="hint">The striped awning over your shop window.</span>
-            </Section>
+            </Section> : null}
+            {physical ? (
+              <Section title="Colours and type" open>
+                <div className="sfed-awnings" role="group" aria-label="Look of your shop">
+                  {PHYS_LOOKS.map((l, n) => {
+                    const on = (config.look ?? 0) === n;
+                    return <button key={l.n} type="button" className={`sfed-awn${on ? ' on' : ''}`} aria-pressed={on} aria-label={l.n} title={l.n} style={{ background: `linear-gradient(90deg, ${l.pr} 50%, ${l.ac} 50%)` }} onClick={() => change((c) => ({ ...c, look: n }))} />;
+                  })}
+                </div>
+                <span className="hint">{PHYS_LOOKS[config.look ?? 0].n}: colours, and {PHYS_LOOKS[config.look ?? 0].hf === 'Bricolage Grotesque' ? 'Bricolage Grotesque' : 'Cormorant Garamond'} for headings with DM Sans for text.</span>
+              </Section>
+            ) : null}
+            {physical ? (
+              <Section title="Promo banner">
+                <p className="cap" style={{ margin: 0 }}>An offer between your shelves. It shows only when it has a headline, and you can switch it off under Sections.</p>
+                <Text id="sf-pt" label="Headline" value={config.promo?.title ?? ''} onChange={(v) => setPromo({ title: v })} max={LIMITS.short} />
+                <Text id="sf-ps" label="Details" area value={config.promo?.sub ?? ''} onChange={(v) => setPromo({ sub: v })} max={LIMITS.text} />
+                <Text id="sf-pc" label="Button words" value={config.promo?.cta ?? ''} onChange={(v) => setPromo({ cta: v })} max={30} />
+                <ImageSlot label="Photo" value={config.promo?.image ?? ''} onChange={(v) => setPromo({ image: v })} onError={imageError} />
+              </Section>
+            ) : null}
             <Section title="Shop name and logo">
               <Text id="sf-name" label="Shop name" value={config.brand.name} onChange={(v) => set('brand', { name: v })} hint={`Shown at the top. Leave blank to use “${db.shop.name}”.`} />
               <Text id="sf-tag" label="Tagline" value={config.brand.tagline} onChange={(v) => set('brand', { tagline: v })} />
               <ImageSlot label="Logo" value={config.brand.logo} onChange={(v) => set('brand', { logo: v })} onError={imageError} />
             </Section>
             <Section title="Top of your shop">
-              <Text id="sf-ht" label="Headline" value={config.hero.title} onChange={(v) => set('hero', { title: v })} hint="The last two words get the Stoora gradient." />
+              <Text id="sf-ht" label="Headline" value={config.hero.title} onChange={(v) => set('hero', { title: v })} hint={physical ? undefined : 'The last two words get the Stoora gradient.'} />
               <Text id="sf-hs" label="Intro" max={LIMITS.text} area value={config.hero.subtitle} onChange={(v) => set('hero', { subtitle: v })} />
               <Text id="sf-hc" label="Button words" value={config.hero.cta} onChange={(v) => set('hero', { cta: v })} max={30} />
-              <ImageSlot label="Main photo" value={config.hero.image} onChange={(v) => set('hero', { image: v })} onError={imageError} />
+              {physical ? (
+                <div className="field"><span className="flabel">Carousel photos</span>
+                  <ProductPhotos photos={config.hero.images ?? []} onChange={(images) => set('hero', { images })} />
+                  <span className="hint">Each photo becomes a slide at the top of your shop. The first is shown first.</span>
+                </div>
+              ) : <ImageSlot label="Main photo" value={config.hero.image} onChange={(v) => set('hero', { image: v })} onError={imageError} />}
               <div className="field"><span className="flabel">Which part of the photo stays in view</span>
                 <div className="seg" role="group" aria-label="Photo focus">{FOCUS_OPTIONS.map((f) => <button key={f} type="button" className={config.hero.focus === f ? 'on' : ''} aria-pressed={config.hero.focus === f} onClick={() => set('hero', { focus: f })}>{FOCUS_LABEL[f]}</button>)}</div></div>
             </Section>
@@ -265,7 +300,7 @@ export function Editor({ initial, onBack }: { initial: StoreConfig; onBack: () =
                   <Link className="btn line sm" href="/products" style={{ marginTop: 8 }}>Add or edit products</Link>
                 </>
               )}
-              {db.services.length > 0 ? <p className="cap" style={{ marginTop: 8 }}>Your classes and sessions show under “Classes and sessions”.</p> : null}
+              {!physical && db.services.length > 0 ? <p className="cap" style={{ marginTop: 8 }}>Your classes and sessions show under “Classes and sessions”.</p> : null}
             </Section>
             <div style={{ padding: 16 }}><Button small kind="quiet" onClick={reset}>Start again</Button></div>
           </div>

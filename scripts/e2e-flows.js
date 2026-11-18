@@ -227,6 +227,101 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.js(`!!document.querySelector('.sx-drawer a[href="/s/meera/checkout"]')`), 'the drawer should lead to the real checkout');
     });
 
+    await flow('Physical-products shop: search, categories menu, hero slides, shelves, filters, sort, list view, bag and the editor sections', async (t) => {
+      const setValue = (sel, v, proto = 'HTMLInputElement', ev = 'input') => t.js(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); Object.getOwnPropertyDescriptor(${proto}.prototype, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event(${JSON.stringify(ev)}, { bubbles: true })); })()`);
+      await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
+      await t.goto('/settings/shop-details'); await sleep(1500); await t.click('Physical products'); await t.click('Save changes'); await sleep(900);
+      await t.goto('/s/meera'); await sleep(2500);
+      expect(await t.js(`!!document.querySelector('.pf header input[type=search]') && [...document.querySelectorAll('.pf header button')].some((b) => b.textContent.includes('All categories'))`), 'the header should have a search box and an All categories menu');
+      expect(!(await t.js(`!!document.querySelector('#sx-services')`)), 'a shop of physical products should not show Classes and sessions');
+      expect(await t.js(`!!document.querySelector('#sx-best') && !!document.querySelector('#sx-fresh') && document.querySelectorAll('#sx-cats .pf-cat').length >= 2`), 'the Bestsellers and New arrivals shelves and the category tiles should be there');
+      // hero: no product photos until the seller adds them (no Main photo, no product starred Featured)
+      expect(await t.js(`document.querySelectorAll('.pf section[aria-label=Featured] [aria-label^=Slide]').length`) === 0, 'with only one slide there should be no slide dots, and the hero should not auto-fill with product photos');
+      expect(!(await t.js(`!!document.querySelector('[aria-label="Next slide"]')`)), 'with only one slide there should be no arrows');
+      expect(await t.js(`document.querySelectorAll('#sx-best .pf-card').length >= 1 && !!document.querySelector('#sx-fresh [aria-label="Scroll right"]')`), 'the shelves should have arrows');
+      // search from the header filters the list
+      const cards = () => t.js(`document.querySelectorAll('#sx-products .pf-card').length`);
+      expect(await cards() === 5, 'all five products should show to start with');
+      await setValue('.pf header input[type=search]', 'dupatta'); await sleep(300);
+      expect(await t.js(`document.querySelectorAll('.pf header ul[aria-label=Suggestions] li').length`) === 2, 'typing dupatta should suggest the two dupattas');
+      await t.js(`document.querySelector('.pf header form[role=search]').requestSubmit()`); await sleep(800);
+      expect(await cards() === 2, 'searching dupatta should leave two products');
+      expect(await t.js(`document.querySelector('#sx-products input[type=search]').value`) === 'dupatta', 'the search word should show in the products box too');
+      await setValue('#sx-products input[type=search]', ''); await sleep(300);
+      expect(await cards() === 5, 'clearing the search should bring all five back');
+      // the categories menu opens, picks one and closes with Escape
+      await t.js(`[...document.querySelectorAll('.pf header button')].find((b) => b.textContent.includes('All categories')).click()`); await sleep(400);
+      expect(await t.js(`!!document.querySelector('.pf-mega')`), 'All categories should open the menu');
+      await t.js(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`); await sleep(300);
+      expect(!(await t.js(`!!document.querySelector('.pf-mega')`)), 'Escape should close the categories menu');
+      await t.js(`[...document.querySelectorAll('.pf header button')].find((b) => b.textContent.includes('All categories')).click()`); await sleep(300);
+      await t.js(`[...document.querySelectorAll('.pf-mega a')].find((a) => a.textContent.includes('Kurtas')).click()`); await sleep(700);
+      expect(await cards() === 3 && !(await t.js(`!!document.querySelector('.pf-mega')`)), 'choosing Kurtas should show the three kurtas and close the menu');
+      await t.js(`[...document.querySelectorAll('#sx-products [aria-label="Filter by category"] button')].find((b) => b.textContent === 'All').click()`); await sleep(300);
+      // sort, filters and view
+      await t.js(`document.querySelector('#sx-sort').click()`); await sleep(300);
+      await t.js(`[...document.querySelectorAll('.dd-opt')].find((o) => o.textContent.includes('Price: high to low')).click()`); await sleep(400);
+      expect(await t.js(`document.querySelector('#sx-products .pf-card b').textContent`) === '₹2,899', 'sorting high to low should start with the dearest');
+      await t.js(`document.querySelector('#sx-products aside input[type=checkbox]').click()`); await sleep(300);
+      expect(await cards() === 4, 'In stock only should hide the sold-out dupatta');
+      await setValue('#sx-products aside input[type=range]', '1600'); await sleep(300);
+      expect(await cards() === 2, 'a highest price of 1,600 should leave the two cheaper kurtas');
+      await t.js(`[...document.querySelectorAll('#sx-products aside button')].pop().click()`); await sleep(300);
+      expect(await cards() === 5, 'Clear filters should bring everything back');
+      await t.js(`document.querySelector('[aria-label="List view"]').click()`); await sleep(400);
+      expect(await t.js(`!!document.querySelector('#sx-products [data-view=list]')`), 'the list view should show');
+      await t.js(`[...document.querySelectorAll('#sx-products [data-view=list] .pf-btn')].find((b) => b.textContent.includes('Add to cart')).click()`); await sleep(900);
+      expect((await t.js(`document.querySelector('.pf header [aria-label^="Open your bag"]').textContent`)).includes('1'), 'adding from the list should put one thing in the bag');
+      await t.js(`document.querySelector('[aria-label="Grid view"]').click()`); await sleep(300);
+      // the editor lists this shop's own sections and no awning
+      await t.goto('/storefront'); await sleep(2000);
+      await t.js(`[...document.querySelectorAll('.sfg-current button')].find((b) => b.textContent.includes('Edit your storefront')).click()`); await sleep(3500);
+      expect(await t.has('Bestsellers') && await t.has('New arrivals') && !(await t.has('Classes and sessions')) && !(await t.has('Awning colours')), 'the editor should list Bestsellers and New arrivals, and not Classes and sessions or the awning');
+      // starring a product as Featured adds it to the hero slides, which is how a seller is meant to add hero photos
+      await t.js(`document.querySelector('.sfed-star').click()`); await sleep(1500);
+      expect(await t.js(`document.querySelector('.sfed-device-frame iframe').contentDocument.querySelectorAll('.pf section[aria-label=Featured] [aria-label^=Slide]').length`) > 1, 'starring a product as Featured should add it to the hero slides');
+      await t.js(`document.querySelector('[aria-label="Show New arrivals"]').click()`); await sleep(1500);
+      expect(!(await t.js(`!!document.querySelector('.sfed-device-frame iframe').contentDocument.querySelector('#sx-fresh')`)), 'switching New arrivals off should remove it from the preview');
+      await t.js(`document.querySelector('[aria-label="Emerald silk"]').click()`); await sleep(1500);
+      expect(await t.js(`getComputedStyle(document.querySelector('.sfed-device-frame iframe').contentDocument.querySelector('.pf')).getPropertyValue('--pr').trim().toLowerCase()`) === '#0f4c3a', 'choosing the Emerald silk look should recolour the preview');
+      await setValue('#sf-pt', 'Festive sale'); await sleep(1500);
+      expect(await t.js(`document.querySelector('.sfed-device-frame iframe').contentDocument.body.innerText.includes('Festive sale')`), 'a promo headline should show in the preview');
+    });
+
+    await flow('Admin: two buttons on the Storefront page show the physical and the digital storefront (preview, editor and shop link)', async (t) => {
+      await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
+      await t.goto('/storefront'); await sleep(2500);
+      const pressed = () => t.js(`[...document.querySelectorAll('.sfx-kind-b')].filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.kind).join()`);
+      expect(await t.js(`document.querySelectorAll('.sfx-kind-b').length`) === 2, 'an admin should see exactly two storefront buttons');
+      expect(await t.has('Physical storefront') && await t.has('Digital storefront'), 'the buttons should be named Physical storefront and Digital storefront');
+      expect(await pressed() === 'physical', 'with nothing chosen the shop’s own kind (physical for the sample shop) should show as pressed');
+      const frameDoc = (sel) => t.js(`(() => { const d = document.querySelector('.sfx-adminprev-f').contentDocument; return d ? !!d.querySelector(${JSON.stringify(sel)}) : false; })()`);
+      await sleep(3500);
+      expect(await frameDoc('.pf header') && await frameDoc('#sx-best') && !(await frameDoc('#sx-services')), 'the physical preview should show the shop window layout');
+      // digital
+      await t.js(`document.querySelector('.sfx-kind-b[data-kind="digital"]').click()`); await sleep(4500);
+      expect(await pressed() === 'digital', 'Digital storefront should be pressed after a click');
+      expect(await frameDoc('#sx-services') && await frameDoc('.sx-sf-awn') && !(await frameDoc('.pf')), 'the digital preview should show the painted shopfront with classes and sessions');
+      expect(await t.js(`document.querySelector('.sfx-adminprev-f').contentDocument.querySelector('[data-testid=admin-kind-note]')?.textContent.includes('Digital storefront')`), 'the preview should say it is the admin view of the Digital storefront');
+      expect(await t.js(`document.querySelector('a[href="/s/meera?as=digital"]') !== null`), 'View storefront should open the shop as the digital storefront');
+      // the choice stays after a reload
+      await t.goto('/storefront'); await sleep(2500);
+      expect(await pressed() === 'digital', 'the choice should be remembered in this browser');
+      // the editor preview follows the choice
+      await t.js(`[...document.querySelectorAll('.sfx-card button')].find((b) => b.textContent.includes('Edit your storefront')).click()`); await sleep(3800);
+      expect(await t.js(`!!document.querySelector('.sfed-device-frame iframe').contentDocument.querySelector('.sx-sf-awn')`) && await t.has('Awning colours'), 'the editor preview and its sections should be the digital ones');
+      // the shop itself, opened as physical by an admin
+      await t.goto('/s/meera?as=physical'); await sleep(2500);
+      expect(await t.js(`!!document.querySelector('.pf header') && !document.querySelector('#sx-services')`), '/s/meera?as=physical should open the physical storefront for an admin');
+      await t.goto('/s/meera?as=digital'); await sleep(2500);
+      expect(await t.js(`!document.querySelector('.pf') && !!document.querySelector('#sx-services')`), '/s/meera?as=digital should open the digital storefront for an admin');
+      // back to the shop's own, and the preview page for a shop that has no classes gets labelled sample content
+      await t.goto('/storefront'); await sleep(2000);
+      await t.js(`document.querySelector('.sfx-kind-reset').click()`); await sleep(600);
+      expect(await pressed() === 'physical' && !(await t.js(`!!document.querySelector('.sfx-kind-reset')`)), 'Back to my shop’s own should clear the choice');
+      await t.goto('/design'); await t.js(`localStorage.removeItem('stoora.admin.sfkind')`);
+    });
+
     await flow('Blogs admin: write, publish, edit, unpublish and delete a story; edit a built-in story and reset it', async (t) => {
       const fill = (sel, v) => t.js(`(async () => { const el = document.querySelector(${JSON.stringify(sel)}); if (el.getAttribute('role') === 'combobox') { el.click(); await new Promise((r) => setTimeout(r, 150)); const opt = [...document.querySelectorAll('#' + CSS.escape(el.id) + '-list [role=option]')].find((o) => o.dataset.value === ${JSON.stringify(v)}); if (!opt) throw new Error('no option ' + ${JSON.stringify(v)} + ' in ' + el.id); opt.click(); await new Promise((r) => setTimeout(r, 80)); return; } const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
       const h1 = () => t.js(`document.querySelector('h1')?.textContent || ''`);
@@ -595,34 +690,38 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
     await flow('Open a shop: name, what you sell, setting up, live; Settings can change what you sell', async (t) => {
       await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
       await t.goto('/onboarding'); await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
-      await t.type('#ob-name', 'Test Bakes'); await t.click('Continue');
+      await t.type('#ob-name', 'Test Bakes');
+      await t.click('Continue');
+      expect(await t.has('Enter your surname.'), 'surname was not required');
+      await t.type('#ob-username', 'Test'); await t.type('#ob-surname', 'Rao'); await t.type('#ob-email', 'test.bakes@example.in'); await t.type('#ob-phone', '9876500001');
+      await t.click('Continue');
       expect(await t.waitFor('What do you sell?'), 'the what-you-sell step is missing');
-      await t.click('Continue'); expect(await t.has('Pick one to go on.'), 'a choice was not required');
-      await t.click('Physical products'); expect(await t.waitFor('You picked Physical products'), 'the choice was not confirmed back');
-      await t.click('Digital products'); expect(await t.has('You picked Digital products'), 'the choice could not be changed');
-      await t.click('Physical products'); await t.click('Continue');
-      await t.click('Continue'); await t.click('Continue'); await t.click('Publish my shop');
+      expect(await t.has('Physical products') && !(await t.has('Digital products')), 'onboarding should only offer physical products');
+      expect(!(await t.has('How will you get paid?')) && !(await t.has('How you take orders')) && !(await t.has('Pick a look')), 'onboarding should no longer ask about payments, orders or look');
+      await t.click('Publish my shop');
       expect(await t.waitFor('Setting up Test Bakes', 4000), 'there was no setting-up screen with steps');
       expect(await t.waitFor('Test Bakes is live', 8000), 'shop was not published');
       expect(await t.has('stoora.in/test-bakes'), 'shop link was not made from the name');
       await t.goto('/s/test-bakes'); expect(await t.has('Coming soon'), 'a shop with no products should say Coming soon');
       await t.goto('/dashboard'); expect(await t.waitFor('Add your first product'), 'a physical shop should be asked to add a product first: ' + (await t.text()).replace(/\s+/g, ' ').slice(0, 260));
-      expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'a physical shop should not show Services in the menu');
-      // physical: the Products screen only, no Services or Bookings anywhere
+      expect(await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`), 'an admin should see Services in the menu even for a physical shop, to test both storefronts');
+      // demo mode is always admin, so Products and Services are both reachable regardless of the shop's category
       await t.goto('/products'); await sleep(1200);
-      expect(!(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`)) && await t.has('Add product') && !(await t.has('Add service')), 'a physical shop should see Products only on the Products screen');
+      expect(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`) && await t.has('Add product'), 'an admin should see the Products/Services switch even on a physical shop');
       await t.goto('/products?tab=services'); await sleep(1500);
-      expect(!(await t.js('location.search')).includes('services') && await t.has('Add product'), 'the services address should send a physical shop back to Products');
+      expect(await t.has('Add service'), 'an admin should be able to open Services on a physical shop');
       await t.goto('/orders'); await sleep(1200);
       expect(!(await t.js(`!!document.querySelector('[aria-label="Orders or bookings"]')`)), 'a physical shop should not see an Orders or Bookings switch');
       await t.goto('/dashboard'); await sleep(1500);
       expect(!(await t.has('Coming up')) && !(await t.js(`[...document.querySelectorAll('.mstrip, .dstrip, [class*=strip]')].some((x) => x.textContent.includes('Bookings'))`)), 'a physical shop should not see Bookings on the dashboard');
       await t.goto('/settings/shop-details'); await t.click('Digital products'); await t.click('Save changes'); await sleep(900);
       await t.goto('/dashboard'); expect(await t.waitFor('Add your first session or download'), 'a digital shop should be asked to add a session first');
-      expect(!(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`)) && (await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'the menu should show Services and hide Products after switching to digital');
-      // digital: the Services screen only
+      expect((await t.js(`!!document.querySelector('.dnav a[href="/products"]')`)) && (await t.js(`!!document.querySelector('.dnav a[href="/products?tab=services"]')`)), 'an admin should keep seeing both Products and Services after switching to digital');
+      // an admin can still reach both screens after switching to digital, to test both storefronts
       await t.goto('/products'); await sleep(1500);
-      expect((await t.js('location.search')).includes('tab=services') && await t.has('Add service') && !(await t.has('Add product')) && !(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`)), 'a digital shop should see Services only on the Products screen');
+      expect(await t.js(`!!document.querySelector('[aria-label="Products or services"]')`) && await t.has('Add product'), 'an admin should still see the Products/Services switch on a digital shop');
+      await t.goto('/products?tab=services'); await sleep(1500);
+      expect(await t.has('Add service'), 'an admin should be able to open Services on a digital shop');
       await t.goto('/settings/shop-details'); await t.click('Physical products'); await t.click('Save changes'); await sleep(900);
       await t.goto('/dashboard'); expect(await t.js(`!!document.querySelector('.dnav a[href="/products"]')`), 'switching back should bring Products back');
     });

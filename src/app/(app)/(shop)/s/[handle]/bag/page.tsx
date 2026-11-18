@@ -12,7 +12,7 @@ import { rs } from '@/lib/format';
 export default function BagPage() {
   const { handle } = useParams<{ handle: string }>(); const base = shopBase(handle); const bag = useBag(); const { db } = useStore(); const toast = useToast();
   if (!bag.ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={3} height={110} /></div>;
-  if (!bag.detailed.length) return <div className="wrap"><EmptyState icon="shopping_bag" title="Your bag is empty" text="Add something you like and it will wait for you here." action={<ButtonLink href={base} kind="primary">Start shopping</ButtonLink>} /></div>;
+  if (!bag.detailed.length) return <div className="wrap"><EmptyState icon="shopping_bag" title="Your bag is empty" text="Add something you like and it will wait for you here." action={<ButtonLink href={base} kind="primary" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Start shopping</ButtonLink>} /></div>;
   const { fee, freeOver } = bag.rule; const toFree = freeOver > 0 ? Math.max(0, freeOver - bag.subtotal) : 0; const showFreebar = fee > 0 && freeOver > 0;
   return (
     <div className="wrap">
@@ -21,7 +21,12 @@ export default function BagPage() {
         <div className="stack">
           {bag.detailed.map(({ line, product, index }) => (
             <div className="bagline" key={index}>
-              <Link href={`${base}/p/${product.id}`}><ProductArt product={product} /></Link>
+              <Link href={`${base}/p/${product.id}`}>
+                {product.photos?.[0]
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={product.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="part" />
+                  : <ProductArt product={product} />}
+              </Link>
               <div className="stack tight">
                 <div className="row"><Link className="nm grow" href={`${base}/p/${product.id}`}>{product.name}</Link><span className="money">{rs(product.price * line.qty)}</span></div>
                 <span className="cap">{line.size ? `Size ${line.size} · ` : ''}{rs(product.price)} each{product.stock <= 3 && product.stock > 0 ? ` · only ${product.stock} left` : ''}</span>
@@ -38,7 +43,7 @@ export default function BagPage() {
           {showFreebar && <div className="freebar">{toFree > 0 ? <span>Add <b className="num t-ink">{rs(toFree)}</b> more for free delivery</span> : <span className="verified"><Icon name="local_shipping" size="sm" />You get free delivery</span>}<div className="meter"><i style={{ width: `${Math.min(100, (bag.subtotal / freeOver) * 100)}%` }} /></div></div>}
           <div className="kv"><div className="r"><span>Subtotal</span><span>{rs(bag.subtotal)}</span></div><div className="r"><span>Delivery</span><span>{bag.delivery ? rs(bag.delivery) : 'Free'}</span></div><div className="r t"><span>Total</span><span>{rs(bag.total)}</span></div></div>
           {!db.shop.open && <div className="banner warn"><Icon name="pause_circle" /><span>{PAUSED_LINE}</span></div>}
-          <ButtonLink href={`${base}/checkout`} kind="primary" full>Checkout</ButtonLink>
+          <ButtonLink href={`${base}/checkout`} kind="primary" full style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Checkout</ButtonLink>
           <p className="cap">Taxes included. You pay on the next step.</p>
         </Card>
       </div>

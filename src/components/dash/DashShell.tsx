@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { DI } from './parts';
 import { useToast } from '../ui';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useIsAdmin } from '@/lib/auth';
 import { rs } from '@/lib/format';
 import { orderFilters, useStore } from '@/lib/store';
 import { sellsDigital, sellsPhysical } from '@/lib/shopstate';
@@ -72,7 +72,9 @@ export function DashShell({ children }: { children: ReactNode }) {
   const toast = useToast();
   const auth = useAuth();
   const { db, ready } = useStore();
-  const physicalOnly = sellsPhysical(db.shop); const digitalOnly = sellsDigital(db.shop); // the other kind stays saved, just out of the menu
+  const admin = useIsAdmin();
+  // admins can add both products and services to test the storefront layout, regardless of the shop's own category
+  const physicalOnly = !admin && sellsPhysical(db.shop); const digitalOnly = !admin && sellsDigital(db.shop); // the other kind stays saved, just out of the menu
   // the ?tab= part of the address is read by a small piece wrapped in its own Suspense (see TabWatcher), so the sidebar and top bar are part of the server's HTML
   const [tab, setTab] = useState<string | null>(null);
   const screen = useRef<HTMLDivElement>(null);

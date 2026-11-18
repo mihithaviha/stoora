@@ -9,15 +9,18 @@ import { Skeleton, useToast } from '@/components/ui';
 import { shopKind } from '@/lib/shopstate';
 import { downloadCsv } from '@/lib/csv';
 import { rs } from '@/lib/format';
+import { useIsAdmin } from '@/lib/auth';
 import { useStore } from '@/lib/store';
 
 export default function ProductsPage() {
   const { db, ready } = useStore();
   const router = useRouter();
   const toast = useToast();
+  const admin = useIsAdmin();
   const tab = useSearchParams().get('tab');
   // a shop that sells physical products sees Products only; one that sells digital products sees Services only (sessions, classes, downloads)
-  const kind = shopKind(db.shop);
+  // admins can see and add both, to test the storefront layout with real data of each kind
+  const kind = admin ? 'both' : shopKind(db.shop);
   const isS = kind === 'digital' ? true : kind === 'physical' ? false : tab === 'services';
   useEffect(() => {
     if (!ready) return;
