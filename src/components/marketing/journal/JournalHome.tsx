@@ -95,7 +95,7 @@ export function JournalHome() {
               <label className="sr" htmlFor="jr-q">Search Blogs</label>
               <input id="jr-q" name="q" type="search" value={typed} placeholder="Search stories" autoComplete="off" maxLength={80}
                 onChange={(e) => { setTyped(e.target.value); publish(topic, e.target.value, false); }} />
-              <button className="btn primary sm" type="submit">Search</button>
+              <button className="btn primary sm" type="submit" suppressHydrationWarning>Search</button>
             </form>
           </div>
           <nav className="jr-topic-grid" aria-label="Topics">
