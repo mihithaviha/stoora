@@ -6,7 +6,6 @@ import { ShopSign } from '@/components/storefront/ShopSign';
 import { Card, DemoBar, Icon, Skeleton, Switch, useToast } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { loadDraft, saveDraft } from '@/lib/storefront/draft';
-import { KIND_LABEL, useAdminKind, type SfKind } from '@/lib/storefront/kind';
 import { startingConfig } from '@/lib/storefront/map';
 import type { StoreConfig } from '@/lib/storefront/shared';
 import type { Shop } from '@/lib/types';
@@ -20,7 +19,6 @@ export default function StorefrontPage() {
   const [tab, setTab] = useState<Tab>('templates');
   const [working, setWorking] = useState<StoreConfig | null>(null);
   const handle = db.shop.handle;
-  const { admin, override, active, choose } = useAdminKind(db);
 
   // coming back to a draft: open it where the seller left off
   useEffect(() => {
@@ -47,19 +45,10 @@ export default function StorefrontPage() {
           <p>Your shop page and how it looks. Choose a template, make it yours, and publish it at your own link.</p>
         </div>
         <div className="sfx-acts">
-          <a className="sfx-btn sfx-go" href={`/s/${s.handle}${override ? `?as=${override}` : ''}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />View storefront</a>
+          <a className="sfx-btn sfx-go" href={`/s/${s.handle}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />View storefront</a>
           <CopyButton text={link} label="Copy shop link" done="Shop link copied." />
         </div>
       </header>
-      {admin ? (
-        <div className="sfx-kind" role="group" aria-label="Admin: show the storefront as">
-          <span className="sfx-kind-l"><Icon name="verified_user" size="sm" />Admin view</span>
-          {(['physical', 'digital'] as SfKind[]).map((k) => (
-            <button key={k} type="button" className="sfx-kind-b" aria-pressed={active === k} data-kind={k} onClick={() => choose(k)}><Icon name={k === 'physical' ? 'shopping_bag' : 'play_circle'} size="sm" />{KIND_LABEL[k]}</button>
-          ))}
-          {override ? <button type="button" className="sfx-kind-reset" onClick={() => choose(null)}>Back to my shop’s own</button> : null}
-        </div>
-      ) : null}
       <div className="sfx-tabs" role="tablist" aria-label="Storefront">
         {([['templates', 'Templates'], ['editor', 'Editor'], ['settings', 'Shop settings']] as [Tab, string][]).map(([id, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} className="sfx-tab" onClick={() => (id === 'editor' ? edit() : setTab(id))}>{label}</button>
@@ -85,18 +74,8 @@ export default function StorefrontPage() {
           </div>
         </article>
       )}
-      {tab === 'templates' && admin ? (
-        <section className="sfx-adminprev" aria-label={`${KIND_LABEL[active]} preview`}>
-          <div className="sfx-adminprev-h">
-            <div><h2>{KIND_LABEL[active]}</h2><p>{active === 'physical' ? 'The shop-window layout for sellers of physical products.' : 'The painted shopfront for sellers of classes, sessions and digital products.'} Admin only. Sample products fill in where your shop has none.</p></div>
-            <a className="sfx-btn" href={`/store-preview?kind=${active}`} target="_blank" rel="noopener noreferrer"><Icon name="open_in_new" />Open full size</a>
-          </div>
-          <iframe key={`${active}-${db.products.length}-${db.services.length}-${live}`} title={`${KIND_LABEL[active]} preview`} src={`/store-preview?kind=${active}`} className="sfx-adminprev-f" loading="lazy" />
-        </section>
-      ) : null}
-
       {tab === 'editor' && (working
-        ? <Editor key={`${working.template}-${override ?? 'own'}`} initial={working} kind={override} onBack={() => setTab('templates')} />
+        ? <Editor key={working.template} initial={working} onBack={() => setTab('templates')} />
         : <Card><p className="t-body">Pick a template to start.</p><button className="btn primary" onClick={() => setTab('templates')}>Choose a template</button></Card>)}
 
       {tab === 'settings' && (

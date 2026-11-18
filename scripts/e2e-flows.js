@@ -63,68 +63,26 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
 (async () => {
   const browser = await launch();
   try {
-    await flow('Seller login with a code (wrong code, then the right one)', async (t) => {
-      await t.goto('/login'); await t.type('#li-phone', '9876543210'); await t.click('Get WhatsApp code');
-      expect(await t.waitUrl('/login/verify'), 'did not reach the code screen');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('000000');
-      expect(await t.waitFor('That code isn’t right'), 'wrong code was not rejected');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitUrl('/dashboard', 8000), 'right code did not open the dashboard');
-    });
-
-    await flow('Continue with Google signs in, and the phone must be added first (P0-6)', async (t) => {
+    await flow('Continue with Google signs in to the shop setup, and Google is the seller’s only login (P0-6)', async (t) => {
       await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/login'); expect(await t.has('Continue with Google') && await t.has('or with a WhatsApp code'), 'login page is missing the Google button or the WhatsApp option');
-      expect(!(await t.has('Password')), 'a password field is still on the page');
-      await t.click('Continue with Google'); expect(await t.waitUrl('/dashboard', 8000), 'Google button did not open the dashboard');
-      expect(await t.waitFor('Add your WhatsApp number'), 'a Google sign-up reached the dashboard without being asked for a phone');
-      expect(!(await t.has('Good morning')) && !(await t.has('Welcome to Stoora')), 'the dashboard showed before the phone was verified');
-      await t.type('#pg-num', '9000000001'); await t.click('Send code on WhatsApp');
-      expect(await t.waitFor('This number is already used by another Stoora account'), 'a number that belongs to another account was not refused');
+      await t.goto('/login'); expect(await t.has('Continue with Google'), 'login page is missing the Google button');
+      expect(!(await t.has('WhatsApp')) && !(await t.has('Password')), 'the login page should offer Google only, no WhatsApp code and no password');
+      await t.click('Continue with Google'); expect(await t.waitUrl('/onboarding', 8000), 'a new Google sign-up should go to the shop setup, not straight to the dashboard');
+      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing');
+      await t.type('#ob-username', 'Priya'); await t.type('#ob-surname', 'Sharma'); await t.type('#ob-name', 'Priya Studio');
       await t.type('#pg-num', '9811122233'); await t.click('Send code on WhatsApp');
-      expect(await t.waitFor('We sent a 6-digit code'), 'no code step');
+      expect(await t.waitFor('We sent a 6-digit code'), 'no code step for the WhatsApp number');
       await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('000000');
       expect(await t.waitFor('That code isn’t right'), 'a wrong code was accepted');
       await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitFor('Welcome to Stoora', 8000) || await t.waitFor('Good morning', 3000) || await t.waitFor('Good afternoon', 3000) || await t.waitFor('Good evening', 3000), 'the dashboard did not open after the code');
-      await t.goto('/account'); expect(await t.waitFor('Phone login') && await t.has('Google login'), 'Account does not show both logins');
+      expect(await t.waitFor('+91 9811122233'), 'the WhatsApp number should show as confirmed');
+      await t.click('Continue'); await t.click('Continue'); await t.click('Publish my shop');
+      expect(await t.waitFor('is live', 8000), 'the shop was not published');
+      await t.goto('/account'); expect(await t.waitFor('WhatsApp number') && await t.has('Google login'), 'Account does not show the Google login and the WhatsApp number');
       expect((await t.text()).includes('••• ••'), 'the phone is not shown masked');
+      expect(!(await t.has('Phone login')) && !(await t.has('log in with your phone')), 'the WhatsApp number should not be labelled or described as a login method');
       await t.goto('/buyer/login'); await t.click('Continue with Google'); expect(await t.waitUrl('/buyer/orders', 8000), 'buyer Google sign-in did not open orders');
       await t.goto('/dashboard'); await t.goto('/account'); await t.click('Sign out'); expect(await t.waitUrl('/signed-out', 6000), 'sign out did not reach the signed-out screen');
-    });
-
-    await flow('An unknown phone number asks "first time on Stoora?" and never makes an account by itself (P0-3)', async (t) => {
-      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/login'); await t.type('#li-phone', '9123456780'); await t.click('Get WhatsApp code');
-      expect(await t.waitFor('Is this your first time on Stoora?'), 'an unknown number was not asked about');
-      expect(!(await t.has('link an existing email')) && !(await t.has('make a new account')), 'the old link-an-email screen showed');
-      expect((await t.where()).startsWith('/login') && !(await t.where()).includes('verify'), 'a code was sent before asking');
-      await t.click('No, I used Google before'); expect(await t.waitUrl('/dashboard', 8000), 'Google did not lead to the dashboard');
-      expect(await t.waitFor('Add your WhatsApp number'), 'the number was not asked for again to connect the two');
-      expect((await t.js(`document.getElementById('pg-num').value`)).replace(/\D/g, '') === '9123456780', 'the number typed at login was not carried to the connect step');
-      await t.click('Send code on WhatsApp'); expect(await t.waitFor('We sent a 6-digit code'), 'no code step');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitFor('Welcome to Stoora', 8000) || await t.waitFor('Good morning', 3000) || await t.waitFor('Good afternoon', 3000) || await t.waitFor('Good evening', 3000), 'the dashboard did not open after connecting the number');
-      await t.goto('/account'); await t.click('Sign out'); expect(await t.waitUrl('/signed-out', 6000), 'sign out failed');
-      await t.goto('/login'); await t.type('#li-phone', '9123456780'); await t.click('Get WhatsApp code');
-      expect(await t.waitUrl('/login/verify', 6000), 'after connecting, the same number should go straight to the code screen');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitUrl('/dashboard', 8000), 'the next phone login did not open the dashboard');
-    });
-
-    await flow('Signed up with the phone: Google is offered, Later keeps it in the setup list (P0-6 rule 2)', async (t) => {
-      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/login'); await t.type('#li-phone', '9333344444'); await t.click('Get WhatsApp code');
-      expect(await t.waitFor('Is this your first time on Stoora?'), 'unknown number was not asked');
-      await t.click('Yes, I’m new'); expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitUrl('/onboarding', 8000), 'a new number should be asked for the store name');
-      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing');
-      await t.goto('/dashboard'); expect(await t.waitFor('Add your Google account so you can log in with it too'), 'Google was not offered');
-      await t.click('Later'); await sleep(300);
-      expect(!(await t.has('Add your Google account so you can log in with it too')), 'the prompt should go after Later');
-      expect(await t.has('Add Google login'), 'Later should leave "Add Google login" in the setup list');
-      await t.goto('/account'); expect(await t.has('Google login') && await t.has('Not added yet'), 'Account should show Google as not added');
     });
 
     await flow('Buyer buys something and it reaches the seller', async (t) => {
@@ -288,38 +246,14 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.js(`document.querySelector('.sfed-device-frame iframe').contentDocument.body.innerText.includes('Festive sale')`), 'a promo headline should show in the preview');
     });
 
-    await flow('Admin: two buttons on the Storefront page show the physical and the digital storefront (preview, editor and shop link)', async (t) => {
+    await flow('Admin: the shop itself can still be opened as the physical or the digital storefront by address', async (t) => {
       await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
       await t.goto('/storefront'); await sleep(2500);
-      const pressed = () => t.js(`[...document.querySelectorAll('.sfx-kind-b')].filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.kind).join()`);
-      expect(await t.js(`document.querySelectorAll('.sfx-kind-b').length`) === 2, 'an admin should see exactly two storefront buttons');
-      expect(await t.has('Physical storefront') && await t.has('Digital storefront'), 'the buttons should be named Physical storefront and Digital storefront');
-      expect(await pressed() === 'physical', 'with nothing chosen the shop’s own kind (physical for the sample shop) should show as pressed');
-      const frameDoc = (sel) => t.js(`(() => { const d = document.querySelector('.sfx-adminprev-f').contentDocument; return d ? !!d.querySelector(${JSON.stringify(sel)}) : false; })()`);
-      await sleep(3500);
-      expect(await frameDoc('.pf header') && await frameDoc('#sx-best') && !(await frameDoc('#sx-services')), 'the physical preview should show the shop window layout');
-      // digital
-      await t.js(`document.querySelector('.sfx-kind-b[data-kind="digital"]').click()`); await sleep(4500);
-      expect(await pressed() === 'digital', 'Digital storefront should be pressed after a click');
-      expect(await frameDoc('#sx-services') && await frameDoc('.sx-sf-awn') && !(await frameDoc('.pf')), 'the digital preview should show the painted shopfront with classes and sessions');
-      expect(await t.js(`document.querySelector('.sfx-adminprev-f').contentDocument.querySelector('[data-testid=admin-kind-note]')?.textContent.includes('Digital storefront')`), 'the preview should say it is the admin view of the Digital storefront');
-      expect(await t.js(`document.querySelector('a[href="/s/meera?as=digital"]') !== null`), 'View storefront should open the shop as the digital storefront');
-      // the choice stays after a reload
-      await t.goto('/storefront'); await sleep(2500);
-      expect(await pressed() === 'digital', 'the choice should be remembered in this browser');
-      // the editor preview follows the choice
-      await t.js(`[...document.querySelectorAll('.sfx-card button')].find((b) => b.textContent.includes('Edit your storefront')).click()`); await sleep(3800);
-      expect(await t.js(`!!document.querySelector('.sfed-device-frame iframe').contentDocument.querySelector('.sx-sf-awn')`) && await t.has('Awning colours'), 'the editor preview and its sections should be the digital ones');
-      // the shop itself, opened as physical by an admin
+      expect(!(await t.has('Admin view')) && !(await t.js(`!!document.querySelector('.sfx-kind-b')`)), 'the admin preview toggle should be gone from the Storefront page');
       await t.goto('/s/meera?as=physical'); await sleep(2500);
       expect(await t.js(`!!document.querySelector('.pf header') && !document.querySelector('#sx-services')`), '/s/meera?as=physical should open the physical storefront for an admin');
       await t.goto('/s/meera?as=digital'); await sleep(2500);
       expect(await t.js(`!document.querySelector('.pf') && !!document.querySelector('#sx-services')`), '/s/meera?as=digital should open the digital storefront for an admin');
-      // back to the shop's own, and the preview page for a shop that has no classes gets labelled sample content
-      await t.goto('/storefront'); await sleep(2000);
-      await t.js(`document.querySelector('.sfx-kind-reset').click()`); await sleep(600);
-      expect(await pressed() === 'physical' && !(await t.js(`!!document.querySelector('.sfx-kind-reset')`)), 'Back to my shop’s own should clear the choice');
-      await t.goto('/design'); await t.js(`localStorage.removeItem('stoora.admin.sfkind')`);
     });
 
     await flow('Blogs admin: write, publish, edit, unpublish and delete a story; edit a built-in story and reset it', async (t) => {
@@ -679,19 +613,12 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.goto('/signup'); expect(await t.waitUrl('/shop/start'), 'the old /signup address should lead to /shop/start');
     });
 
-    await flow('Start for Free: country box, new number, code, store name, then the shop setup', async (t) => {
+    await flow('Start for Free: Google only, then the shop setup', async (t) => {
+      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
       await t.goto('/shop/start');
-      expect(await t.has('Start selling from one link') && await t.has('Continue with Google'), 'Start for Free screen is missing its two ways in');
-      expect(await t.js(`document.querySelector('.cc-box')?.textContent.trim() === '+91'`), 'the country code box is missing');
-      await t.click('Get WhatsApp code'); expect(await t.has('Enter your 10-digit mobile number'), 'a short number was accepted');
-      await t.type('#su-phone', '9555500001'); await t.click('Get WhatsApp code');
-      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
-      expect(!(await t.has('already has a Stoora account')), 'a new number was treated as an existing account');
-      expect(await t.has('Code not coming?') && await t.has('Use Google instead'), '"Code not coming? Use Google instead" is missing');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('000000');
-      expect(await t.waitFor('That code isn’t right. Try again.'), 'a wrong code was not rejected in the plain words');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitUrl('/onboarding', 8000), 'a new number should go to the store name');
+      expect(await t.has('Start selling from one link') && await t.has('Continue with Google'), 'Start for Free screen is missing its headline or the Google button');
+      expect(!(await t.has('WhatsApp')), 'Start for Free should offer Google only, no WhatsApp code');
+      await t.click('Continue with Google'); expect(await t.waitUrl('/onboarding', 8000), 'Google did not lead to the store name');
       expect(await t.waitFor('What’s your store name?'), 'the store name question is missing');
       expect(!(await t.has('link an existing email')) && !(await t.has('make a new account')), 'the old account screen appeared');
       await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
@@ -700,23 +627,6 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       await t.type('#ob-name', 'Shaurya Studio'); await sleep(1200);
       expect(await t.has('is free'), 'a free link was not flagged');
       expect(!(await t.has('Add your shop’s name')), 'the red message should clear once the box is filled');
-    });
-
-    await flow('Start for Free: a number that already has an account is sent to log in', async (t) => {
-      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/shop/start'); await t.type('#su-phone', '9876543210'); await t.click('Get WhatsApp code');
-      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
-      expect(await t.has('already has a Stoora account'), 'the person was not told the number is already used');
-      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
-      expect(await t.waitUrl('/dashboard', 8000), 'an existing number should open the dashboard');
-    });
-
-    await flow('Start for Free: Use Google instead works from the code screen', async (t) => {
-      await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/shop/start'); await t.type('#su-phone', '9555500002'); await t.click('Get WhatsApp code');
-      expect(await t.waitUrl('/login/verify', 6000), 'no code screen');
-      await t.click('Use Google instead'); expect(await t.waitUrl('/onboarding', 8000), 'Google did not lead on to the store name');
-      expect(await t.waitFor('What’s your store name?'), 'the store name question is missing after Google');
     });
 
     await flow('The public site: home, Journal and Start for Free open without errors', async (t) => {
@@ -731,11 +641,16 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
 
     await flow('Open a shop: name, what you sell, setting up, live; Settings can change what you sell', async (t) => {
       await t.goto('/design/states/offline'); await t.js('localStorage.clear()');
-      await t.goto('/onboarding'); await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
+      await t.goto('/onboarding'); expect(!(await t.has('Skip for now')), 'the Skip for now link should be gone from onboarding');
+      await t.click('Continue'); expect(await t.has('Enter your username.'), 'username was not required');
+      await t.type('#ob-username', 'Test'); await t.type('#ob-surname', 'Rao');
+      await t.click('Continue'); expect(await t.has('Add your shop’s name'), 'name was not required');
       await t.type('#ob-name', 'Test Bakes');
-      await t.click('Continue');
-      expect(await t.has('Enter your surname.'), 'surname was not required');
-      await t.type('#ob-username', 'Test'); await t.type('#ob-surname', 'Rao'); await t.type('#ob-email', 'test.bakes@example.in'); await t.type('#ob-phone', '9876500001');
+      await t.click('Continue'); expect(await t.has('Confirm your WhatsApp number'), 'the WhatsApp number was not required before moving on');
+      await t.type('#pg-num', '9876500001'); await t.click('Send code on WhatsApp');
+      expect(await t.waitFor('We sent a 6-digit code'), 'no code step for the onboarding WhatsApp number');
+      await t.js(`document.querySelector('.otp-box').focus()`); await t.keys('123456');
+      expect(await t.waitFor('+91 9876500001'), 'the confirmed WhatsApp number should show with a Change link');
       await t.click('Continue');
       expect(await t.waitFor('What do you sell?'), 'the what-you-sell step is missing');
       expect(await t.has('Physical products') && !(await t.has('Digital products')), 'onboarding should only offer physical products');

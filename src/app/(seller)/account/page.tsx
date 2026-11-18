@@ -24,10 +24,13 @@ export default function AccountPage() {
             {mode === 'demo' && <div className="banner warn" style={{ marginTop: 'var(--s3)' }}><Icon name="info" /><span>Supabase isn’t connected, so this is a demo session in this browser, not a real Stoora account. Add the keys from <b>.env.example</b> to turn on real sign-in.</span></div>}
           </Card>
           <Card title="How you log in" icon="key" className="stack tight">
-            <p className="t-soft" style={{ margin: 0 }}>Both ways open the same shop.</p>
-            <div className="row"><Icon name="chat" /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>Phone login</div><div className="cap">{auth.user?.hasPhone ? <>{maskedPhone(auth.user.phone)} ✓</> : 'Not added yet'}</div></div>{auth.user?.hasPhone ? <Badge tone="ok" icon="verified">Added</Badge> : <Button small onClick={() => setAddingPhone(true)}>Add</Button>}</div>
+            <p className="t-soft" style={{ margin: 0 }}>Google is how you sign in.</p>
             <div className="row"><Icon name="mail" /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>Google login</div><div className="cap">{auth.user?.hasGoogle ? <>{email || 'Google account'} ✓</> : 'Not added yet'}</div></div>{auth.user?.hasGoogle ? <Badge tone="ok" icon="verified">Added</Badge> : <Button small onClick={addGoogle}>Add</Button>}</div>
             {linkError && <div className="banner bad" role="alert"><Icon name="error" /><span>{linkError}</span></div>}
+          </Card>
+          <Card title="WhatsApp number" icon="chat" className="stack tight">
+            <p className="t-soft" style={{ margin: 0 }}>Not used to log in. Buyers and Stoora use this to reach you about orders.</p>
+            <div className="row"><Icon name="chat" /><div className="grow"><div className="t-ink" style={{ fontWeight: 500 }}>WhatsApp number</div><div className="cap">{auth.user?.hasPhone ? <>{maskedPhone(auth.user.phone)} ✓</> : 'Not added yet'}</div></div>{auth.user?.hasPhone ? <Badge tone="ok" icon="verified">Added</Badge> : <Button small onClick={() => setAddingPhone(true)}>Add</Button>}</div>
           </Card>
           <Card title="Shop" icon="storefront">
             <div className="kv"><div className="r"><span>Shop</span><span>{db.shop.name}</span></div><div className="r"><span>Link</span><span>stoora.in/{db.shop.handle}</span></div><div className="r"><span>City</span><span>{db.shop.city || '—'}</span></div></div>
