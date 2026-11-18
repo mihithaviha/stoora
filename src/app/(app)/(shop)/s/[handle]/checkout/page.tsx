@@ -25,7 +25,7 @@ export default function Checkout() {
   const [outcome, setOutcome] = useState<'success' | 'failed' | 'pending'>('success'); const [orderError, setOrderError] = useState('');
 
   if (!bag.ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={3} height={120} /></div>;
-  if (!bag.detailed.length && stage === 'form') return <div className="wrap"><EmptyState icon="shopping_bag" title="Nothing to check out" text="Your bag is empty. Add something first." action={<ButtonLink href={base} kind="primary">Back to the shop</ButtonLink>} /></div>;
+  if (!bag.detailed.length && stage === 'form') return <div className="wrap"><EmptyState icon="shopping_bag" title="Nothing to check out" text="Your bag is empty. Add something first." action={<ButtonLink href={base} kind="primary" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Back to the shop</ButtonLink>} /></div>;
   if (!db.shop.open) return <div className="wrap"><StateScreen kind="empty" compact title="Shop is paused" text={`${PAUSED_LINE} Your bag is saved, so you can come back and order later.`} actions={<ButtonLink href={`${base}/bag`}>Back to my bag</ButtonLink>} /></div>;
 
   const err: Record<string, string> = {};
@@ -90,9 +90,14 @@ export default function Checkout() {
           </Card>
         </div>
         <Card className="sumbox" title="Your order">
-          <div className="stack tight">{bag.detailed.map(({ line, product, index }) => (<div className="sumline" key={index}><ProductArt product={product} /><span><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{product.name}</span><span className="cap">{line.size ? `Size ${line.size} · ` : ''}Qty {line.qty}</span></span><span className="money">{rs(product.price * line.qty)}</span></div>))}</div>
+          <div className="stack tight">{bag.detailed.map(({ line, product, index }) => (<div className="sumline" key={index}>
+            {product.photos?.[0]
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={product.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="part" />
+              : <ProductArt product={product} />}
+            <span><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>{product.name}</span><span className="cap">{line.size ? `Size ${line.size} · ` : ''}Qty {line.qty}</span></span><span className="money">{rs(product.price * line.qty)}</span></div>))}</div>
           <div className="kv"><div className="r"><span>Subtotal</span><span>{rs(bag.subtotal)}</span></div><div className="r"><span>Delivery</span><span>{bag.delivery ? rs(bag.delivery) : 'Free'}</span></div><div className="r t"><span>{pay === 'cod' ? 'To pay on delivery' : 'To pay now'}</span><span>{rs(bag.total)}</span></div></div>
-          <Button kind="primary" full type="submit" icon={pay === 'cod' ? 'check' : 'lock'}>{pay === 'cod' ? 'Place order' : `Pay ${rs(bag.total)}`}</Button>
+          <Button kind="primary" full type="submit" icon={pay === 'cod' ? 'check' : 'lock'} style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>{pay === 'cod' ? 'Place order' : `Pay ${rs(bag.total)}`}</Button>
           <p className="cap"><Icon name="lock" size="xs" /> Payments are handled by our payment provider. Stoora never sees your card details. By ordering you agree to the <Link className="link" href="/terms">terms</Link>.</p>
         </Card>
       </form>

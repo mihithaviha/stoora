@@ -183,4 +183,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** Is the person looking an admin? In live mode that is the admin role; the demo has no accounts, so (like the Admin area) it is open there. */
+export function useIsAdmin() { const c = useContext(Ctx); return Boolean(c && (c.mode === 'demo' || (c.ready && c.role === 'admin'))); }
 export function useAuth() { const c = useContext(Ctx); if (!c) throw new Error('useAuth must be used inside <AuthProvider>'); return c; }

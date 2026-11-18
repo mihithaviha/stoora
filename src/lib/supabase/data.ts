@@ -149,8 +149,8 @@ export async function updateShop(sb: SupabaseClient, shopId: string, patch: Part
   if (Object.keys(row).length) fail((await sb.from('shops').update(row).eq('id', shopId)).error);
 }
 
-export async function createShop(sb: SupabaseClient, ownerId: string, s: { name: string; handle: string; city: string; category: string; cod: boolean; online: boolean; open: boolean; look: Shop['look']; upi?: string; ownerName?: string; email?: string; orderSettings?: Record<string, string> }): Promise<Shop> {
-  const { data, error } = await sb.from('shops').insert({ owner_id: ownerId, name: s.name, handle: s.handle, city: s.city, category: s.category, accepts_cod: s.cod, accepts_online: s.online, is_open: s.open, look: s.look, upi_id: s.upi || null, owner_name: s.ownerName ?? null, email: s.email ?? null, order_settings: s.orderSettings ?? {} }).select().single();
+export async function createShop(sb: SupabaseClient, ownerId: string, s: { name: string; handle: string; city: string; category: string; cod: boolean; online: boolean; open: boolean; look: Shop['look']; upi?: string; ownerName?: string; email?: string; phone?: string; orderSettings?: Record<string, string> }): Promise<Shop> {
+  const { data, error } = await sb.from('shops').insert({ owner_id: ownerId, name: s.name, handle: s.handle, city: s.city, category: s.category, accepts_cod: s.cod, accepts_online: s.online, is_open: s.open, look: s.look, upi_id: s.upi || null, owner_name: s.ownerName ?? null, email: s.email ?? null, phone: s.phone || null, order_settings: s.orderSettings ?? {} }).select().single();
   if (error) throw new Error(/duplicate key|unique/i.test(error.message) ? 'That shop link is already taken. Try another.' : error.message);
   return shopFromRow(data!);
 }

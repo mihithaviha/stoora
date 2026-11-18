@@ -21,8 +21,8 @@ export function Button({ kind = 'line', small, full, icon, busy, busyLabel, chil
     </button>
   );
 }
-export function ButtonLink({ href, kind = 'line', small, full, icon, children }: { href: string; kind?: BtnKind; small?: boolean; full?: boolean; icon?: string; children: React.ReactNode }) {
-  return <Link href={href} className={`btn ${kind} ${small ? 'sm' : ''} ${full ? 'full' : ''}`}>{icon && <Icon name={icon} />}{children}</Link>;
+export function ButtonLink({ href, kind = 'line', small, full, icon, children, style }: { href: string; kind?: BtnKind; small?: boolean; full?: boolean; icon?: string; children: React.ReactNode; style?: React.CSSProperties }) {
+  return <Link href={href} className={`btn ${kind} ${small ? 'sm' : ''} ${full ? 'full' : ''}`} style={style}>{icon && <Icon name={icon} />}{children}</Link>;
 }
 
 /* ---------- badges: deep text on tint + icon + word (rule R6) ---------- */

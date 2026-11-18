@@ -68,19 +68,34 @@ export type SectionKey = keyof typeof SECTIONS;
 
 /** The standard storefront's sections. The seller can switch them on or off and put them in any order. */
 export const STD_SECTIONS = {
-  feat: 'Highlights strip', cats: 'Categories', products: 'Products', services: 'Classes and sessions',
+  feat: 'Highlights strip', cats: 'Categories', best: 'Bestsellers', fresh: 'New arrivals', promo: 'Promo banner', products: 'Products', services: 'Classes and sessions',
   story: 'Our story', reviews: 'Reviews', faq: 'Questions and answers', cta: 'Get in touch',
 } as const;
 export type StdSection = keyof typeof STD_SECTIONS;
 export const STD_ORDER = Object.keys(STD_SECTIONS) as StdSection[];
+/** What a shop of physical products shows, in the order it first shows it. A services shop has no shelves or classes mix-up: each kind lists only its own sections. */
+export const PHYSICAL_ORDER: StdSection[] = ['cats', 'best', 'promo', 'fresh', 'products', 'reviews', 'feat', 'story', 'faq', 'cta'];
+export const SERVICE_ORDER: StdSection[] = ['feat', 'cats', 'products', 'services', 'story', 'reviews', 'faq', 'cta'];
+/** The sections that make sense for this kind of shop. */
+export const sectionsFor = (physical: boolean): StdSection[] => (physical ? PHYSICAL_ORDER : SERVICE_ORDER);
 /** Awning colour pairs: stops from the Stoora gradient. */
 export const AWNINGS: [string, string][] = [['#F4A24A', '#EF7F3D'], ['#EF7F3D', '#DC4A3A'], ['#D13A5B', '#8B3A9E'], ['#5F3BA8', '#262A7A'], ['#DC4A3A', '#D13A5B']];
 
-/** The layout of a design with every gap filled: the order always lists every section once, whatever was saved. */
-export function layoutOf(config: StoreConfig): { order: StdSection[]; hidden: StdSection[]; awning: [string, string] } {
+/**
+ * The layout of a design with every gap filled: the order always lists every section of this kind of shop once, whatever was saved.
+ * A section the saved design has never seen (added later) goes right after the section that comes before it by default.
+ */
+export function layoutOf(config: StoreConfig, physical = false): { order: StdSection[]; hidden: StdSection[]; awning: [string, string] } {
   const saved = config.layout || {};
-  const known = (saved.order || []).filter((id, i, all) => STD_ORDER.includes(id) && all.indexOf(id) === i);
-  const order = [...known, ...STD_ORDER.filter((id) => !known.includes(id))];
+  const kind = sectionsFor(physical);
+  const known = (saved.order || []).filter((id, i, all) => kind.includes(id) && all.indexOf(id) === i);
+  const order = [...known];
+  kind.forEach((id, i) => {
+    if (order.includes(id)) return;
+    let at = 0;
+    for (let j = i - 1; j >= 0; j--) { const k = order.indexOf(kind[j]); if (k >= 0) { at = k + 1; break; } }
+    order.splice(at, 0, id);
+  });
   const awning = saved.awning && AWNINGS.some((a) => a[0] === saved.awning![0] && a[1] === saved.awning![1]) ? saved.awning : AWNINGS[0];
   return { order, hidden: (saved.hidden || []).filter((id) => STD_ORDER.includes(id)), awning };
 }
@@ -114,7 +129,8 @@ export function themeVariables(themeId: string, accent?: string | null): Record<
 export interface StoreConfig {
   version: number; template: TemplateId; theme: string; accent: string | null;
   brand: { name: string; tagline: string; logo: string };
-  hero: { title: string; subtitle: string; image: string; focus: string; cta: string };
+  /** `images`: extra photos for the hero carousel on a shop of physical products, shown after the main photo. Other templates use `image` alone. */
+  hero: { title: string; subtitle: string; image: string; images: string[]; focus: string; cta: string };
   about: { title: string; text: string; image: string };
   story: { title: string; text: string };
   process: { title: string; text: string }[];
@@ -128,6 +144,10 @@ export interface StoreConfig {
   footer: { note: string };
   /** The standard layout: which sections show, in what order, and the awning colours. Older saved designs have none of this. */
   layout?: { order?: StdSection[]; hidden?: StdSection[]; awning?: [string, string] };
+  /** The look of a shop that sells physical products: which of the four colour-and-type sets it uses (0 to 3). */
+  look?: number;
+  /** An offer banner on a shop of physical products. It shows only when it has a headline. */
+  promo?: { title: string; sub: string; cta: string; image: string };
 }
 
 /** A fresh storefront configuration. The shop's own details fill the blanks; nothing is invented. */
@@ -136,7 +156,7 @@ export function defaultConfig(templateId: string, shop: { name?: string; tagline
   return {
     version: 1, template: template.id, theme: template.theme, accent: null,
     brand: { name: shop.name || '', tagline: shop.tagline || '', logo: '' },
-    hero: { title: '', subtitle: '', image: '', focus: '50% 50%', cta: template.kind === 'services' ? 'Book a session' : 'Shop now' },
+    hero: { title: '', subtitle: '', image: '', images: [], focus: '50% 50%', cta: template.kind === 'services' ? 'Book a session' : 'Shop now' },
     about: { title: 'About us', text: '', image: '' },
     story: { title: 'Our story', text: '' },
     process: [],

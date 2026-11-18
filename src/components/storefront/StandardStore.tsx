@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { StoreCtx } from './Templates';
+import { PhysFooter, PhysHeader, PhysHome } from './phys/PhysStore';
 import { AwningSvg, I, cx, rupees } from './sx';
 import { layoutOf, type StdSection, type StoreItem } from '@/lib/storefront/shared';
 import '../../styles/standard-store.css';
@@ -41,9 +42,11 @@ function Photo({ src, alt = '', pos, className = '', letter, art, eager = false 
 /** Which section ids the page has, so the header links only to what is there. */
 function useSections(ctx: StoreCtx) {
   const { config, data, extras = {} } = ctx;
-  const layout = layoutOf(config);
   const hasProducts = data.products.length > 0;
   const hasServices = data.services.length > 0;
+  // a shop of physical products gets the shop-window layout; classes and sessions keep the painted shopfront
+  const physical = !hasServices;
+  const layout = layoutOf(config, physical);
   const story = config.story.text || config.about.text;
   const c = config.contact;
   const show = c.show ?? {};
@@ -54,8 +57,8 @@ function useSections(ctx: StoreCtx) {
     instagram: config.social.instagram,
   };
   const cats = useMemo(() => {
-    const groups: Record<string, { name: string; count: number; image: string }> = {};
-    for (const item of data.products) if (item.cat) { const g = (groups[item.cat] = groups[item.cat] || { name: item.cat, count: 0, image: '' }); g.count += 1; if (!g.image && item.img) g.image = item.img; }
+    const groups: Record<string, { name: string; count: number; image: string; art?: StoreItem['art'] }> = {};
+    for (const item of data.products) if (item.cat) { const g = (groups[item.cat] = groups[item.cat] || { name: item.cat, count: 0, image: '', art: item.art }); g.count += 1; if (!g.image && item.img) g.image = item.img; }
     return Object.values(groups);
   }, [data.products]);
   const features: { icon: string; title: string; sub: string }[] = [];
@@ -67,6 +70,7 @@ function useSections(ctx: StoreCtx) {
   const available: Record<StdSection, boolean> = {
     feat: features.length > 0,
     cats: cats.some((x) => x.image) && hasProducts,
+    best: false, fresh: false, promo: false,
     // a shop with only services (digital) has no products shelf to show
     products: hasProducts || !hasServices,
     services: hasServices,
@@ -76,13 +80,17 @@ function useSections(ctx: StoreCtx) {
     cta: Boolean(contactRows.whatsapp || contactRows.phone || contactRows.email || contactRows.instagram || c.address || c.hours),
   };
   const shown = layout.order.filter((id) => !layout.hidden.includes(id) && available[id]);
-  return { layout, shown, features, cats, contactRows, story, hasProducts, hasServices, reviews };
+  return { layout, shown, features, cats, contactRows, story, hasProducts, hasServices, reviews, physical };
 }
 
 /* ---------- header, footer ---------- */
 
-/** The shop's header: announcement bar, logo, links, bag. `nav` entries are [label, link]; `home` is where the logo goes. */
-export function StdHeader({ ctx, nav, whatsapp, home = '#sx-top' }: { ctx: StoreCtx; nav: [string, string][]; whatsapp: string; home?: string }) {
+/** The shop's header: announcement bar, logo, links, bag. `nav` entries are [label, link]; `home` is where the logo goes. A shop of physical products gets search and a categories menu too. */
+export function StdHeader(props: { ctx: StoreCtx; nav: [string, string][]; whatsapp: string; home?: string }) {
+  return props.ctx.data.services.length === 0 ? <PhysHeader {...props} /> : <ServiceHeader {...props} />;
+}
+
+function ServiceHeader({ ctx, nav, whatsapp, home = '#sx-top' }: { ctx: StoreCtx; nav: [string, string][]; whatsapp: string; home?: string }) {
   const { config, data, base, actions } = ctx;
   const name = config.brand.name || data.shop.name;
   const [menu, setMenu] = useState(false);
@@ -126,7 +134,11 @@ export function StdHeader({ ctx, nav, whatsapp, home = '#sx-top' }: { ctx: Store
 }
 
 /** The shop's footer. */
-export function StdFooter({ ctx, nav, rows }: { ctx: StoreCtx; nav: [string, string][]; rows: { whatsapp: string; instagram: string } }) {
+export function StdFooter(props: { ctx: StoreCtx; nav: [string, string][]; rows: { whatsapp: string; instagram: string } }) {
+  return props.ctx.data.services.length === 0 ? <PhysFooter {...props} /> : <ServiceFooter {...props} />;
+}
+
+function ServiceFooter({ ctx, nav, rows }: { ctx: StoreCtx; nav: [string, string][]; rows: { whatsapp: string; instagram: string } }) {
   const { config, data, extras = {} } = ctx;
   const name = config.brand.name || data.shop.name;
   const tag = config.brand.tagline || config.footer.note;
@@ -428,17 +440,20 @@ function Hero({ ctx, hasProducts, ctaTarget, whatsapp }: { ctx: StoreCtx; hasPro
  */
 export function StandardStore({ ctx, children }: { ctx: StoreCtx; children?: ReactNode }) {
   const s = useSections(ctx);
+  // a shop of physical products has its own storefront (the shop-window design); classes and sessions keep the painted shopfront
+  if (s.physical) return <PhysHome ctx={ctx}>{children}</PhysHome>;
   const navFor: Record<StdSection, [string, string]> = {
-    feat: ['Highlights', '#sx-feat'], cats: ['Categories', '#sx-cats'], products: ['Shop', '#sx-products'], services: ['Sessions', '#sx-services'],
+    feat: ['Highlights', '#sx-feat'], cats: ['Categories', '#sx-cats'], best: ['Bestsellers', '#sx-best'], fresh: ['New in', '#sx-fresh'], promo: ['Offer', '#sx-promo'], products: ['Shop', '#sx-products'], services: ['Sessions', '#sx-services'],
     story: ['Our story', '#sx-story'], reviews: ['Reviews', '#sx-reviews'], faq: ['Help', '#sx-faq'], cta: ['Contact', '#sx-contact'],
   };
-  const nav = s.shown.filter((id) => id !== 'feat').map((id) => navFor[id]);
+  const nav = s.shown.filter((id) => id !== 'feat' && id !== 'cats').map((id) => navFor[id]);
   const wa = s.contactRows.whatsapp;
   const productsShown = s.shown.includes('products');
   const ctaTarget = productsShown ? 'sx-products' : s.shown.includes('services') ? 'sx-services' : 'sx-top';
   const body: Record<StdSection, ReactNode> = {
     feat: <Features key="feat" items={s.features} />,
     cats: <Categories key="cats" cats={s.cats} />,
+    best: null, fresh: null, promo: null,
     products: <Products key="products" ctx={ctx} cats={s.cats} />,
     services: <Services key="services" ctx={ctx} />,
     story: <Story key="story" ctx={ctx} text={s.story} />,

@@ -17,7 +17,7 @@ export default function PaymentResult() {
   useEffect(() => { if (!pending || mode === 'live') return; // live: only the payment provider can confirm, so keep waiting
     const t = setTimeout(() => { if (checks >= 2) { if (order && mode === 'demo') updateOrder(order.id, { paid: true }); setPending(false); } else setChecks(checks + 1); }, 2200); return () => clearTimeout(t); }, [pending, checks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!kind) return <div className="wrap"><StateScreen kind="notfound" title="That page doesn’t exist" text="Check the link, or go back to the shop." actions={<ButtonLink href={base} kind="primary">Back to the shop</ButtonLink>} /></div>;
+  if (!kind) return <div className="wrap"><StateScreen kind="notfound" title="That page doesn’t exist" text="Check the link, or go back to the shop." actions={<ButtonLink href={base} kind="primary" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Back to the shop</ButtonLink>} /></div>;
   const copy = {
     success: { icon: 'check', t: method === 'cod' ? 'Order placed' : 'Payment received', d: method === 'cod' ? `Thank you. ${db.shop.name} will pack your order. Keep ${order ? rs(order.total) : 'the amount'} ready to pay when it arrives.` : `Thank you. ${db.shop.name} has your order and will pack it soon.` },
     failed: { icon: 'close', t: 'Payment didn’t go through', d: 'No money was taken. This can happen if the UPI app timed out or the bank said no. Your bag is still saved.' },
@@ -29,8 +29,8 @@ export default function PaymentResult() {
       <h1 className="h1">{copy.t}</h1><p className="t-body">{copy.d}</p>
       {order && <Card className="stack tight"><div className="row"><b className="t-ink">Order #{order.id}</b><span className="grow" /><span className="money">{rs(order.total)}</span></div><span className="cap">{order.lines.reduce((a, l) => a + l.qty, 0)} items · {order.city}{kind === 'success' && order.paid ? ' · Paid' : kind === 'success' ? ' · Pay on delivery' : ''}</span>{kind === 'success' && <span className="cap">A receipt and tracking updates will be sent to {order.phone}.</span>}</Card>}
       <div className="btns" style={{ justifyContent: 'center' }}>
-        {kind === 'success' && <><ButtonLink href={`/buyer/orders/${id}`} kind="primary" icon="local_shipping">Track my order</ButtonLink><ButtonLink href={base}>Keep shopping</ButtonLink></>}
-        {kind === 'failed' && <><ButtonLink href={`${base}/checkout?demo=filled`} kind="primary" icon="refresh">Try again</ButtonLink><ButtonLink href={`${base}/bag`}>Back to my bag</ButtonLink></>}
+        {kind === 'success' && <><ButtonLink href={`/buyer/orders/${id}`} kind="primary" icon="local_shipping" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Track my order</ButtonLink><ButtonLink href={base}>Keep shopping</ButtonLink></>}
+        {kind === 'failed' && <><ButtonLink href={`${base}/checkout?demo=filled`} kind="primary" icon="refresh" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Try again</ButtonLink><ButtonLink href={`${base}/bag`}>Back to my bag</ButtonLink></>}
         {kind === 'pending' && <><Button icon="refresh" onClick={() => setChecks(2)}>Check now</Button><ButtonLink href={`/buyer/orders/${id}`}>See my order</ButtonLink></>}
       </div>
       {kind === 'failed' && <p className="cap">Need help? <a className="link" href="/#faq">Read the questions buyers ask</a>.</p>}

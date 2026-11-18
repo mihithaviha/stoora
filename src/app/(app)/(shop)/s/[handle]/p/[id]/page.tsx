@@ -5,7 +5,9 @@ import { useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui';
 import { StateScreen } from '@/components/bits';
 import { shopBase } from '@/components/shop/ShopChrome';
+import { PhysProduct } from '@/components/storefront/phys/PhysProduct';
 import { StdProduct } from '@/components/storefront/StdProduct';
+import { isPhysicalShop } from '@/lib/storefront/map';
 import { useStore } from '@/lib/store';
 
 export default function ProductPage() {
@@ -14,6 +16,7 @@ export default function ProductPage() {
   const base = shopBase(handle);
   const p = db.products.find((x) => x.id === id && x.status === 'Active');
   if (!ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={1} height={420} /></div>;
-  if (!p) return <StateScreen kind="notfound" title="That product isn’t here" text="It may have been removed or sold out for good." actions={<Link className="btn primary" href={base}>Back to the shop</Link>} />;
-  return <StdProduct product={p} base={base} />;
+  if (!p) return <StateScreen kind="notfound" title="That product isn’t here" text="It may have been removed or sold out for good." actions={<Link className="btn primary" href={base} style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Back to the shop</Link>} />;
+  // a shop of physical products has its own product page; classes and sessions keep the Standard one
+  return isPhysicalShop(db) ? <PhysProduct product={p} base={base} /> : <StdProduct product={p} base={base} />;
 }

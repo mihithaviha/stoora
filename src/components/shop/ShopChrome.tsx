@@ -15,6 +15,7 @@ import { publishedConfig, toStoreData } from '@/lib/storefront/map';
 import { shopAnnounce } from '@/lib/storefront/announce';
 import { StdHeader, StdFooter } from '../storefront/StandardStore';
 import { StdCartDrawer } from '../storefront/StdCart';
+import { physVars } from '../storefront/phys/theme';
 import { themeVariables } from '@/lib/storefront/shared';
 import type { Product } from '@/lib/types';
 
@@ -44,6 +45,20 @@ export function ShopFrame({ handle, children }: { handle: string; children: Reac
     const c = design.contact; const wa = (design.contact.show?.whatsapp ?? true) && c.whatsapp ? c.whatsapp : '';
     const ctx = { config: design, data: toStoreData(db), base, cartCount: bag.count, wish: bag.wish, paused: !db.shop.open, actions: { cart: () => setBagOpen(true), track: () => router.push('/buyer/orders') }, extras: { payments: { online: db.shop.online !== false, upi: true }, announce: shopAnnounce(db, bag.rule), delivery: deliveryLine(bag.rule), cod: Boolean(db.shop.cod) } };
     const nav: [string, string][] = [['Shop', `${base}#sx-products`], ['Saved', `${base}/wishlist`], ['My orders', '/buyer/orders']];
+    // a shop of physical products keeps the look of its own storefront (colours, typefaces, header and footer) on every page
+    if (ctx.data.services.length === 0) {
+      const look = physVars(design);
+      const physNav: [string, string][] = [['Shop', `${base}#sx-products`], ['Saved', `${base}/wishlist`], ['My orders', '/buyer/orders']];
+      return (
+        <div className="shopwrap" style={{ ...look, background: 'var(--bg)', color: 'var(--tx)' }} data-phys="true">
+          {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : null}
+          <div className="pf" style={{ display: 'contents' }}><StdHeader ctx={ctx} nav={physNav} whatsapp={wa} home={base} /></div>
+          <StdCartDrawer open={bagOpen} onClose={() => setBagOpen(false)} base={base} />
+          <main id="main" className="grow-main">{children}</main>
+          <div className="pf" style={{ display: 'contents' }}><StdFooter ctx={ctx} nav={physNav} rows={{ whatsapp: wa, instagram: design.social.instagram }} /></div>
+        </div>
+      );
+    }
     return (
       <div className="shopwrap" style={themed} data-themed="standard">
         {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : null}
@@ -110,7 +125,13 @@ export function ProductCard({ p, base, onQuick }: { p: Product; base: string; on
   return (
     <article className="pcard">
       <div className="imgwrap">
-        <Link href={`${base}/p/${p.id}`} aria-label={p.name} className="imgwrap"><ProductArt product={p} />{out && <span className="soldout"><Badge tone="neutral" icon="inventory_2">Sold out</Badge></span>}</Link>
+        <Link href={`${base}/p/${p.id}`} aria-label={p.name} className="imgwrap">
+          {p.photos?.[0]
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={p.photos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <ProductArt product={p} />}
+          {out && <span className="soldout"><Badge tone="neutral" icon="inventory_2">Sold out</Badge></span>}
+        </Link>
         {!out && (m.badge || p.stock <= 3) && <span className="tag"><Badge tone={p.stock <= 3 ? 'warn' : 'offer'} icon={p.stock <= 3 ? 'local_fire_department' : 'star'}>{p.stock <= 3 ? `Only ${p.stock} left` : m.badge}</Badge></span>}
         <button className="heart" aria-pressed={wished} aria-label={wished ? `Remove ${p.name} from wishlist` : `Save ${p.name} to wishlist`} onClick={() => { bag.toggleWish(p.id); toast(wished ? 'Removed from wishlist.' : 'Saved to wishlist.', { icon: 'favorite' }); }}><Icon name="favorite" size="sm" /></button>
         {onQuick && !out && <Button small className="quick" onClick={() => onQuick(p)}>Quick view</Button>}
@@ -128,8 +149,13 @@ export function QuickView({ p, base, onClose }: { p: Product | null; base: strin
   if (!p) return null; const m = metaOf(p);
   const add = () => { if (p.sizes.length && !size) { setErr(true); return; } bag.add(p.id, size || undefined); toast(`${p.name} added to your bag.`, { icon: 'shopping_bag' }); onClose(); };
   return (
-    <Dialog open onClose={onClose} title={p.name} footer={<><ButtonLink href={`${base}/p/${p.id}`} kind="line" small>Full details</ButtonLink>{orderable ? <Button kind="primary" icon="shopping_bag" onClick={add}>Add to bag</Button> : <span className="cap">{PAUSED_LINE}</span>}</>}>
-      <div className="stack"><ProductArt product={p} big /><div className="row"><span className="price money" style={{ fontSize: 24 }}>{rs(p.price)}</span>{m.reviews > 0 && <Stars value={m.rating} count={m.reviews} />}</div>{m.blurb ? <p className="t-body">{m.blurb}</p> : null}
+    <Dialog open onClose={onClose} title={p.name} footer={<><ButtonLink href={`${base}/p/${p.id}`} kind="line" small>Full details</ButtonLink>{orderable ? <Button kind="primary" icon="shopping_bag" onClick={add} style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Add to bag</Button> : <span className="cap">{PAUSED_LINE}</span>}</>}>
+      <div className="stack">
+        {p.photos?.[0]
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={p.photos[0]} alt={p.name} className="part big" style={{ objectFit: 'cover', width: '100%' }} />
+          : <ProductArt product={p} big />}
+        <div className="row"><span className="price money" style={{ fontSize: 24 }}>{rs(p.price)}</span>{m.reviews > 0 && <Stars value={m.rating} count={m.reviews} />}</div>{m.blurb ? <p className="t-body">{m.blurb}</p> : null}
         {p.sizes.length > 0 && <div className="field"><span className="flabel">Size</span><div className="sizes" role="group" aria-label="Size">{p.sizes.map((s) => { const gone = p.optionStock?.[s] !== undefined && p.optionStock[s] <= 0; return <button key={s} type="button" aria-pressed={size === s} disabled={gone} title={gone ? 'Sold out' : undefined} onClick={() => { setSize(s); setErr(false); }}>{s}{gone ? ' (sold out)' : ''}</button>; })}</div>{err && <span className="err" role="alert"><Icon name="error" size="xs" />Choose a size first.</span>}</div>}</div>
     </Dialog>
   );

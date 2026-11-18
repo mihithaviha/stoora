@@ -23,7 +23,7 @@ export interface NewOrderInput {
   pay: 'paid' | 'upi' | 'cod'; createdBy: 'manual' | 'ai' | 'buyer';
 }
 export interface BuyerOrderInput { handle: string; name: string; phone: string; city: string; address: string; note?: string; pay: 'upi' | 'card' | 'cod'; lines: { productId: string; qty: number; size?: string }[]; shipping?: number }
-export interface NewShopInput { name: string; handle: string; city: string; category: string; cod: boolean; online: boolean; open: boolean; look: Shop['look']; upi?: string; minimum?: string; firstProduct?: { name: string; price: number; stock: number } }
+export interface NewShopInput { name: string; handle: string; city: string; owner: string; email: string; phone: string; category: string; cod: boolean; online: boolean; open: boolean; look: Shop['look']; upi?: string; minimum?: string; firstProduct?: { name: string; price: number; stock: number } }
 
 interface Store {
   mode: 'demo' | 'live';
@@ -156,14 +156,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const createShop = useCallback(async (s: NewShopInput): Promise<string | null> => {
     if (!sb) {
       // a new shop starts empty (like a real one); "Reset demo" brings the sample shop back
-      setDemo(() => ({ ...emptyDb(), shop: { ...PLACEHOLDER, name: s.name, owner: auth.user?.name ?? '', handle: s.handle, city: s.city, category: s.category, look: s.look, open: true, cod: s.cod, online: s.online, upi: s.upi ?? '', orderSettings: (s.minimum ? { minimum: s.minimum } : {}) as Record<string, string> },
+      setDemo(() => ({ ...emptyDb(), shop: { ...PLACEHOLDER, name: s.name, owner: s.owner || auth.user?.name || '', email: s.email || auth.user?.email || '', phone: s.phone || '', handle: s.handle, city: s.city, category: s.category, look: s.look, open: true, cod: s.cod, online: s.online, upi: s.upi ?? '', orderSettings: (s.minimum ? { minimum: s.minimum } : {}) as Record<string, string> },
         products: s.firstProduct ? [{ id: 'p' + Date.now(), name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' }] : [] }));
       return null;
     }
     if (!userId) return 'Please sign in first.';
     try {
       await sb.rpc('become_seller');
-      const shop = await remote.createShop(sb, userId, { name: s.name, handle: s.handle, city: s.city, category: s.category, cod: s.cod, online: s.online, open: s.open, look: s.look, upi: s.upi, ownerName: auth.user?.name, email: auth.user?.email, orderSettings: s.minimum ? { minimum: s.minimum.replace(/\D/g, '') } : {} });
+      const shop = await remote.createShop(sb, userId, { name: s.name, handle: s.handle, city: s.city, category: s.category, cod: s.cod, online: s.online, open: s.open, look: s.look, upi: s.upi, ownerName: s.owner || auth.user?.name, email: s.email || auth.user?.email, phone: s.phone, orderSettings: s.minimum ? { minimum: s.minimum.replace(/\D/g, '') } : {} });
       if (s.firstProduct) await remote.saveProduct(sb, shop.id!, { id: 'new', name: s.firstProduct.name, category: 'Other', sizes: [], price: s.firstProduct.price, stock: s.firstProduct.stock, status: 'Active', soldLast30Days: 0, icon: 'sell' });
       await loadOwnerNow();
       return null;

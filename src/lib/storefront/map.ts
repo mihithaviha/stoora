@@ -3,12 +3,12 @@ import { metaOf } from '../catalog';
 import { sellsDigital, sellsPhysical } from '../shopstate';
 import { defaultConfig, type StoreConfig, type StoreData, type StoreItem } from './shared';
 
-const productItem = (p: Product): StoreItem => ({
+export const productItem = (p: Product): StoreItem => ({
   id: p.id, name: p.name, price: p.price, was: p.comparePrice && p.comparePrice > p.price ? p.comparePrice : undefined, cat: p.category === 'Other' ? '' : p.category, stock: p.stock, img: p.photos?.[0] ?? '',
   desc: p.description ?? '', sizes: p.sizes.join(', '), tags: p.color ?? '',
   art: { hex: metaOf(p).hex, icon: p.icon },
 });
-const serviceItem = (s: Service): StoreItem => ({ id: s.id, name: s.name, price: s.price, type: s.type, duration: s.minutes ? `${s.minutes} min` : '', where: '', next: s.next });
+export const serviceItem = (s: Service): StoreItem => ({ id: s.id, name: s.name, price: s.price, type: s.type, duration: s.minutes ? `${s.minutes} min` : '', where: '', next: s.next });
 
 /** The shop's catalogue as a storefront shows it: only active products, and only public fields. */
 export function toStoreData(db: Db): StoreData {
@@ -21,6 +21,9 @@ export function toStoreData(db: Db): StoreData {
     bestsellerIds: best, ratings: {}, reviews: [], reviewSummary: { count: 0, average: 0 },
   };
 }
+
+/** Does this shop have the storefront for physical products? (It shows no classes or digital goods.) */
+export const isPhysicalShop = (db: Db) => toStoreData(db).services.length === 0;
 
 /** The template that suits what the shop sells, before the seller has chosen one. */
 export const suggestedTemplate = (_db?: Db) => ('standard');

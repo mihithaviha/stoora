@@ -4,50 +4,59 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
-import { Button, ButtonLink, Card, Field, Icon, Switch, useToast } from '@/components/ui';
+import { Button, ButtonLink, Card, Field, Icon, useToast } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { Logo, Stepper } from '@/components/bits';
-import { WhatsAppVerify } from '@/components/WhatsAppVerify';
 import { useStore } from '@/lib/store';
 import { cleanHandle, rs, toNum } from '@/lib/format';
 import { useHandleCheck } from '@/lib/handle';
-import { DIGITAL, PHYSICAL } from '@/lib/shopstate';
+import { PHYSICAL } from '@/lib/shopstate';
 
-const STEPS = ['Your shop', 'What you sell', 'Get paid', 'Orders', 'Look'];
+const STEPS = ['Your shop', 'What you sell'];
 const SELLS: [string, string, string, string][] = [
   [PHYSICAL, 'inventory_2', 'Physical products', 'Things you ship: clothes, food, jewellery, home goods. Your dashboard shows products, stock, orders, delivery and payments.'],
-  [DIGITAL, 'self_improvement', 'Digital products', 'Things you teach or send online: workshops, 1-on-1 sessions, downloads. Your dashboard shows sessions, calendar, bookings and payments.'],
 ];
 /** The steps shown while the shop is made, so nobody stares at a blank screen. */
 const SETUP_LINES = ['Making your shop', 'Choosing how buyers pay and order', 'Getting your dashboard ready'];
-const LOOKS: [string, string, 'Warm' | 'Indigo' | 'Plain'][] = [['Warm', 'linear-gradient(135deg,#fbe0a8,#ef7f3d)', 'Warm'], ['Indigo', 'linear-gradient(135deg,#5f3ba8,#262a7a)', 'Indigo'], ['Plain', 'linear-gradient(135deg,#F7F7F7,#E0D6CA)', 'Plain']];
+// Payment, order-taking and look are no longer asked during onboarding; sellers set these up in Settings after publishing.
+const DEFAULT_PAY = { upi: '', cod: true, online: true };
+const DEFAULT_LOOK: 'Warm' | 'Indigo' | 'Plain' = 'Warm';
+const DEFAULT_MINIMUM = '';
 
 function Wizard() {
   const router = useRouter(); const toast = useToast(); const { createShop, mode, ready, needsShop, db } = useStore(); const auth = useAuth(); const [pubError, setPubError] = useState('');
   const params = useSearchParams();
-  const start = Math.min(Math.max(Number(params.get('step') || 1) - 1, 0), 4);
+  const start = Math.min(Math.max(Number(params.get('step') || 1) - 1, 0), 1);
   const [step, setStep] = useState(start); const [tried, setTried] = useState(false);
-  const [shop, setS] = useState({ name: start > 0 ? 'Meera Studio' : params.get('name') ?? '', handle: start > 0 ? 'meera' : params.get('handle') ?? '', city: start > 0 ? 'Jaipur' : '', cat: start > 1 ? PHYSICAL : '' });
-  const [pay, setPay] = useState({ upi: '', cod: true, online: true });
-  const [look, setLook] = useState<'Warm' | 'Indigo' | 'Plain'>('Warm');
-  const [orders, setOrders] = useState({ open: true, minimum: '', note: '' });
+  const [shop, setS] = useState({ name: start > 0 ? 'Meera Studio' : params.get('name') ?? '', handle: start > 0 ? 'meera' : params.get('handle') ?? '', cat: PHYSICAL });
+  const [owner, setOwner] = useState(() => {
+    const name = (auth.user?.name ?? '').trim().split(/\s+/).filter(Boolean);
+    return { username: start > 0 ? 'Meera' : name[0] ?? '', surname: start > 0 ? 'Iyer' : name.slice(1).join(' '), email: start > 0 ? 'meera.studio@example.in' : auth.user?.email ?? '', phone: start > 0 ? '9876543210' : (auth.user?.phone ?? '').replace(/\D/g, '').slice(-10) };
+  });
   const [busy, setBusy] = useState(false);
   const [setupAt, setSetupAt] = useState(0);
   useEffect(() => { if (!busy) return; const t = setInterval(() => setSetupAt((n) => Math.min(n + 1, SETUP_LINES.length - 1)), 500); return () => clearInterval(t); }, [busy]);
   const handleState = useHandleCheck(shop.handle, shop.name);
 
+  const ownerName = `${owner.username.trim()} ${owner.surname.trim()}`.trim();
+  const phoneDigits = owner.phone.replace(/\D/g, '').slice(-10);
   const errs: Record<number, Record<string, string>> = {
-    0: { ...(shop.name.trim() ? {} : { name: 'Add your shop’s name.' }), ...(shop.handle.length < 3 ? { handle: 'Use at least 3 letters or numbers.' } : handleState.status === 'taken' ? { handle: 'That link is taken. Pick another.' } : {}) },
-    1: shop.cat ? {} : { cat: 'Pick one to go on.' },
-    2: pay.upi && !/^[\w.-]{2,}@[a-z]{2,}$/i.test(pay.upi) ? { upi: 'A UPI ID looks like name@bank.' } : {},
-    3: {}, 4: {},
+    0: {
+      ...(shop.name.trim() ? {} : { name: 'Add your shop’s name.' }),
+      ...(shop.handle.length < 3 ? { handle: 'Use at least 3 letters or numbers.' } : handleState.status === 'taken' ? { handle: 'That link is taken. Pick another.' } : {}),
+      ...(owner.username.trim() ? {} : { username: 'Enter your username.' }),
+      ...(owner.surname.trim() ? {} : { surname: 'Enter your surname.' }),
+      ...(owner.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(owner.email.trim()) ? {} : { email: 'Enter a valid email address.' }),
+      ...(phoneDigits.length === 10 ? {} : { phone: 'Enter your 10-digit phone number.' }),
+    },
+    1: {},
   };
   const e = (k: string) => (tried ? errs[step]?.[k] : undefined);
   const next = () => { setTried(true); if (Object.keys(errs[step] ?? {}).length) return; setTried(false); setStep(step + 1); };
   const publish = async () => {
     setBusy(true); setPubError(''); setSetupAt(0);
     const shown = Date.now();
-    const err = await createShop({ name: shop.name.trim(), handle: shop.handle, city: shop.city, category: shop.cat, cod: pay.cod, online: pay.online, open: true, look, upi: pay.upi, minimum: orders.minimum });
+    const err = await createShop({ name: shop.name.trim(), handle: shop.handle, city: '', owner: ownerName, email: owner.email.trim(), phone: phoneDigits, category: shop.cat, cod: DEFAULT_PAY.cod, online: DEFAULT_PAY.online, open: true, look: DEFAULT_LOOK, upi: DEFAULT_PAY.upi, minimum: DEFAULT_MINIMUM });
     // let each line of the setting-up screen show for a moment, so it reads as steps and not a blank wait
     const wait = 1500 - (Date.now() - shown); if (!err && wait > 0) await new Promise((r) => setTimeout(r, wait));
     setBusy(false);
@@ -88,40 +97,27 @@ function Wizard() {
         {step === 0 && <>
           <div><h1 className="h1">What’s your store name?</h1><p className="t-body">This is what buyers see at the top of your page.</p></div>
           <Field id="ob-name" label="Shop name" required error={e('name')}><input id="ob-name" className={`input ${e('name') ? 'bad' : ''}`} value={shop.name} onChange={(x) => setS({ ...shop, name: x.target.value, handle: shop.handle && shop.handle !== cleanHandle(shop.name) ? shop.handle : cleanHandle(x.target.value) })} placeholder="e.g. Meera Studio" autoFocus /></Field>
-          <Field id="ob-handle" label="Your shop link" required error={e('handle')} hint={`Buyers visit stoora.in/${shop.handle || 'yourshop'}`}><div className={`affix ${e('handle') ? 'bad' : ''}`}><span aria-hidden="true">stoora.in/</span><input id="ob-handle" value={shop.handle} onChange={(x) => setS({ ...shop, handle: cleanHandle(x.target.value) })} /></div></Field>
+          <div className="grid2">
+            <Field id="ob-username" label="Username" required error={e('username')}><input id="ob-username" className={`input ${e('username') ? 'bad' : ''}`} autoComplete="username" value={owner.username} onChange={(x) => setOwner({ ...owner, username: x.target.value })} /></Field>
+            <Field id="ob-surname" label="Surname" required error={e('surname')}><input id="ob-surname" className={`input ${e('surname') ? 'bad' : ''}`} autoComplete="family-name" value={owner.surname} onChange={(x) => setOwner({ ...owner, surname: x.target.value })} /></Field>
+          </div>
+          <Field id="ob-handle" label="Link" required error={e('handle')} hint="Your public shop link."><div className={`affix ${e('handle') ? 'bad' : ''}`}><span aria-hidden="true">stoora.in/</span><input id="ob-handle" value={shop.handle} onChange={(x) => setS({ ...shop, handle: cleanHandle(x.target.value) })} aria-invalid={e('handle') ? true : undefined} /></div></Field>
           {!e('handle') && handleState.status === 'free' ? <p className="cap" role="status" style={{ margin: '-8px 0 0', color: 'var(--positive-deep, var(--positive))' }}><Icon name="check_circle" size="xs" /> stoora.in/{shop.handle} is free</p> : null}
           {handleState.status === 'taken' ? <p className="cap" role="alert" style={{ margin: '-8px 0 0', color: 'var(--negative-deep)' }}><Icon name="error" size="xs" /> stoora.in/{shop.handle} is taken{handleState.suggestion ? <>, try <button type="button" className="link" onClick={() => setS({ ...shop, handle: handleState.suggestion! })}>{handleState.suggestion}</button></> : '. Try another.'}</p> : null}
-          <Field id="ob-city" label="City" optional><input id="ob-city" className="input" value={shop.city} onChange={(x) => setS({ ...shop, city: x.target.value })} /></Field>
+          <Field id="ob-email" label="Email ID" required error={e('email')}><input id="ob-email" type="email" className={`input ${e('email') ? 'bad' : ''}`} autoComplete="email" inputMode="email" autoCapitalize="none" value={owner.email} onChange={(x) => setOwner({ ...owner, email: x.target.value })} placeholder="you@example.com" /></Field>
+          <Field id="ob-phone" label="Phone number" required error={e('phone')} hint="We may use this to reach you about your shop."><div className={`affix ${e('phone') ? 'bad' : ''}`}><span aria-hidden="true">+91</span><input id="ob-phone" type="tel" inputMode="numeric" autoComplete="tel-national" value={owner.phone} onChange={(x) => setOwner({ ...owner, phone: x.target.value.replace(/[^\d ]/g, '').slice(0, 11) })} placeholder="98765 43210" /></div></Field>
         </>}
         {step === 1 && <>
-          <div><h1 className="h1">What do you sell?</h1><p className="t-body">Pick one for now. You can change it later in Settings.</p></div>
+          <div><h1 className="h1">What do you sell?</h1><p className="t-body">Stoora is set up for physical products.</p></div>
           <div className="stack" role="radiogroup" aria-label="What you sell">{SELLS.map(([v, icon, name, text]) => (
             <button key={v} type="button" role="radio" aria-checked={shop.cat === v} className="cat" aria-pressed={shop.cat === v} style={{ textAlign: 'left', width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }} onClick={() => setS({ ...shop, cat: v })}>
               <Icon name={icon} /><span><span className="t-ink" style={{ fontWeight: 600, display: 'block' }}>{name}</span><span className="cap">{text}</span></span>
             </button>))}</div>
-          {e('cat') ? <span className="err" role="alert"><Icon name="error" size="xs" />{e('cat')}</span> : null}
-          {shop.cat ? <p className="t-body" role="status" style={{ margin: 0 }}>You picked <b className="t-ink">{shop.cat}</b>. Is that right? If not, tap the other one.</p> : null}
-        </>}
-        {step === 2 && <>
-          <div><h1 className="h1">How will you get paid?</h1><p className="t-body">Turn on what suits you. You can change this any time.</p></div>
-          <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Online payments</span><span className="cap">UPI, cards and netbanking. Needs a few bank details later.</span></span><Switch checked={pay.online} onChange={(v) => setPay({ ...pay, online: v })} label="Online payments" /></div>
-          <div className="toggle-row"><span className="grow"><span className="t-ink" style={{ fontWeight: 500, display: 'block' }}>Cash on delivery</span><span className="cap">The buyer pays when the parcel arrives.</span></span><Switch checked={pay.cod} onChange={(v) => setPay({ ...pay, cod: v })} label="Cash on delivery" /></div>
-          <Field id="ob-upi" label="Your UPI ID" optional error={e('upi')} hint="Buyers can pay you directly. You confirm each payment yourself."><input id="ob-upi" className={`input ${e('upi') ? 'bad' : ''}`} value={pay.upi} onChange={(x) => setPay({ ...pay, upi: x.target.value })} placeholder="yourname@okhdfc" autoCapitalize="none" /></Field>
-        </>}
-        {step === 3 && <>
-          <div><h1 className="h1">How you take orders</h1><p className="t-body">Your shop opens as soon as you publish. You can pause it any time in Settings.</p></div>
-          <Field id="ob-min" label="Smallest order" optional hint="Leave empty for no minimum."><div className="affix"><span aria-hidden="true">₹</span><input id="ob-min" inputMode="numeric" value={orders.minimum} onChange={(x) => setOrders({ ...orders, minimum: x.target.value })} /></div></Field>
-          <div className="hr" style={{ margin: 0 }} /><h2 className="ct">WhatsApp number</h2><WhatsAppVerify />
-        </>}
-        {step === 4 && <>
-          <div><h1 className="h1">Pick a look</h1><p className="t-body">Three simple styles. Premium templates are optional extras you can try later.</p></div>
-          <div className="looks" role="radiogroup" aria-label="Look">{LOOKS.map(([n, bg, v]) => <button key={n} type="button" className="look" role="radio" aria-checked={look === v} aria-pressed={look === v} onClick={() => setLook(v)}><i style={{ background: bg }} />{n}</button>)}</div>
-          <Card className="stack tight" style={{ background: 'var(--inner)' }}><b className="t-ink">Ready to publish</b><p className="cap">{shop.name || 'Your shop'} · stoora.in/{shop.handle || 'yourshop'} · {pay.online ? 'online payments' : 'no online payments'}{pay.cod ? ', cash on delivery' : ''}</p></Card>
         </>}
         {pubError && <div className="banner bad" role="alert"><Icon name="error" /><span>{pubError} Nothing you typed is lost.</span><Button small onClick={publish}>Try again</Button></div>}
         <div className="wiz-foot">
           {step > 0 ? <Button icon="arrow_back" onClick={() => { setTried(false); setStep(step - 1); }}>Back</Button> : <span />}
-          {step < 4 ? <Button kind="primary" onClick={next}>Continue</Button> : mode === 'live' && auth.ready && !auth.user ? <Link className="btn primary" href="/login?next=%2Fonboarding%3Fstep%3D5">Sign in to publish</Link> : <Button kind="primary" icon="rocket_launch" busy={busy} busyLabel="Publishing…" onClick={publish}>Publish my shop</Button>}
+          {step < 1 ? <Button kind="primary" onClick={next}>Continue</Button> : mode === 'live' && auth.ready && !auth.user ? <Link className="btn primary" href="/login?next=%2Fonboarding%3Fstep%3D5">Sign in to publish</Link> : <Button kind="primary" icon="rocket_launch" busy={busy} busyLabel="Publishing…" onClick={publish}>Publish my shop</Button>}
         </div>
       </Card>
     </div>
