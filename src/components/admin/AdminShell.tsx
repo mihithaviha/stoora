@@ -2,7 +2,7 @@
 // Admin frame: same look as the seller app (dark rail/sidebar, white work panel), with its own menu.
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Badge, Icon } from '../ui';
 import { Logo, StateScreen } from '../bits';
 import { useAuth } from '@/lib/auth';
@@ -14,6 +14,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname() || ''; const [menu, setMenu] = useState(false); const auth = useAuth();
   useEffect(() => setMenu(false), [path]);
   const on = (h: string) => (h === '/admin' ? path === '/admin' : path.startsWith(h));
+
+  // the bottom pill's highlight slides to the active tab instead of just fading in on top of it
+  const pill = useRef<HTMLDivElement>(null);
+  const [slide, setSlide] = useState<{ x: number; w: number } | null>(null);
+  const measure = useCallback(() => {
+    const el = pill.current?.querySelector<HTMLElement>('a.on');
+    setSlide(el ? { x: el.offsetLeft, w: el.offsetWidth } : null);
+  }, []);
+  useLayoutEffect(() => { measure(); }, [measure, path]);
+  useEffect(() => {
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [measure]);
   if (auth.mode === 'live' && auth.ready && auth.role !== 'admin') return <main id="main" style={{ minHeight: '100dvh', background: 'var(--surface)' }}><StateScreen kind="signedout" title="Admins only" text="This area is for the Stoora team. If you should have access, ask an admin to switch your account on (see supabase/README.md)." actions={<ButtonLink href="/dashboard" kind="primary">Go to my dashboard</ButtonLink>} /></main>;
   const title = path.startsWith('/admin/blogs') ? 'Blogs' : 'Overview';
   return (
@@ -33,7 +46,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </div>
       <nav className="bbar" aria-label="Quick menu">
         <button className="round" onClick={() => setMenu(true)} aria-label="Open menu"><Icon name="menu" /></button>
-        <div className="pill" role="navigation" aria-label="Admin">{NAV.map(([h, i, l]) => <Link key={h} href={h} className={on(h) ? 'on' : ''} aria-current={on(h) ? 'page' : undefined}><Icon name={i} /><span>{l}</span></Link>)}</div>
+        <div className="pill" ref={pill} role="navigation" aria-label="Admin">
+          {slide ? <i className="pill-slide" aria-hidden="true" style={{ transform: `translateX(${slide.x}px)`, width: slide.w }} /> : null}
+          {NAV.map(([h, i, l]) => <Link key={h} href={h} className={on(h) ? 'on' : ''} aria-current={on(h) ? 'page' : undefined}><Icon name={i} /><span>{l}</span></Link>)}
+        </div>
       </nav>
       {menu && (
         <div className="drawer" role="dialog" aria-modal="true" aria-label="Menu">

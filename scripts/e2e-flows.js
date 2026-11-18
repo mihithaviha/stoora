@@ -478,6 +478,48 @@ const CAKE = { title: 'Chocolate cake', description: 'A rich chocolate cake bake
       expect(await t.js(`!!document.querySelector('[data-slug="packing-checklist"]')`) && !(await t.js(`!!document.querySelector('[data-slug="product-photos-at-home"]') && !document.querySelector('[data-slug="product-photos-at-home"]').hidden`)), 'only the restored story should be on Blogs');
     });
 
+    await flow('Blogs admin: schedule a story for later, and it goes live by itself once its time comes', async (t) => {
+      const fill = (sel, v) => t.js(`(async () => { const el = document.querySelector(${JSON.stringify(sel)}); if (el.getAttribute('role') === 'combobox') { el.click(); await new Promise((r) => setTimeout(r, 150)); const opt = [...document.querySelectorAll('#' + CSS.escape(el.id) + '-list [role=option]')].find((o) => o.dataset.value === ${JSON.stringify(v)}); if (!opt) throw new Error('no option ' + ${JSON.stringify(v)} + ' in ' + el.id); opt.click(); await new Promise((r) => setTimeout(r, 80)); return; } const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(v)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
+      await t.goto('/admin/blogs/new'); await sleep(1500);
+      await fill('#bl-title', 'A story scheduled for later'); await sleep(200);
+      await fill('#bl-photo', 'bowls');
+      await fill('#bl-excerpt', 'This one is set to publish itself at a future moment, with nobody at the keyboard.');
+      await fill('#bl-summary', 'Scheduling a story picks the exact date and time it goes live, instead of publishing right away.');
+      await fill('textarea[aria-label="Paragraph 1"]', 'Nothing more to do once it is scheduled: it appears on Blogs on its own.');
+
+      // picking a time already past today is refused
+      await t.click('Schedule'); await sleep(400);
+      expect(await t.has('Schedule this story'), 'the schedule dialog did not open');
+      const dlgScope = `document.querySelector('[aria-label="Schedule this story"]')`;
+      const today = await t.js(`(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()`);
+      await t.js(`document.querySelector('#sched-date').click()`); await sleep(300);
+      await t.js(`document.querySelector('.dp-pop.open [data-day="${today}"]').click()`); await sleep(300);
+      await fill('#sched-time', '00:01');
+      await t.click('Schedule', dlgScope); await sleep(400);
+      expect(await t.has('Choose a time in the future'), 'scheduling a time already in the past should be refused');
+
+      // pick tomorrow and a time: it schedules, and stays off the public pages
+      await t.js(`document.querySelector('#sched-date').click()`); await sleep(300);
+      const tomorrow = await t.js(`(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()`);
+      await t.js(`document.querySelector('.dp-pop.open [data-day="${tomorrow}"]').click()`); await sleep(300);
+      await fill('#sched-time', '09:00');
+      await t.click('Schedule', dlgScope); expect(await t.waitFor('Story scheduled for'), 'scheduling did not confirm');
+      expect(await t.has('Scheduled'), 'the story should show the Scheduled badge');
+      await t.goto('/blogs'); await sleep(1500);
+      expect(!(await t.has('A story scheduled for later')), 'a story scheduled for later must not show on Blogs yet');
+      await t.goto('/admin/blogs'); await sleep(1500);
+      await t.click('Scheduled'); await sleep(300);
+      expect(await t.js(`document.querySelector('[data-testid=blogs-table] [data-slug="a-story-scheduled-for-later"]')?.textContent.includes('goes live')`), 'the Scheduled filter should list the story with when it goes live');
+
+      // its time comes (simulated here, since nothing on this page runs a clock): it goes live by itself, no publish action needed
+      await t.js(`localStorage.setItem('stoora.blogs.v1', JSON.stringify(JSON.parse(localStorage.getItem('stoora.blogs.v1')).map((p) => p.slug === 'a-story-scheduled-for-later' ? { ...p, scheduledAt: new Date(Date.now() - 60000).toISOString() } : p))); window.dispatchEvent(new Event('stoora-blogs'))`);
+      await t.goto('/blogs'); await sleep(1500);
+      expect(await t.has('A story scheduled for later'), 'a scheduled story whose time has passed should be on Blogs without anyone publishing it');
+      await t.goto('/admin/blogs/a-story-scheduled-for-later'); await sleep(1500);
+      expect(await t.has('Published') && !(await t.has('Scheduled')), 'once its time has passed the story should read as Published in the editor too');
+    });
+
     await flow('Drop-down: opens softly, picks with the mouse and the keyboard, closes with Escape or a click outside, and shows on top of a dialog', async (t) => {
       await t.goto('/design'); await t.js(`localStorage.clear(); localStorage.setItem('stoora.session', 'demo')`);
       await t.goto('/products/service/new?kind=workshop'); await sleep(1500);

@@ -185,24 +185,32 @@ ok((await q(`select title, updated_at >= created_at as t from public.blog_posts 
 ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('Bad Slug', 'A fine title')`)), 'a web address with capitals or spaces is refused');
 ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('first-story', 'Same address again')`)), 'two stories cannot share an address');
 ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('too-short', 'Hi')`)), 'a title under 5 letters is refused');
-ok(!!(await fails(`insert into public.blog_posts (slug, title, status) values ('odd-status', 'A fine title', 'scheduled')`)), 'only draft and published are valid');
+ok(!!(await fails(`insert into public.blog_posts (slug, title, status) values ('odd-status', 'A fine title', 'bogus')`)), 'only draft, published, scheduled and removed are valid');
+ok(!!(await fails(`insert into public.blog_posts (slug, title, status) values ('no-time', 'A fine title', 'scheduled')`)), 'a scheduled story needs a time to go live');
+await db.query(`insert into public.blog_posts (slug, title, excerpt, summary, photo, status, scheduled_at) values
+  ('future-story', 'A future story', 'Teaser', 'Short answer', 'bowls', 'scheduled', now() + interval '1 day'),
+  ('due-story', 'A due story', 'Teaser', 'Short answer', 'bowls', 'scheduled', now() - interval '1 minute')`);
 await as('anon');
 const seen = await q('select slug from public.blog_posts order by slug');
-ok(seen.length === 1 && seen[0].slug === 'first-story', 'a visitor sees the published story only, no drafts');
+ok(seen.length === 2 && seen.map((r) => r.slug).includes('first-story') && seen.map((r) => r.slug).includes('due-story') && !seen.map((r) => r.slug).includes('future-story'),
+  'a visitor sees the published story and the scheduled story whose time has come, not the one still in the future or the drafts');
 ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('visitor-story', 'A visitor story')`)), 'a visitor cannot write a story');
 await db.exec(`update public.blog_posts set title = 'Hacked' where slug = 'first-story'`);
 await as('authenticated', admin);
 ok((await q(`select title from public.blog_posts where slug = 'first-story'`))[0].title === 'A first story, edited', 'a visitor cannot change a story');
+await db.exec(`delete from public.blog_posts where slug in ('future-story', 'due-story')`);
 await as('authenticated', seller);
 ok(!!(await fails(`insert into public.blog_posts (slug, title) values ('seller-story', 'A seller story')`)), 'a seller cannot write a story');
 await db.exec(`delete from public.blog_posts where slug = 'first-story'`);
 await as('authenticated', admin);
 ok((await q(`select count(*)::int n from public.blog_posts where slug = 'first-story'`))[0].n === 1, 'a seller cannot delete a story');
+await db.query(`insert into public.blog_posts (slug, title, builtin, status, scheduled_at) values ('brand-in-an-afternoon', 'Scheduled edit of a built-in story', true, 'scheduled', now() + interval '1 day')`);
 await as('anon');
 const hiddenSlugs = (await q('select public.hidden_blog_slugs() as s')).map((r) => r.s);
-ok(hiddenSlugs.length === 1 && hiddenSlugs[0] === 'product-photos-at-home', 'the public pages can learn which built-in stories were switched off, and nothing else');
+ok(hiddenSlugs.length === 2 && hiddenSlugs.includes('product-photos-at-home') && hiddenSlugs.includes('brand-in-an-afternoon'),
+  'the public pages can learn which built-in stories were switched off or are still scheduled, and nothing else');
 await as('authenticated', admin);
-await db.exec(`delete from public.blog_posts where slug = 'first-story'`);
+await db.exec(`delete from public.blog_posts where slug in ('first-story', 'brand-in-an-afternoon')`);
 ok((await q(`select count(*)::int n from public.blog_posts where slug = 'first-story'`))[0].n === 0, 'an admin deletes a story');
 await db.query(`insert into storage.objects (bucket_id, name) values ('blog-images', 'cover.jpg')`);
 await as('authenticated', seller);

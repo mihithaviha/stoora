@@ -4,13 +4,19 @@
 // Live mode keeps posts in Supabase (table blog_posts); demo mode keeps them in this browser (localStorage).
 import { ARTICLES, TOPICS, type Article, type Block } from './articles';
 
-/** 'removed' is a built-in story the team deleted for good: it stays off the site and out of the admin list. */
-export type PostStatus = 'draft' | 'published' | 'removed';
+/** 'removed' is a built-in story the team deleted for good: it stays off the site and out of the admin list.
+ * 'scheduled' is ready to go live, but not until `scheduledAt` (an ISO date-time) — it stays off the site until then. */
+export type PostStatus = 'draft' | 'published' | 'scheduled' | 'removed';
 export interface BlogPost {
   id: string; slug: string; title: string; excerpt: string; summary: string; topic: string; /** A photo key from the Journal library, or the address of an uploaded picture. */ photo: string;
   published: string; minutes: number; body: Block[]; faq: { q: string; a: string }[];
   carousel?: number | null; pick?: string | null; status: PostStatus; builtin: boolean; updatedAt?: string;
+  /** When a 'scheduled' story goes live (ISO date-time). Unused for other statuses. */ scheduledAt?: string | null;
 }
+
+/** Whether a story is visible to visitors right now: published, or scheduled and its time has come. */
+export const isPostDue = (p: Pick<BlogPost, 'status' | 'scheduledAt'>, now: Date = new Date()): boolean =>
+  p.status === 'published' || (p.status === 'scheduled' && !!p.scheduledAt && new Date(p.scheduledAt).getTime() <= now.getTime());
 
 export const LIMITS = { title: 160, excerpt: 400, summary: 800, slug: 90, pick: 300, blocks: 120, items: 30, faq: 20, text: 4000 };
 export const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -29,25 +35,25 @@ export const postToArticle = (p: BlogPost): Article => ({
 /** A built-in story as an editable post (the starting point for editing it). */
 export const articleToPost = (a: Article): BlogPost => ({
   id: '', slug: a.slug, title: a.title, excerpt: a.excerpt, summary: a.summary, topic: a.topic, photo: a.photo, published: a.published, minutes: a.minutes,
-  body: JSON.parse(JSON.stringify(a.body)), faq: JSON.parse(JSON.stringify(a.faq)), carousel: a.carousel ?? null, pick: a.pick ?? null, status: 'published', builtin: true,
+  body: JSON.parse(JSON.stringify(a.body)), faq: JSON.parse(JSON.stringify(a.faq)), carousel: a.carousel ?? null, pick: a.pick ?? null, status: 'published', builtin: true, scheduledAt: null,
 });
 
 export const blankPost = (): BlogPost => ({
   id: '', slug: '', title: '', excerpt: '', summary: '', topic: TOPICS[0].id, photo: '', published: (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })(), minutes: 3,
-  body: [{ p: '' }], faq: [], carousel: null, pick: null, status: 'draft', builtin: false,
+  body: [{ p: '' }], faq: [], carousel: null, pick: null, status: 'draft', builtin: false, scheduledAt: null,
 });
 
-/** The stories visitors see: the built-in ones, with admin edits applied, hidden ones removed and new published ones added. */
+/** The stories visitors see: the built-in ones, with admin edits applied, hidden ones removed and new published (or now-due scheduled) ones added. */
 export function mergeArticles(posts: BlogPost[], hiddenSlugs: string[] = []): Article[] {
   const edits = new Map(posts.filter((p) => p.builtin).map((p) => [p.slug, p]));
-  const hidden = new Set([...hiddenSlugs, ...posts.filter((p) => p.builtin && p.status !== 'published').map((p) => p.slug)]);
+  const hidden = new Set([...hiddenSlugs, ...posts.filter((p) => p.builtin && !isPostDue(p)).map((p) => p.slug)]);
   const out: Article[] = [];
   for (const a of ARTICLES) {
     const edit = edits.get(a.slug);
     if (hidden.has(a.slug)) continue;
-    out.push(edit && edit.status === 'published' ? postToArticle(edit) : a);
+    out.push(edit && isPostDue(edit) ? postToArticle(edit) : a);
   }
-  for (const p of posts) if (!p.builtin && p.status === 'published' && !BUILTIN_SLUGS.has(p.slug)) out.push(postToArticle(p));
+  for (const p of posts) if (!p.builtin && isPostDue(p) && !BUILTIN_SLUGS.has(p.slug)) out.push(postToArticle(p));
   return out;
 }
 
@@ -146,6 +152,10 @@ export function problemsOf(p: BlogPost, existingSlugs: string[], publishing: boo
     if (cleanBody(p.body).length === 0) e.body = 'Write something in the story first.';
     p.faq.forEach((f, i) => { if (!f.q.trim() !== !f.a.trim()) e[`faq${i}`] = 'A question needs an answer, and an answer needs a question.'; });
   }
+  if (p.status === 'scheduled') {
+    if (!p.scheduledAt) e.scheduledAt = 'Choose when to publish.';
+    else if (new Date(p.scheduledAt).getTime() <= Date.now()) e.scheduledAt = 'Choose a time in the future.';
+  }
   return e;
 }
 
@@ -155,7 +165,9 @@ export function postFromRow(r: Record<string, any>): BlogPost {
   return {
     id: String(r.id), slug: r.slug, title: r.title, excerpt: r.excerpt ?? '', summary: r.summary ?? '', topic: r.topic ?? TOPICS[0].id, photo: r.photo ?? '',
     published: String(r.published).slice(0, 10), minutes: r.minutes ?? 3, body: Array.isArray(r.body) ? r.body : [], faq: Array.isArray(r.faq) ? r.faq : [],
-    carousel: r.carousel ?? null, pick: r.pick ?? null, status: r.status === 'published' ? 'published' : r.status === 'removed' ? 'removed' : 'draft', builtin: Boolean(r.builtin), updatedAt: r.updated_at ?? r.updatedAt,
+    carousel: r.carousel ?? null, pick: r.pick ?? null,
+    status: r.status === 'published' ? 'published' : r.status === 'scheduled' ? 'scheduled' : r.status === 'removed' ? 'removed' : 'draft',
+    builtin: Boolean(r.builtin), updatedAt: r.updated_at ?? r.updatedAt, scheduledAt: r.scheduled_at ?? r.scheduledAt ?? null,
   };
 }
 

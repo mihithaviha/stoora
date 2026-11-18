@@ -6,11 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Chips, ConfirmDialog, DemoBar, Dialog, EmptyState, Icon, PageHeader, SearchBox, Skeleton, useToast } from '../ui';
 import { ARTICLES, formatDate, topicOf } from '@/lib/journal';
 import { deletePost, listPosts, savePost } from '@/lib/journal/admin-store';
-import { articleToPost, builtinBySlug, type BlogPost } from '@/lib/journal/posts';
+import { articleToPost, builtinBySlug, isPostDue, type BlogPost } from '@/lib/journal/posts';
 import { getSupabase } from '@/lib/supabase/client';
 
-type Filter = 'all' | 'published' | 'draft';
-interface Row { slug: string; title: string; topic: string; date: string; status: 'published' | 'draft'; kind: 'built-in' | 'edited' | 'new'; post?: BlogPost }
+type Filter = 'all' | 'published' | 'scheduled' | 'draft';
+type RowStatus = 'published' | 'scheduled' | 'draft';
+const statusOf = (p: Pick<BlogPost, 'status' | 'scheduledAt'>): RowStatus => (isPostDue(p) ? 'published' : p.status === 'scheduled' ? 'scheduled' : 'draft');
+interface Row { slug: string; title: string; topic: string; date: string; status: RowStatus; scheduledAt?: string | null; kind: 'built-in' | 'edited' | 'new'; post?: BlogPost }
 
 /** One row for every story: the built-in ones (with the team's edit, if any) and the stories written in the admin. */
 export function rowsOf(posts: BlogPost[]): Row[] {
@@ -18,10 +20,10 @@ export function rowsOf(posts: BlogPost[]): Row[] {
   const rows: Row[] = ARTICLES.filter((a) => bySlug.get(a.slug)?.status !== 'removed').map((a) => {
     const edit = bySlug.get(a.slug);
     return edit
-      ? { slug: a.slug, title: edit.title, topic: edit.topic, date: edit.published, status: edit.status === 'published' ? 'published' : 'draft', kind: 'edited', post: edit }
+      ? { slug: a.slug, title: edit.title, topic: edit.topic, date: edit.published, status: statusOf(edit), scheduledAt: edit.scheduledAt, kind: 'edited', post: edit }
       : { slug: a.slug, title: a.title, topic: a.topic, date: a.published, status: 'published', kind: 'built-in' };
   });
-  for (const p of posts) if (!p.builtin && p.status !== 'removed') rows.push({ slug: p.slug, title: p.title, topic: p.topic, date: p.published, status: p.status === 'published' ? 'published' : 'draft', kind: 'new', post: p });
+  for (const p of posts) if (!p.builtin && p.status !== 'removed') rows.push({ slug: p.slug, title: p.title, topic: p.topic, date: p.published, status: statusOf(p), scheduledAt: p.scheduledAt, kind: 'new', post: p });
   return rows.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
 }
 
@@ -119,7 +121,7 @@ export function BlogsAdmin() {
       <div className="stack">
         <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--s2)' }}>
           <div className="grow" style={{ minWidth: 220 }}><SearchBox id="blog-q" value={q} onChange={setQ} placeholder="Search stories" /></div>
-          <Chips label="Status" value={filter} onChange={setFilter} options={[{ value: 'all', label: 'All', count: count('all') }, { value: 'published', label: 'Published', count: count('published') }, { value: 'draft', label: 'Draft or hidden', count: count('draft') }]} />
+          <Chips label="Status" value={filter} onChange={setFilter} options={[{ value: 'all', label: 'All', count: count('all') }, { value: 'published', label: 'Published', count: count('published') }, { value: 'scheduled', label: 'Scheduled', count: count('scheduled') }, { value: 'draft', label: 'Draft or hidden', count: count('draft') }]} />
         </div>
         {filter === 'draft' && draftCount > 0 ? (
           <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'space-between', gap: 'var(--s2)' }}>
@@ -133,9 +135,9 @@ export function BlogsAdmin() {
               <div className="blog-row" key={r.slug} data-slug={r.slug}>
                 <div className="blog-main">
                   <Link className="link blog-title" href={`/admin/blogs/${r.slug}`}>{r.title}</Link>
-                  <span className="cap">/blogs/{r.slug} · {topicOf(r.topic).name} · {formatDate(r.date)}{r.kind === 'built-in' ? ' · built-in' : r.kind === 'edited' ? ' · built-in, edited' : ''}</span>
+                  <span className="cap">/blogs/{r.slug} · {topicOf(r.topic).name} · {formatDate(r.date)}{r.kind === 'built-in' ? ' · built-in' : r.kind === 'edited' ? ' · built-in, edited' : ''}{r.status === 'scheduled' && r.scheduledAt ? ` · goes live ${formatDate(r.scheduledAt.slice(0, 10))}` : ''}</span>
                 </div>
-                <Badge tone={r.status === 'published' ? 'ok' : 'warn'} icon={r.status === 'published' ? 'check_circle' : r.kind === 'new' ? 'edit_note' : 'visibility_off'}>{r.status === 'published' ? 'Published' : r.kind === 'new' ? 'Draft' : 'Hidden'}</Badge>
+                <Badge tone={r.status === 'published' ? 'ok' : r.status === 'scheduled' ? 'offer' : 'warn'} icon={r.status === 'published' ? 'check_circle' : r.status === 'scheduled' ? 'schedule' : r.kind === 'new' ? 'edit_note' : 'visibility_off'}>{r.status === 'published' ? 'Published' : r.status === 'scheduled' ? 'Scheduled' : r.kind === 'new' ? 'Draft' : 'Hidden'}</Badge>
                 <span className="blog-acts">
                   <Link className="btn line sm" href={`/admin/blogs/${r.slug}`}>Edit</Link>
                   {r.status === 'published' ? <Link className="btn quiet sm" href={`/blogs/${r.slug}`} target="_blank" rel="noopener noreferrer">View</Link> : null}

@@ -9,8 +9,10 @@ export async function fetchPublicArticles(): Promise<{ articles: Article[]; post
   if (!isSupabaseConfigured) return { articles: mergeArticles([]), posts: [], carousel: null };
   try {
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    // a scheduled story counts as published once its time has come
+    const now = new Date().toISOString();
     const [rows, hidden, ring] = await Promise.all([
-      sb.from('blog_posts').select('*').eq('status', 'published').limit(500),
+      sb.from('blog_posts').select('*').or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${now})`).limit(500),
       sb.rpc('hidden_blog_slugs'),
       sb.from('blog_settings').select('value').eq('key', 'carousel').maybeSingle(),
     ]);
