@@ -25,7 +25,8 @@ export function Gallery({ current, onUse }: { current?: string; onUse: (id: stri
   const [filter, setFilter] = useState('all');
   const [full, setFull] = useState<TemplateInfo | null>(null);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
-  const list = TEMPLATES.filter((t) => filter === 'all' || t.categories.includes(filter));
+  // Premium templates are not on sale yet, so they are hidden until they are (PRD decision D2)
+  const list = TEMPLATES.filter((t) => !t.premium && (filter === 'all' || t.categories.includes(filter)));
   return (
     <div className="stack">
       <Chips label="Template category" value={filter} onChange={setFilter} options={GALLERY_FILTERS.map(([value, label]) => ({ value, label }))} />

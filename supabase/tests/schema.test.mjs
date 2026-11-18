@@ -140,11 +140,48 @@ await db.exec(`update public.enquiries set status = 'Answered'`);
 ok((await q('select status from public.enquiries'))[0].status === 'Answered', 'an admin updates enquiry status');
 ok((await q('select count(*)::int n from public.shops'))[0].n === 1, 'an admin can see shops');
 
+// product numbers and the daily AI draft limit
+await as('authenticated', seller);
+{
+  const mk = async (n) => (await q(`insert into public.products (shop_id, name, price) values ('${shopId}', '${n}', 100) returning id, product_number`))[0];
+  const a = await mk('Number test A'); const b = await mk('Number test B');
+  ok(/^[A-Z0-9]+-\d{4}$/.test(a.product_number) && a.product_number !== b.product_number, 'a new product gets its own product number');
+  await db.exec(`update public.products set product_number = 'HACKED-9999' where id = '${a.id}'`);
+  ok((await q('select product_number from public.products where id = $1', [a.id]))[0].product_number === a.product_number, 'a seller cannot change the product number');
+  await db.exec(`delete from public.products where name like 'Number test %'`);
+  let granted = 0; for (let i = 0; i < 22; i++) if ((await q(`select public.ai_draft_take('${shopId}', 20) as ok`))[0].ok) granted++;
+  ok(granted === 20, 'a shop gets 20 AI drafts a day, no more');
+  // stock for each size, and the seller's own delivery rule
+  const sized = (await q(`insert into public.products (shop_id, name, price, stock, option_stock) values ('${shopId}', 'Sized test', 100, 5, '{"M":2,"L":3}') returning id`))[0].id;
+  await as('anon');
+  ok(!!(await fails(`select public.place_order('meera', 'Guest', '9876501234', 'Pune', 'x', null, 'cod', '[{"productId":"${sized}","qty":3,"size":"M"}]'::jsonb)`)), 'ordering more than a size has left is refused');
+  await db.query(`select public.place_order('meera', 'Guest', '9876501234', 'Pune', 'x', null, 'cod', $1::jsonb)`, [JSON.stringify([{ productId: sized, qty: 2, size: 'M' }])]);
+  await as('authenticated', seller);
+  const left = (await q('select stock, option_stock from public.products where id = $1', [sized]))[0];
+  ok(left.stock === 3 && left.option_stock.M === 0 && left.option_stock.L === 3, 'stock comes off the size that was bought');
+  await db.exec(`update public.shops set order_settings = order_settings || '{"fee":"99","freeOver":"0"}'::jsonb where id = '${shopId}'`);
+  await as('anon');
+  const ship = (await q(`select public.place_order('meera', 'Guest', '9876501234', 'Pune', 'x', null, 'cod', $1::jsonb) as r`, [JSON.stringify([{ productId: sized, qty: 1, size: 'L' }])]))[0].r;
+  ok(ship.shipping === 99, 'delivery follows the seller own charge (Rs 99), not a fixed one');
+  await as('authenticated', seller);
+  await db.exec(`update public.shops set order_settings = order_settings - 'fee' - 'freeOver' where id = '${shopId}'; delete from public.products where id = '${sized}'`);
+  await as('authenticated', other);
+  ok((await q(`select public.ai_draft_take('${shopId}', 20) as ok`))[0].ok === false, 'another seller cannot use this shop AI drafts');
+  await as('authenticated', seller);
+}
+
 // storage policy
 await as('authenticated', seller);
 await db.query(`insert into storage.objects (bucket_id, name) values ('product-images', '${shopId}/photo.jpg')`);
 ok(!!(await fails(`insert into storage.objects (bucket_id, name) values ('product-images', '${crypto.randomUUID()}/photo.jpg')`)), 'a seller cannot upload into another shop\'s folder');
 ok(!!(await fails(`insert into storage.objects (bucket_id, name) values ('product-images', 'not-a-uuid/photo.jpg')`)), 'a bad folder name is refused');
+
+// the public shop page loads in one trip
+await as('anon');
+const pub1 = (await q(`select public.load_public_shop('MEERA') as r`))[0].r;
+ok(pub1 && pub1.shop.handle === 'meera' && Array.isArray(pub1.products) && pub1.products.length === 5 && pub1.services.length >= 1, 'load_public_shop returns the shop, its live products and its services in one call (and ignores letter case)');
+ok(pub1.products.every((p) => p.status === 'Active') && !('owner_id' in pub1.shop), 'it returns only live products and none of the owner-only shop columns');
+ok((await q(`select public.load_public_shop('nobody-here') as r`))[0].r === null, 'an unknown shop link gives nothing');
 
 console.log(`\n${fail ? fail + ' FAILED' : 'All ' + pass + ' database checks passed'}`);
 process.exit(fail ? 1 : 0);

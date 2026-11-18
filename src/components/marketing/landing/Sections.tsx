@@ -1,0 +1,267 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import type { CSSProperties, ReactNode } from 'react';
+import { Ic } from '../bits';
+import {
+  ScreenBuilt, ScreenChat, ScreenOrders, ScreenProduct, ScreenShop, ScreenSignup, ScreenUpi, ScreenWeek,
+} from './Screens';
+
+/** Section 6 (customer stories) is built but stays off the page until there are real sellers who said yes in writing. */
+const SHOW_STORIES = false;
+
+/**
+ * The stock photos of the page plan. Each is a licensed file in /public/photos once bought (WebP, saved small).
+ * While a slot is null it shows a plain cream block with no text, so nothing is made up.
+ * Photos carry no name, quote or "customer" caption.
+ */
+type PhotoSlot = { src: string; width: number; height: number; alt: string } | null;
+const PHOTOS: Record<'top' | 'chat' | 'sell' | 'workshop' | 'sessions' | 'add' | 'share' | 'phone' | 'last', PhotoSlot> = {
+  // Existing project photos (Unsplash licence, see public/assets/home/CREDITS.md and public/assets/journal/CREDITS.md).
+  top: { src: '/assets/home/shop.webp', width: 900, height: 1350, alt: 'A small clothing boutique with a rack of hand-made clothes' },
+  chat: { src: '/assets/home/chat.webp', width: 1000, height: 667, alt: 'A shop owner smiling at a message on her phone' },
+  sell: { src: '/assets/journal/kurta-pink-720.webp', width: 720, height: 1080, alt: 'A printed cotton kurta set, shot for a shop page' },
+  workshop: { src: '/assets/journal/bowls-720.webp', width: 720, height: 1080, alt: 'Hand-made ceramic bowls laid out on a table' },
+  sessions: { src: '/assets/home/classes.webp', width: 1000, height: 562, alt: 'A tutor and a student working at a laptop' },
+  add: { src: '/assets/journal/cups-720.webp', width: 720, height: 480, alt: 'Hand-made ceramic cups, photographed for a product page' },
+  share: { src: '/assets/journal/suit-maroon-720.webp', width: 720, height: 1079, alt: 'A festive suit set, shot for a shop page' },
+  phone: null, // still needs a photo of a budget smartphone in a hand
+  last: { src: '/assets/journal/interior-1400.webp', width: 1400, height: 1750, alt: 'A calm, bright room at the end of the day' },
+};
+
+const delay = (d: number) => ({ '--d': d }) as CSSProperties;
+
+function Photo({ slot, shape, art, priority = false, reveal = false }: { slot: PhotoSlot; shape: 'portrait' | 'wide' | 'square' | 'banner'; art: string; priority?: boolean; reveal?: boolean }) {
+  return (
+    <div className={`lp-photo ${shape}${reveal ? ' rv' : ''}`}>
+      {slot ? (
+        <Image src={slot.src} width={slot.width} height={slot.height} alt={slot.alt} priority={priority} loading={priority ? undefined : 'lazy'} sizes={priority ? '(min-width: 980px) 520px, 100vw' : '(min-width: 760px) 520px, 90vw'} />
+      ) : (
+        // Placeholder drawing until the licensed photo is added. It is decoration only: no name, quote or caption.
+        <div className="lp-art" aria-hidden="true"><i className="a" /><i className="b" /><Ic n={art} /></div>
+      )}
+    </div>
+  );
+}
+
+function StartButton({ className = '' }: { className?: string }) {
+  return <Link className={`btn primary ${className}`.trim()} href="/shop/start">Start for Free</Link>;
+}
+
+/** The headline, with the words rising in one by one. */
+function Words({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(' ').map((w, i) => (
+        <span className="lp-w" style={{ '--i': i } as CSSProperties} key={i}>{w}</span>
+      ))}
+    </>
+  );
+}
+
+/** Section 1 */
+export function Top() {
+  return (
+    <section className="lp-top" aria-labelledby="lp-top-h">
+      <div className="wrap lp-top-grid">
+        <div className="lp-top-text">
+          <h1 id="lp-top-h"><Words text="Your business, open in 10 minutes." /></h1>
+          <p className="lede">Tell Stoora what you sell. Your AI co-founder builds the shop and helps run it.</p>
+          <StartButton />
+        </div>
+        <Photo art="inventory_2" slot={PHOTOS.top} shape="portrait" priority />
+      </div>
+    </section>
+  );
+}
+
+/** Section 2 */
+export function Product() {
+  return (
+    <section className="sec" id="l-about" aria-labelledby="lp-prod-h">
+      <div className="wrap">
+        <div className="lp-frame center">
+          <h2 className="l-h2 rv" id="lp-prod-h">This is what your shop looks like.</h2>
+          <div className="lp-phone-wrap rv">
+            <div className="lp-float"><div className="lp-phone"><ScreenShop /></div></div>
+            <span className="lp-paid"><Ic n="check_circle" c="xs" />Paid · ₹1,849 by UPI</span>
+          </div>
+          <div className="lp-grid three stack-phone">
+            {([['One link', 'stoora.in/yourname. Share it anywhere.'], ['Pay by UPI', 'Buyers pay at your link.'], ['One list of orders', 'Every order, in one place.']] as const).map(([t, d], i) => (
+              <div className="lp-item rv" style={delay(i)} key={t}><h3>{t}</h3><p>{d}</p></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const COFOUNDER: { screen: ReactNode; title: string; text: string }[] = [
+  { screen: <ScreenBuilt />, title: 'Builds your shop', text: 'From what you tell it. Words, photos and prices set up for you.' },
+  { screen: <ScreenProduct />, title: 'Writes your product pages', text: 'Names and descriptions in plain words. You can change any of them.' },
+  { screen: <ScreenUpi />, title: 'Gets you paid', text: 'UPI payment ready from day one.' },
+  { screen: <ScreenChat />, title: 'Replies to your buyers', text: 'It drafts the answer. You tap to send.' },
+  { screen: <ScreenOrders />, title: 'Keeps your orders in order', text: 'Every order from WhatsApp, Instagram and your link, in one list.' },
+  { screen: <ScreenWeek />, title: 'Tells you how the week went', text: 'Two plain lines and one idea. No reports.' },
+];
+
+/** Section 3 */
+export function CoFounder() {
+  return (
+    <section className="sec" id="l-features" aria-labelledby="lp-co-h">
+      <div className="wrap">
+        <div className="lp-frame">
+          <div className="lp-two">
+            <div className="lp-stack">
+              <h2 className="l-h2 rv" id="lp-co-h">It builds your shop. Then it helps run it.</h2>
+              <p className="lede rv" style={delay(1)}>Your AI co-founder does the work. You look, and you say yes.</p>
+            </div>
+            <Photo art="chat" slot={PHOTOS.chat} shape="wide" />
+          </div>
+          <div className="lp-grid three swipe">
+            {COFOUNDER.map((c, i) => (
+              <div className="lp-item rv" style={delay(i)} key={c.title}>
+                {c.screen}
+                <h3>{c.title}</h3>
+                <p>{c.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const AUDIENCE: { art: string; slot: PhotoSlot; title: string; text: string }[] = [
+  { art: 'checkroom', slot: PHOTOS.sell, title: 'You sell things', text: 'Clothes, crafts, home bakes, anything you can ship. Your own shop, and every order in one list.' },
+  { art: 'groups', slot: PHOTOS.workshop, title: 'You run workshops and classes', text: 'Set the date, take bookings and get paid before anyone arrives.' },
+  { art: 'self_improvement', slot: PHOTOS.sessions, title: 'You take one-on-one sessions', text: 'Therapists, psychologists, tutors and coaches. People pick a time and pay to book.' },
+];
+
+/** Section 4 */
+export function Audience() {
+  return (
+    <section className="sec" id="l-for" aria-labelledby="lp-aud-h">
+      <div className="wrap">
+        <div className="lp-frame">
+          <h2 className="l-h3 rv" id="lp-aud-h">For solo entrepreneurs and independent artists who want to grow.</h2>
+          <div className="lp-grid three swipe">
+            {AUDIENCE.map((a, i) => (
+              <div className="lp-item rv" style={delay(i)} key={a.title}>
+                <Photo art={a.art} slot={a.slot} shape="portrait" />
+                <h3>{a.title}</h3>
+                <p>{a.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Section 5. The steps are separate cards, with no bar or line between them. */
+export function Steps() {
+  const steps: { visual: ReactNode; title: string; text: string }[] = [
+    { visual: <ScreenSignup />, title: 'Sign up', text: 'Pick your shop name and link.' },
+    { visual: <Photo art="photo_camera" slot={PHOTOS.add} shape="square" />, title: 'Add what you sell', text: 'A photo, a name and a price. That is all it needs.' },
+    { visual: <Photo art="link" slot={PHOTOS.share} shape="square" />, title: 'Share your link', text: 'Put it in your bio and your status. Orders come in.' },
+  ];
+  return (
+    <section className="sec" id="l-how" aria-labelledby="lp-steps-h">
+      <div className="wrap">
+        <div className="lp-frame center">
+          <h2 className="l-h3 rv" id="lp-steps-h">Three steps. Ten minutes.</h2>
+          <ol className="lp-grid three stack-phone lp-steps">
+            {steps.map((s, i) => (
+              <li className="lp-item rv" style={delay(i)} key={s.title}>
+                {s.visual}
+                <span className="lp-step-n">Step {i + 1}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="rv" style={delay(3)}><StartButton /></div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Section 6. Real sellers only: fill STORIES with a photo, name, what they sell, city and one real result, each with their written yes. */
+const STORIES: { photo: PhotoSlot; name: string; sells: string; city: string; result: string }[] = [];
+
+export function Stories() {
+  if (!SHOW_STORIES || STORIES.length === 0) return null;
+  return (
+    <section className="sec" aria-labelledby="lp-story-h">
+      <div className="wrap">
+        <div className="lp-frame">
+          <h2 className="l-h3 rv" id="lp-story-h">Sellers who opened a shop on Stoora.</h2>
+          <div className="lp-grid three swipe">
+            {STORIES.map((s, i) => (
+              <div className="lp-item rv" style={delay(i)} key={s.name}>
+                <Photo art="storefront" slot={s.photo} shape="wide" />
+                <h3>{s.name}, {s.sells}</h3>
+                <p>{s.city}. {s.result}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Section 7 */
+export function Steady() {
+  return (
+    <section className="sec" aria-labelledby="lp-steady-h">
+      <div className="wrap">
+        <div className="lp-frame">
+          <div className="lp-two">
+            <div className="lp-stack">
+              <h2 className="l-h2 rv" id="lp-steady-h">Steady on busy days. Fast on any phone.</h2>
+              <p className="lede rv" style={delay(1)}>Your shop stays up when many buyers arrive at once.</p>
+              <p className="lede rv" style={delay(2)}>It loads quickly on a cheap phone and a slow network.</p>
+            </div>
+            <Photo art="wifi" slot={PHOTOS.phone} shape="wide" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Section 8. Goes to the separate Plans page. */
+export function Plans() {
+  return (
+    <section className="sec" aria-labelledby="lp-plans-h">
+      <div className="wrap">
+        <div className="lp-frame center">
+          <h2 className="l-h3 rv" id="lp-plans-h">Free for 10 days. Then pick the plan that fits.</h2>
+          <div className="rv" style={delay(1)}>
+            <Link className="btn line lp-plans-btn" href="/plans">See plans<span className="arr" aria-hidden="true"><Ic n="arrow_forward" c="sm" /></span></Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Section 9 */
+export function Last() {
+  return (
+    <section className="sec" aria-labelledby="lp-last-h">
+      <div className="wrap">
+        <div className="lp-frame center">
+          <Photo art="storefront" slot={PHOTOS.last} shape="banner" reveal />
+          <h2 className="l-h2 rv" id="lp-last-h">Your business, open in 10 minutes.</h2>
+          <div className="rv" style={delay(1)}><StartButton /></div>
+        </div>
+      </div>
+    </section>
+  );
+}

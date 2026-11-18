@@ -28,7 +28,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .dtop .title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ibtn{width:44px;height:44px;border-radius:999px;background:var(--card);display:grid;place-items:center;box-shadow:var(--float);flex:none;position:relative}
 .ibtn.dark{background:var(--ink);color:#fff}
-.ibtn .dot{position:absolute;top:4px;right:4px;min-width:18px;height:18px;border-radius:9px;background:var(--negative);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;line-height:1}
+.ibtn .dot{position:absolute;top:4px;right:4px;min-width:18px;height:18px;border-radius:999px;background:var(--negative);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;padding:0 4px;box-sizing:border-box}
 .btn{height:44px;padding:0 18px;border-radius:999px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:transform .12s var(--ease)}
 .btn:active{transform:scale(.97)}
 .btn.main{background:var(--gradient-action);color:#fff}
@@ -213,7 +213,7 @@ button.li:hover{background:color-mix(in srgb,var(--muted) 55%,var(--card))}
 .nme{flex:1;display:flex;align-items:center;gap:10px;height:40px;padding:0 6px;border-radius:10px;color:var(--on-ink);font-size:14px;font-weight:600;text-align:left;white-space:nowrap;min-width:0}
 .nme:hover,.nbell:hover{background:rgba(255,253,248,.08)}
 .nbell{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--on-ink);position:relative;flex:none}
-.nbell .dot{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:var(--negative);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 3px}
+.nbell .dot{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--negative);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;padding:0 4px;box-sizing:border-box}
 .smark.sq{border-radius:8px;width:28px;height:28px;font-size:15px;flex:none}
 .dapp.set .dnav{width:60px}
 .dapp.set .dnav .l,.dapp.set .nsub,.dapp.set .ngrp,.dapp.set .dcnt,.dapp.set .nbell{display:none}

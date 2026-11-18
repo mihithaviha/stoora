@@ -5,6 +5,7 @@ import { QuickView } from '../shop/ShopChrome';
 import { useToast } from '../ui';
 import { StoreFront, type StoreActions, type StoreCtx } from './Templates';
 import { useBag } from '@/lib/bag';
+import { PAUSED_LINE } from '@/lib/shopstate';
 import { useStore } from '@/lib/store';
 import { publishedConfig, toStoreData } from '@/lib/storefront/map';
 import type { Product } from '@/lib/types';
@@ -54,11 +55,12 @@ export function ShopStore({ base }: { base: string }) {
     track: () => router.push('/buyer/orders'),
   };
   const ctx: StoreCtx = {
-    config, data, cart, wish: bag.wish, actions,
+    config, data, cart, wish: bag.wish, actions, paused: !db.shop.open,
     extras: { payments: { online: db.shop.online !== false, upi: true }, pricesIncludeGst: false },
   };
   return (
     <>
+      {!db.shop.open ? <div className="announce" role="status">{PAUSED_LINE}</div> : null}
       <StoreFront templateId={config.template} ctx={ctx} />
       <QuickView p={quick} base={base} onClose={() => setQuick(null)} />
       <div className="sf-float" role="group" aria-label="Your saved items and bag">

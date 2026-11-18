@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
-import { useAuth } from '@/lib/auth';
+import { EXPIRED, useAuth } from '@/lib/auth';
+import { queryOf, type Query } from '@/lib/query';
 import { safeNext } from '@/lib/supabase/config';
 import { Ic } from '../bits';
 import { cleanHandle } from '../landing/LandingContext';
@@ -18,34 +19,66 @@ const ERRORS: Record<string, string> = {
 const submitStyle = { height: 50 };
 
 /** The two ways in: Google, or a 6-digit code sent to a WhatsApp number. Used by Log in and by Open a shop. */
-function useSignIn(next: string) {
+function useSignIn(params: ReturnType<typeof queryOf>, next: string, existingOnly = false, startFlow = false, shop = '') {
   const router = useRouter();
-  const params = useSearchParams();
   const auth = useAuth();
   const [phone, setPhone] = useState('');
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState<'' | 'google' | 'code'>('');
   const [error, setError] = useState(() => { const code = params.get('error'); return code ? ERRORS[code] ?? code : ''; });
+  /** Log in only: the number has no account yet, so we ask whether this is their first time before making anything. */
+  const [unknown, setUnknown] = useState('');
   const digits = phone.replace(/\D/g, '');
   const phoneError = tried && digits.length !== 10 ? 'Enter your 10-digit mobile number.' : undefined;
 
   // already signed in: go straight on
   useEffect(() => { if (auth.ready && auth.user && auth.mode === 'live') router.replace(next); }, [auth.ready, auth.user, auth.mode, next, router]);
 
-  const google = async (target = next) => {
+  const google = async (target = next, opts?: { sample?: boolean }) => {
     setError(''); setBusy('google');
-    const failed = await auth.signInWithGoogle('seller', target);
+    const failed = await auth.signInWithGoogle('seller', target, { ...opts, back: startFlow ? `/shop/start${shop ? `?shop=${encodeURIComponent(shop)}` : ''}` : undefined });
     if (failed) { setError(failed); setBusy(''); }
   };
   const code = async (target = next) => {
     setTried(true); setError('');
     if (digits.length !== 10) return;
     setBusy('code');
-    const failed = await auth.sendCode(digits);
-    if (failed) { setError(failed); setBusy(''); return; }
+    if (existingOnly) {
+      // log in never makes an account by accident: an unknown number is asked about first
+      const r = await auth.requestLoginCode(digits, false);
+      if (r.unknown) { setUnknown(digits); setBusy(''); return; }
+      if (!r.ok) { setError(r.error ?? 'We could not send the code. Try again.'); setBusy(''); return; }
+    } else if (startFlow) {
+      // Start for Free: is this number already used? If it is, they log in (the code is already on its way). If not, a new account is made.
+      const known = await auth.requestLoginCode(digits, false);
+      if (!known.unknown) {
+        if (!known.ok) { setError(known.error ?? 'We could not send the code. Try again.'); setBusy(''); return; }
+        router.push(`/login/verify?phone=${digits}&existing=1&next=${encodeURIComponent('/dashboard')}`); return;
+      }
+      const failed = await auth.sendCode(digits);
+      if (failed) { setError(failed); setBusy(''); return; }
+      router.push(`/login/verify?phone=${digits}&flow=start&next=${encodeURIComponent(target)}`);
+      return;
+    } else {
+      const failed = await auth.sendCode(digits);
+      if (failed) { setError(failed); setBusy(''); return; }
+    }
     router.push(`/login/verify?phone=${digits}&next=${encodeURIComponent(target)}`);
   };
-  return { auth, phone, setPhone, phoneError, busy, error, setError, google, code };
+  /** "Yes, I'm new": send the code and make the account, then ask for the store name. */
+  const startNew = async () => {
+    setError(''); setBusy('code');
+    const failed = await auth.sendCode(unknown);
+    if (failed) { setError(failed); setBusy(''); return; }
+    router.push(`/login/verify?phone=${unknown}&next=${encodeURIComponent('/onboarding')}`);
+  };
+  /** "No, I used Google before": sign in with Google once; the dashboard then asks to prove this number, which joins the two. */
+  const usedGoogle = async () => {
+    setError(''); setBusy('google');
+    const failed = await auth.signInWithGoogle('seller', `/dashboard?phone=${unknown}`);
+    if (failed) { setError(failed); setBusy(''); }
+  };
+  return { auth, phone, setPhone, phoneError, busy, error, setError, google, code, unknown, setUnknown, startNew, usedGoogle };
 }
 
 function Banners({ demo, error }: { demo: boolean; error: string }) {
@@ -57,21 +90,38 @@ function Banners({ demo, error }: { demo: boolean; error: string }) {
   );
 }
 
-function PhoneField({ id, value, onChange, error }: { id: string; value: string; onChange: (v: string) => void; error?: string }) {
+function PhoneField({ id, value, onChange, error, hint = 'We send a 6-digit code to this number. No password is needed.' }: { id: string; value: string; onChange: (v: string) => void; error?: string; hint?: string }) {
   return (
-    <FormField id={id} label="WhatsApp mobile number" hint="We send a 6-digit code to this number. No password is needed." error={error}>
-      <div className={`affix${error ? ' bad' : ''}`}>
-        <span aria-hidden="true">+91</span>
-        <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="98765 43210" value={value} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value.replace(/[^\d ]/g, '').slice(0, 11))} />
+    <FormField id={id} label="WhatsApp mobile number" hint={hint} error={error}>
+      <div className="phone-row">
+        {/* the country code has its own box; Stoora is India-only for now, so it shows +91 and cannot be changed */}
+        <span className="cc-box" role="img" aria-label="Country code plus 91, India">+91</span>
+        <div className={`affix${error ? ' bad' : ''}`}>
+          <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="98765 43210" value={value} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value.replace(/[^\d ]/g, '').slice(0, 11))} />
+        </div>
       </div>
     </FormField>
   );
 }
 
-export function LoginScreen() {
-  const params = useSearchParams();
+export function LoginScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
   const next = safeNext(params.get('next'), '/dashboard');
-  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(next);
+  const { auth, phone, setPhone, phoneError, busy, error, google, code, unknown, setUnknown, startNew, usedGoogle } = useSignIn(params, next, true);
+  if (unknown) return (
+    <AuthShell>
+      <button className="link" type="button" style={{ justifySelf: 'start' }} onClick={() => setUnknown('')}><Ic n="arrow_back" c="xs" />Change number</button>
+      <div className="stack tight">
+        <span className="eyebrow">New number</span>
+        <h1>Is this your first time on Stoora?</h1>
+        <p className="t-body">We don’t know +91 {unknown.slice(0, 2)}••• ••{unknown.slice(-3)} yet.</p>
+      </div>
+      <Banners demo={auth.mode === 'demo'} error={error} />
+      <button className="btn primary full" type="button" style={submitStyle} disabled={busy !== ''} onClick={startNew}>{busy === 'code' ? 'Sending code…' : 'Yes, I’m new. Open a shop'}</button>
+      <button className="gbtn" type="button" disabled={busy !== ''} onClick={usedGoogle}><GoogleMark />{busy === 'google' ? 'Opening Google…' : 'No, I used Google before'}</button>
+      <p className="auth-note"><Ic n="info" /><span>If you signed up with Google, sign in with it once. We then ask you to confirm this number with a code, and from then on both open the same shop.</span></p>
+    </AuthShell>
+  );
   return (
     <AuthShell>
       <div className="stack tight">
@@ -90,86 +140,49 @@ export function LoginScreen() {
         <div className="inner stack tight" style={{ padding: 'var(--s3)' }}>
           <span className="t-ink" style={{ fontWeight: 500 }}>Want to look around first?</span>
           <p className="cap">Open the sample shop, Meera Studio. Nothing is saved and no account is needed.</p>
-          <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => google('/dashboard')}>Use the sample shop</button>
+          <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => google('/dashboard', { sample: true })}>Use the sample shop</button>
         </div>
       )}
-      <p className="t-body" style={{ textAlign: 'center' }}>New to Stoora? <Link href="/signup" className="link">Open a shop</Link></p>
+      <p className="t-body" style={{ textAlign: 'center' }}>New to Stoora? <Link href="/shop/start" className="link">Start for Free</Link></p>
       <p className="cap" style={{ textAlign: 'center' }}>Buying something? <Link href="/buyer/login" className="link">Buyer sign-in</Link></p>
     </AuthShell>
   );
 }
 
-export function SignupScreen() {
-  const params = useSearchParams();
-  const [name, setName] = useState('');
-  const [typedHandle, setTypedHandle] = useState(() => cleanHandle(params.get('shop') ?? '').replace(/-/g, ''));
-  const [touched, setTouched] = useState(Boolean(params.get('shop')));
-  const [terms, setTerms] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; handle?: string; terms?: string }>({});
-  const handle = cleanHandle(typedHandle);
-  const target = `/onboarding?name=${encodeURIComponent(name.trim())}&handle=${encodeURIComponent(handle)}`;
-  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(target);
-
-  const shopName = (value: string) => {
-    setName(value);
-    if (!touched) setTypedHandle(cleanHandle(value).replace(/-/g, ''));
-  };
-  /** Both ways in need a shop name, a link and the terms first. */
-  const valid = () => {
-    const next = {
-      name: name.trim() ? undefined : 'Add your shop’s name.',
-      handle: handle.length >= 3 ? undefined : 'Use at least 3 letters or numbers.',
-      terms: terms ? undefined : 'Agree to the terms and the privacy policy to open a shop.',
-    };
-    setErrors(next);
-    return !next.name && !next.handle && !next.terms;
-  };
-
+export function StartScreen({ q }: { q: Query }) {
+  const params = queryOf(q);
+  const shop = cleanHandle(params.get('shop') ?? '').replace(/-/g, '');
+  // Nothing is asked up front but the way in. The store name and link come right after the code (or Google), in the shop setup.
+  const target = `/onboarding${shop ? `?handle=${encodeURIComponent(shop)}` : ''}`;
+  const { auth, phone, setPhone, phoneError, busy, error, google, code } = useSignIn(params, target, false, true, shop);
   return (
-    <AuthShell handle={handle}>
+    <AuthShell handle={shop}>
       <div className="stack tight">
-        <span className="eyebrow">Open a shop</span>
+        <span className="eyebrow">Start for Free</span>
         <h1>Start selling from one link.</h1>
-        <p className="t-body">A shop name and a link. Everything else can wait.</p>
+        <p className="t-body">Sign up with your WhatsApp number or with Google. No password, and no email-only sign-up.</p>
       </div>
       <Banners demo={auth.mode === 'demo'} error={error} />
-      <div className="stack">
-        <FormField id="su-shop" label="Shop name" error={errors.name}>
-          <input className={`input${errors.name ? ' bad' : ''}`} id="su-shop" autoComplete="organization" placeholder="Meera Studio" value={name} onChange={(e) => shopName(e.target.value)} aria-invalid={errors.name ? true : undefined} />
-        </FormField>
-        <FormField id="su-handle" label="Shop link" hint="Letters, numbers and dashes." error={errors.handle}>
-          <div className={`affix${errors.handle ? ' bad' : ''}`}>
-            <span>stoora.in/</span>
-            <input id="su-handle" autoCapitalize="none" spellCheck={false} maxLength={30} placeholder="meerastudio" value={typedHandle} aria-invalid={errors.handle ? true : undefined}
-              onChange={(e) => { setTouched(true); setTypedHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); }} />
-          </div>
-        </FormField>
-        <div className="field">
-          <label className="check" htmlFor="su-terms" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <input type="checkbox" id="su-terms" style={{ marginTop: 3 }} checked={terms} onChange={(e) => setTerms(e.target.checked)} />
-            <span>I agree to the <Link href="/terms" className="link" target="_blank" rel="noopener">terms</Link> and the <Link href="/privacy" className="link" target="_blank" rel="noopener">privacy policy</Link>.</span>
-          </label>
-          {errors.terms ? <span className="err" role="alert"><Ic n="error" c="xs" />{errors.terms}</span> : null}
-        </div>
-      </div>
-      <button className="gbtn" type="button" disabled={busy !== ''} onClick={() => { if (valid()) google(target); }}><GoogleMark />{busy === 'google' ? 'Opening Google…' : 'Continue with Google'}</button>
-      <div className="or">or with a WhatsApp code</div>
-      <form className="stack" noValidate onSubmit={(e: FormEvent) => { e.preventDefault(); if (valid()) code(target); }}>
-        <PhoneField id="su-phone" value={phone} onChange={setPhone} error={phoneError} />
-        <button className="btn primary full" type="submit" style={submitStyle} disabled={busy !== ''}>{busy === 'code' ? 'Sending code…' : 'Create my shop'}</button>
+      <form className="stack" noValidate onSubmit={(e: FormEvent) => { e.preventDefault(); code(target); }}>
+        <PhoneField id="su-phone" value={phone} onChange={setPhone} error={phoneError} hint="We send a 6-digit code to this number." />
+        <button className="btn primary full" type="submit" style={submitStyle} disabled={busy !== ''}>{busy === 'code' ? 'Sending code…' : 'Get WhatsApp code'}</button>
       </form>
-      <p className="auth-note"><Ic n="info" /><span>There is no password to remember. Stoora signs you in with Google or a code sent to your WhatsApp.</span></p>
+      <div className="or">or</div>
+      <button className="gbtn" type="button" disabled={busy !== ''} onClick={() => google(target)}><GoogleMark />{busy === 'google' ? 'Opening Google…' : 'Continue with Google'}</button>
+      <p className="cap" style={{ textAlign: 'center' }}>By continuing you agree to the <Link href="/terms" className="link" style={{ display: 'inline' }} target="_blank" rel="noopener">terms</Link> and the <Link href="/privacy" className="link" style={{ display: 'inline' }} target="_blank" rel="noopener">privacy policy</Link>.</p>
       <p className="t-body" style={{ textAlign: 'center' }}>Already have a shop? <Link href="/login" className="link">Log in</Link></p>
     </AuthShell>
   );
 }
 
-export function VerifyScreen() {
+export function VerifyScreen({ q }: { q: Query }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = queryOf(q);
   const auth = useAuth();
   const phone = (params.get('phone') || '').replace(/\D/g, '').slice(-10);
   const next = safeNext(params.get('next'), '/dashboard');
+  const existing = params.get('existing') === '1';
+  const isStart = params.get('flow') === 'start';
   const [code, setCode] = useState('');
   const [wrong, setWrong] = useState('');
   const [tries, setTries] = useState(0);
@@ -185,6 +198,10 @@ export function VerifyScreen() {
     setBusy(true);
     const failed = await auth.verifyCode(phone, value, 'seller');
     setBusy(false);
+    if (failed === EXPIRED) { // an old code is replaced by a new one on the spot, and it does not count as a wrong try
+      const resent = await auth.sendCode(phone); again();
+      setCode(''); setWrong(''); setNote(resent ? resent : EXPIRED); return;
+    }
     if (failed) { setWrong(failed); setTries((n) => n + 1); setCode(''); return; }
     setDone(true);
     setTimeout(() => router.push(next), 700);
@@ -212,12 +229,13 @@ export function VerifyScreen() {
   }
   return (
     <AuthShell>
-      <Link className="link" href="/login" style={{ justifySelf: 'start' }}><Ic n="arrow_back" c="xs" />Change number</Link>
+      <Link className="link" href={isStart || existing ? '/shop/start' : '/login'} style={{ justifySelf: 'start' }}><Ic n="arrow_back" c="xs" />Change number</Link>
       <div className="stack tight">
         <span className="eyebrow">Check WhatsApp</span>
         <h1>Enter the 6-digit code</h1>
         <p className="t-body">We sent a code to <b className="t-ink">{masked}</b>. It works for 10 minutes.</p>
       </div>
+      {existing && <div className="banner info" role="status"><Ic n="info" /><span>This number already has a Stoora account. Enter the code to log in.</span></div>}
       <form className="stack" onSubmit={(e: FormEvent) => { e.preventDefault(); verify(); }}>
         <OtpBoxes value={code} onChange={(v) => { setCode(v); setWrong(''); }} error={!!wrong} />
         {wrong && <p className="err" role="alert"><Ic n="error" c="xs" />{wrong} {5 - tries} {5 - tries === 1 ? 'try' : 'tries'} left.</p>}
@@ -229,6 +247,7 @@ export function VerifyScreen() {
           : <button className="link" type="button" onClick={async () => { const failed = await auth.sendCode(phone); again(); setCode(''); setWrong(''); setNote(failed ?? 'A new code is on its way.'); }}>Send a new code</button>}
       </p>
       {note && <p className="cap" style={{ textAlign: 'center' }} role="status">{note}</p>}
+      <p className="cap" style={{ textAlign: 'center' }}>Code not coming? <button className="link" type="button" onClick={() => auth.signInWithGoogle('seller', next, { back: isStart ? '/shop/start' : undefined })}>Use Google instead</button></p>
       {auth.mode === 'demo' && <div className="banner info"><Ic n="science" /><span><b>Demo:</b> no message is sent. Use code <b className="num">123456</b>.</span></div>}
     </AuthShell>
   );

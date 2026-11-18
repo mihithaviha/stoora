@@ -217,7 +217,7 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .drop.over{border-color:var(--primary);background:var(--primary-tint)}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .photos{display:flex;gap:var(--s2);flex-wrap:wrap}
-.photos img{width:88px;height:88px;object-fit:cover;border-radius:var(--r-xl);border:1px solid var(--line)}
+.photos img{width:88px;height:88px;object-fit:contain;background:var(--inner);border-radius:var(--r-xl);border:1px solid var(--line)}
 
 /* ---------- lists ---------- */
 .rows{display:grid;gap:var(--s1)}

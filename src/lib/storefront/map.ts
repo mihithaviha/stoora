@@ -2,7 +2,7 @@ import type { Db, Product, Service } from '../types';
 import { defaultConfig, type StoreConfig, type StoreData, type StoreItem } from './shared';
 
 const productItem = (p: Product): StoreItem => ({
-  id: p.id, name: p.name, price: p.price, cat: p.category === 'Other' ? '' : p.category, stock: p.stock, img: p.photos?.[0] ?? '',
+  id: p.id, name: p.name, price: p.price, was: p.comparePrice && p.comparePrice > p.price ? p.comparePrice : undefined, cat: p.category === 'Other' ? '' : p.category, stock: p.stock, img: p.photos?.[0] ?? '',
   desc: p.description ?? '', sizes: p.sizes.join(', '), tags: p.color ?? '',
 });
 const serviceItem = (s: Service): StoreItem => ({ id: s.id, name: s.name, price: s.price, type: s.type, duration: s.minutes ? `${s.minutes} min` : '', where: '', next: s.next });

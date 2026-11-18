@@ -2,13 +2,12 @@
 // Bag and wishlist for the buyer storefront. Kept in this browser (localStorage) in demo mode.
 // API_TODO: POST /api/public/:shop/cart (prices, stock and delivery are always worked out on the server).
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { deliveryFor, deliveryRule } from './delivery';
 import { useStore } from './store';
 import type { Product } from './types';
 
 export interface BagLine { productId: string; size?: string; qty: number }
 const KEY = 'stoora.bag.v1';
-export const FREE_DELIVERY_OVER = 1500;
-export const DELIVERY_FEE = 60;
 
 interface BagCtx {
   lines: BagLine[]; wish: string[]; ready: boolean;
@@ -19,6 +18,8 @@ interface BagCtx {
   toggleWish: (productId: string) => void;
   detailed: { line: BagLine; product: Product; index: number }[];
   count: number; subtotal: number; delivery: number; total: number;
+  /** The seller's delivery rule: the charge, and the order value above which delivery is free. */
+  rule: { fee: number; freeOver: number };
 }
 const Ctx = createContext<BagCtx | null>(null);
 
@@ -47,9 +48,9 @@ export function BagProvider({ children }: { children: React.ReactNode }) {
       .map((line, index) => ({ line, index, product: db.products.find((p) => p.id === line.productId) }))
       .filter((x): x is { line: BagLine; index: number; product: Product } => !!x.product);
     const subtotal = detailed.reduce((a, d) => a + d.product.price * d.line.qty, 0);
-    const delivery = subtotal === 0 || subtotal >= FREE_DELIVERY_OVER ? 0 : DELIVERY_FEE;
-    return { lines, wish, ready, add, setQty, remove, clear, toggleWish, detailed, count: detailed.reduce((a, d) => a + d.line.qty, 0), subtotal, delivery, total: subtotal + delivery };
-  }, [lines, wish, ready, db.products, add, setQty, remove, clear, toggleWish]);
+    const delivery = deliveryFor(subtotal, db.shop);
+    return { lines, wish, ready, add, setQty, remove, clear, toggleWish, detailed, count: detailed.reduce((a, d) => a + d.line.qty, 0), subtotal, delivery, total: subtotal + delivery, rule: deliveryRule(db.shop) };
+  }, [lines, wish, ready, db.products, db.shop, add, setQty, remove, clear, toggleWish]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 export function useBag() { const c = useContext(Ctx); if (!c) throw new Error('useBag must be used inside <BagProvider>'); return c; }

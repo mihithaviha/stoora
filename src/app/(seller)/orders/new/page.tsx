@@ -1,5 +1,6 @@
 'use client';
 // Create an order by hand: who it is for, what they bought, and how they pay (the dashboard prototype's Create order screen).
+import { deliveryFor } from '@/lib/delivery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -19,7 +20,7 @@ export default function CreateOrder() {
   const [buyer, setBuyer] = useState({ name: '', phone: '', city: '', address: '' });
   const [source, setSource] = useState<Source>('WhatsApp');
   const [lines, setLines] = useState<Line[]>([]);
-  const [shipping, setShipping] = useState('0');
+  const [shipping, setShipping] = useState<string | null>(null); // null = use the shop's delivery rule
   const [notes, setNotes] = useState('');
   const [picker, setPicker] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
@@ -30,7 +31,7 @@ export default function CreateOrder() {
   const subtotal = useMemo(() => lines.reduce((a, l) => a + (db.products.find((p) => p.id === l.productId)?.price ?? 0) * l.qty, 0), [lines, db.products]);
   if (!ready) return <div className="dpad" style={{ paddingTop: 20 }}><Skeleton rows={3} height={100} /></div>;
 
-  const ship = Math.max(0, Math.floor(Number(shipping) || 0));
+  const ship = shipping === null ? deliveryFor(subtotal, db.shop) : Math.max(0, Math.floor(Number(shipping) || 0));
   const total = subtotal + ship;
   const available = db.products.filter((p) => p.status === 'Active' && p.stock > 0 && (!find.trim() || p.name.toLowerCase().includes(find.trim().toLowerCase())));
   const nameError = tried && !buyer.name.trim() ? 'Add who the order is for.' : '';
@@ -52,9 +53,7 @@ export default function CreateOrder() {
 
   return (
     <>
-      <BackRow to="/orders" icon="orders" title="Orders">
-        <Link className="btn line sm" href="/orders/new/ai"><DI n="spark" s={16} /> Fill from a chat message</Link>
-      </BackRow>
+      <BackRow to="/orders" icon="orders" title="Orders" />
       <div className="dpad">
         <h1 className="h1" style={{ margin: '0 0 16px' }}>Create order</h1>
         <div className="cols">
@@ -84,7 +83,7 @@ export default function CreateOrder() {
               <div className="box-h"><span className="box-t">Payment</span></div>
               <div className="sum">
                 <div className="r"><span>Subtotal</span><span>{rs(subtotal)}</span></div>
-                <div className="r"><label htmlFor="co-ship">Delivery</label><span className="row" style={{ gap: 6 }}>₹<input id="co-ship" className="input" inputMode="numeric" style={{ width: 80, height: 32, padding: '0 10px', borderRadius: 10 }} value={shipping} onChange={(e) => setShipping(e.target.value.replace(/\D/g, ''))} /></span></div>
+                <div className="r"><label htmlFor="co-ship">Delivery</label><span className="row" style={{ gap: 6 }}>₹<input id="co-ship" className="input" inputMode="numeric" style={{ width: 80, height: 32, padding: '0 10px', borderRadius: 10 }} value={String(ship)} onChange={(e) => setShipping(e.target.value.replace(/\D/g, ''))} /></span></div>
                 <div className="r t"><span>Total</span><span>{rs(total)}</span></div>
               </div>
               {total ? (

@@ -4,3 +4,6 @@ export const initials = (name: string) => name.split(' ').map((w) => w[0]).slice
 export const avatarTone = (name: string) => 'c' + (1 + ([...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 4));
 export const toNum = (s: string | number) => Number(String(s).replace(/[^\d.]/g, '')) || 0;
 export const cleanHandle = (s: string) => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+
+/** "shaurya mittal extra" -> "Shaurya". Greetings use the first name only, with a capital letter. */
+export const firstName = (full: string) => { const w = (full || '').trim().split(/\s+/)[0] ?? ''; return w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : ''; };

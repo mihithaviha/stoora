@@ -10,7 +10,7 @@ export const META: Record<string, ShopMeta> = {
   p5: { blurb: 'Breezy linen kurta in sage green.', details: ['Linen blend', 'Relaxed fit'], hex: '#A9B79A', rating: 4.5, reviews: 6 },
   p6: { blurb: 'The same hand-blocked kurta in a soft sky blue.', details: ['100% cotton', 'Hand block-printed', 'Machine wash cold'], hex: '#9CC3E6', rating: 4.7, reviews: 14, badge: 'New' },
 };
-export const metaOf = (p: Product): ShopMeta => META[p.id] ?? { blurb: p.description || 'Made by hand, shipped from our studio.', details: [], hex: '#EFE6D6', rating: 4.6, reviews: 0 };
+export const metaOf = (p: Product): ShopMeta => META[p.id] ?? { blurb: p.description || '', details: [], hex: '#EFE6D6', rating: 0, reviews: 0 };
 
 export const SHOP_TAGLINE = 'Hand block-printed kurtas, dupattas and yoga classes from Jaipur.';
 export const REVIEWS = [

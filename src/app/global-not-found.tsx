@@ -4,7 +4,8 @@ import '../styles/brand/main.css';
 import '../styles/brand/features.css';
 import '../styles/brand/touch.css';
 import { Ic } from '@/components/marketing/bits';
-import { FONT_LINKS } from '@/components/marketing/fontLinks';
+import '../styles/fonts.css';
+import { FontPreloads } from '@/components/FontPreloads';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { SiteNav } from '@/components/marketing/SiteNav';
 
@@ -16,9 +17,7 @@ export default function GlobalNotFound() {
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {FONT_LINKS.map((href) => <link key={href} rel="stylesheet" href={href} />)}
+        <FontPreloads logo />
       </head>
       <body className="mode-public">
         <SiteNav solidAlways />

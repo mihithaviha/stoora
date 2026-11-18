@@ -87,7 +87,7 @@
 .sf-hero-compact h1 { font-size: clamp(30px, 4.5vw, 48px); }
 .sf-hero-photo { border-radius: var(--sf-radius); overflow: hidden; background: var(--store-surface); aspect-ratio: 4 / 3; }
 .sf-hero-photo.tall { aspect-ratio: 4 / 5; }
-.sf-hero-photo img, .sf-hero-frame img { width: 100%; height: 100%; object-fit: cover; }
+.sf-hero-photo img, .sf-hero-frame img { width: 100%; height: 100%; object-fit: contain; }
 .sf-hero-studio { padding: 56px 0 24px; }
 .sf-hero-frame { position: relative; border-radius: var(--sf-radius); aspect-ratio: 1; background: var(--store-surface); box-shadow: 14px 14px 0 var(--store-accent); overflow: hidden; transform: rotate(1.5deg); }
 .sf-frame-fill { width: 100%; height: 100%; display: grid; place-items: center; font: 800 120px var(--sf-display); color: var(--store-primary); }
@@ -118,7 +118,7 @@
 .sf-price { font-weight: 700; margin: 2px 0; }
 .sf-photo { aspect-ratio: 1; background: var(--store-surface); display: grid; place-items: center; overflow: hidden; position: relative; }
 .sf-tint .sf-photo, .sf-card .sf-photo { background: var(--store-border); }
-.sf-photo img { width: 100%; height: 100%; object-fit: cover; }
+.sf-photo img { width: 100%; height: 100%; object-fit: contain; }
 .sf-card.tall .sf-photo { aspect-ratio: 3 / 4; }
 .sf-card.natural .sf-photo { aspect-ratio: auto; min-height: 180px; }
 .sf-card.natural .sf-photo img { height: auto; }
@@ -135,7 +135,7 @@
 
 .sf-tiles { display: grid; gap: var(--sf-gap); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .sf-tile { position: relative; display: block; aspect-ratio: 4 / 5; border-radius: var(--sf-radius); overflow: hidden; background: var(--store-surface); text-decoration: none; }
-.sf-tile img, .sf-tile-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.sf-tile img, .sf-tile-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .sf-tile-fill { background: var(--store-border); }
 .sf-tile-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px; color: #FFFFFF; font: 700 20px var(--sf-display); background: linear-gradient(to top, color-mix(in srgb, var(--store-secondary) 80%, transparent), transparent); display: flex; flex-direction: column; }
 .sf-tile-label small { font: 400 13px var(--sf-body); opacity: .85; }
@@ -167,7 +167,7 @@
 
 /* ---------- about, reviews, faq, contact, footer ---------- */
 .sf-about-photo { border-radius: var(--sf-radius); overflow: hidden; aspect-ratio: 4 / 3; }
-.sf-about-photo img { width: 100%; height: 100%; object-fit: cover; }
+.sf-about-photo img { width: 100%; height: 100%; object-fit: contain; }
 .sf-reviews { display: grid; gap: var(--sf-gap); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .sf-review { margin: 0; background: var(--store-surface); border: 1px solid var(--store-border); border-radius: var(--sf-radius); padding: 20px; }
 .sf-review footer { color: var(--store-muted); font-size: 14px; }
@@ -226,7 +226,7 @@
 .sf-card .sf-btn { width: 100%; min-height: 40px; margin-top: 10px; }
 .sf-card .sf-step { width: 100%; justify-content: space-between; margin-top: 10px; }
 .sf-card.service .sf-btn { width: auto; }
-.sf-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sf-photo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .sf-desc { font-size: 14px; color: var(--store-muted); margin: 2px 0 4px; }
 .sf-grid { gap: 20px; }
 .sf-tile-label small, .sf-card h3 { overflow-wrap: anywhere; }
@@ -242,7 +242,7 @@
 .sf-atelier-grid { display: grid; gap: 48px; align-items: center; }
 @media (min-width: 900px) { .sf-atelier-grid { grid-template-columns: 1.1fr .9fr; } }
 .sf-atelier-photo { aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--store-surface); }
-.sf-atelier-photo img { width: 100%; height: 100%; object-fit: cover; }
+.sf-atelier-photo img { width: 100%; height: 100%; object-fit: contain; }
 .sf-hero-atelier h1 { font-size: clamp(36px, 5vw, 64px); letter-spacing: -.03em; }
 .sf-h2-center { text-align: center; }
 .sf-lookbook { display: grid; gap: 24px; grid-template-columns: 1.3fr 1fr; }
@@ -271,12 +271,12 @@
 .sf-border-line { height: 8px; background: repeating-linear-gradient(90deg, var(--store-accent) 0 12px, transparent 12px 20px); opacity: .55; }
 .sf-hero-heritage { padding: 56px 0 24px; }
 .sf-arch { aspect-ratio: 4 / 5; border-radius: 999px 999px 16px 16px; overflow: hidden; background: var(--store-surface); box-shadow: 0 0 0 8px var(--store-background), 0 0 0 10px var(--store-accent); max-width: 440px; justify-self: center; width: 100%; }
-.sf-arch img { width: 100%; height: 100%; object-fit: cover; }
+.sf-arch img { width: 100%; height: 100%; object-fit: contain; }
 .sf-sign { font: 700 20px var(--sf-display); margin-top: 18px; color: var(--store-primary); }
 .sf-hlist { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .sf-hitem { display: flex; gap: 16px; align-items: center; padding: 12px; border: 1px solid var(--store-border); border-radius: 16px; text-decoration: none; background: var(--store-background); }
 .sf-hitem-img { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--store-surface); flex: none; display: grid; place-items: center; }
-.sf-hitem-img img { width: 100%; height: 100%; object-fit: cover; }
+.sf-hitem-img img { width: 100%; height: 100%; object-fit: contain; }
 .sf-hitem b { display: block; font-size: 17px; }
 .sf-hitem small { color: var(--store-muted); }
 .sf-timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 28px; }
@@ -291,7 +291,7 @@
 @media (min-width: 900px) { .sf-ss { grid-template-columns: 340px 1fr; gap: 56px; } .sf-ss-side { position: sticky; top: 24px; align-self: start; } }
 .sf-ss-card { border: 1px solid var(--store-border); border-radius: 16px; padding: 20px; background: var(--store-surface); }
 .sf-ss-photo { aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; margin-bottom: 16px; background: var(--store-border); }
-.sf-ss-photo img { width: 100%; height: 100%; object-fit: cover; }
+.sf-ss-photo img { width: 100%; height: 100%; object-fit: contain; }
 .sf-ss-card h1 { font-size: 32px; margin-bottom: 6px; }
 .sf-ss-glance { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 0 0; font-size: 14px; }
 .sf-ss-glance dt { color: var(--store-muted); } .sf-ss-glance dd { margin: 0; font-weight: 500; }

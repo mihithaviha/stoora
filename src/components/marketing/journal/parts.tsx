@@ -5,16 +5,19 @@ import { formatDate, photoAlt, readTime, topicOf, type Article, type Topic } fro
 /** A photo with a small version for cards and a large one for wide places. Cropped with object-fit, never stretched. */
 export function Picture({ name, sizes, eager = false, soon = false, alt }: { name: string; sizes: string; eager?: boolean; soon?: boolean; alt?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // the whole photo is always shown, never cropped; a tiny copy of it, scaled up and soft, fills any space around it
+    <span className="jr-pic" style={{ ['--photo' as string]: `url(/assets/journal/${name}-tiny.webp)` }}>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
     <img
-      src={`/assets/journal/${name}-720.jpg`}
-      srcSet={`/assets/journal/${name}-720.jpg 720w, /assets/journal/${name}-1400.jpg 1400w`}
+      src={`/assets/journal/${name}-720.webp`}
+      srcSet={`/assets/journal/${name}-720.webp 720w, /assets/journal/${name}-1400.webp 1400w`}
       sizes={sizes}
       alt={alt ?? photoAlt(name)}
       fetchPriority={eager ? 'high' : undefined}
       loading={eager || soon ? undefined : 'lazy'}
       decoding="async"
     />
+    </span>
   );
 }
 
@@ -44,7 +47,7 @@ export function CtaBand() {
       <div className="wrap">
         <div className="jr-cta-in">
           <div><span className="eyebrow">Ready when you are</span><h2>Open your shop in a few minutes.</h2><p>One link for every order, every chat and every rupee.</p></div>
-          <Link className="btn primary" href="/signup">Get started<Ic n="arrow_forward" c="xs" /></Link>
+          <Link className="btn primary" href="/shop/start">Start for Free<Ic n="arrow_forward" c="xs" /></Link>
         </div>
       </div>
     </section>

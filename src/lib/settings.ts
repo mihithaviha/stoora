@@ -1,9 +1,14 @@
+// Settings has four pages. Each one is real: nothing here says "coming soon". A page comes back to this list only when it is built.
 export const SETTINGS: [string, string, string][] = [
-  ['General', 'store', 'Shop name, contact details and address'], ['Order-taking', 'shopping_bag', 'When, how and how much you can take orders'], ['WhatsApp verification', 'verified', 'Verify the number buyers contact you on'], ['Plan', 'workspace_premium', 'Your Stoora plan'], ['Billing', 'receipt_long', 'Invoices for your plan'],
-  ['Users', 'group', 'People who can use this shop'], ['Payments', 'payments', 'UPI, cards and payouts'], ['Checkout', 'shopping_cart_checkout', 'What buyers fill in to order'],
-  ['Customer accounts', 'account_circle', 'Buyer logins and saved addresses'], ['Shipping and delivery', 'local_shipping', 'Couriers, rates and pickup'], ['Taxes and duties', 'percent', 'GST on your invoices'],
-  ['Locations', 'location_on', 'Where you keep stock'], ['Apps', 'apps', 'Tools connected to Stoora'], ['Sales channels', 'hub', 'Where orders come from'],
-  ['Domains', 'language', 'Your own web address'], ['Customer events', 'ads_click', 'Tracking for ads'], ['Notifications', 'notifications', 'What Stoora alerts you about'],
-  ['Languages', 'translate', 'Languages your shop shows'], ['Customer privacy', 'lock', 'Cookie and data choices'], ['Policies', 'description', 'Returns, refunds and privacy'],
+  ['Shop details', 'store', 'Name, link, contact details and pausing your shop'],
+  ['Getting paid', 'payments', 'UPI and cash on delivery'],
+  ['Delivery', 'local_shipping', 'Delivery charge, area and order limits'],
+  ['WhatsApp', 'verified', 'Verify the number buyers contact you on'],
 ];
 export const slug = (s: string) => s.toLowerCase().replace(/[^a-z]+/g, '-');
+
+/** Addresses from older versions of Settings go to the page that replaced them. */
+export const LEGACY_SETTINGS: Record<string, string> = {
+  general: 'shop-details', 'order-taking': 'delivery', 'whatsapp-verification': 'whatsapp', payments: 'getting-paid', 'shipping-and-delivery': 'delivery',
+  checkout: 'delivery', notifications: 'shop-details', 'sales-channels': 'shop-details', domains: 'shop-details',
+};

@@ -7,6 +7,7 @@ import '../../styles/shop.css';
 import '../../styles/admin.css';
 import '../../styles/storefront.css';
 import '../../styles/storefront-editor.css';
+import { FontPreloads } from '@/components/FontPreloads';
 import { Providers } from '@/components/Providers';
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">
+      <head><FontPreloads data /></head>
       <body>
         <a className="sr" href="#main">Skip to content</a>
         <Suspense fallback={null}><Providers>{children}</Providers></Suspense>

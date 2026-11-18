@@ -6,11 +6,11 @@ import { defaultConfig, templateById, type StoreConfig, type StoreData, type Sto
  * They appear only in labelled previews: a real storefront always shows the seller's own products and images.
  */
 export const PHOTO: Record<string, string> = {
-  kurtaPink: '/assets/templates/kurta-pink.jpg', suitMaroon: '/assets/templates/suit-maroon.jpg', suitFloral: '/assets/templates/suit-floral.jpg',
-  rack: '/assets/templates/boutique-rack.jpg', bottles: '/assets/templates/bottles.jpg', cups: '/assets/templates/ceramic-cups.jpg',
-  bowls: '/assets/templates/ceramic-bowls.jpg', stack: '/assets/templates/ceramic-stack.jpg', necklace: '/assets/templates/necklace.jpg',
-  earrings: '/assets/templates/earrings.jpg', loom: '/assets/templates/loom.jpg', blazer: '/assets/templates/portrait-blazer.jpg',
-  portrait: '/assets/templates/portrait-long.jpg', tutor: '/assets/templates/tutor.jpg', interior: '/assets/templates/interior.jpg',
+  kurtaPink: '/assets/templates/kurta-pink.webp', suitMaroon: '/assets/templates/suit-maroon.webp', suitFloral: '/assets/templates/suit-floral.webp',
+  rack: '/assets/templates/boutique-rack.webp', bottles: '/assets/templates/bottles.webp', cups: '/assets/templates/ceramic-cups.webp',
+  bowls: '/assets/templates/ceramic-bowls.webp', stack: '/assets/templates/ceramic-stack.webp', necklace: '/assets/templates/necklace.webp',
+  earrings: '/assets/templates/earrings.webp', loom: '/assets/templates/loom.webp', blazer: '/assets/templates/portrait-blazer.webp',
+  portrait: '/assets/templates/portrait-long.webp', tutor: '/assets/templates/tutor.webp', interior: '/assets/templates/interior.webp',
 };
 
 /** Products are [name, price, collection, photo, focus point]. The focus point keeps the subject in view when cropped. */

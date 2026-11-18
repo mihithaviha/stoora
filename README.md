@@ -23,18 +23,18 @@ and **http://localhost:3000/design** to see every screen, each in a phone or lap
 
 Out of the box the app runs in **demo mode** (sample shop, no login needed). To switch to real accounts and a real database:
 
-1. Create a Supabase project and run `supabase/migrations/20261101000000_init.sql` (the whole database).
+1. Create a Supabase project and run every file in `supabase/migrations/` in order (`init`, `storefront`, `product_cost`, `product_options`, `product_stoora_fields`).
 2. Copy `.env.example` to `.env.local` and fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 3. Turn on Google (and optionally WhatsApp codes) in Supabase. Full steps and every credential: **`supabase/README.md`**.
 
 With the keys set, "Continue with Google" and the WhatsApp code are real, seller pages need a login, and shops, products, orders, refunds, enquiries and addresses are stored in Supabase.
-`npm run db:test` runs 50 checks on the database rules (who can see what, the checkout function, stock) in an embedded Postgres.
+`npm run db:test` runs 57 checks on the database rules (who can see what, the checkout function, stock) in an embedded Postgres.
 
 ## Checks
 
 ```bash
 npm run build && npm start     # in one terminal
-npm run e2e                    # 11 browser flows: login, buying, refund, import, WhatsApp, enquiry, onboarding ...
+npm run e2e                    # 27 browser flows: login, Start for Free, add product, buying, refund, import, WhatsApp, enquiry, onboarding ...
 npm run screenshots            # saves handoff/screenshots/{desktop,mobile}/*.png and handoff/screenshots/index.html
 ```
 
@@ -45,7 +45,7 @@ Both scripts need Chrome or Edge (set `BROWSER=` to its path if it is not found)
 ```
 src/app/
   (marketing)/   the public site, its own root layout and stylesheet: home (+ /about, /how-it-works, /who-its-for, /features),
-                 log in, open a shop, code entry, Journal (/journal, /journal/[slug]), privacy, terms
+                 log in, Start for Free (/shop/start; the old /signup leads there), code entry, Journal (/journal, /journal/[slug]), privacy, terms
   (app)/         everything else, a second root layout with the seller app's stylesheet:
     (site)/      demo, seller consent, data requests                                 (older public header + footer)
     (flow)/      buyer login and code entry, store setup, signed out                  (no header)
@@ -65,7 +65,7 @@ src/components/
   site/ shop/ admin/   frames and parts for each area  ·  RefundDialog, OrderTaking, WhatsAppVerify
 src/lib/storefront/  shared.ts (themes, templates, default design), sample.ts (labelled sample shops), map.ts (shop data to storefront data), draft.ts (the editor's draft)
 src/lib/         store (demo data or Supabase), auth, supabase/ (client, server, data), stats, bag (cart + wishlist), catalog, enquiries, nav, types, format
-supabase/        database migrations (init, storefront), seed, local config, tests and the setup guide (supabase/README.md)
+supabase/        database migrations (init, storefront, product_cost, product_options, product_stoora_fields), seed, local config, tests, scripts/list-duplicate-accounts.sql (read-only) and the setup guide (supabase/README.md)
 src/styles/      fonts.css, site.css, shop.css, admin.css (seller app; tokens in src/app/(app)/globals.css) · brand/ (main.css, features.css, journal.css, touch.css: the public site, copied from the original design)
 public/          fonts/ (self-hosted), images/ (logo, wordmark, share card)
 handoff/         screenshots and the handoff notes
@@ -93,6 +93,12 @@ and uses the shop's own bag, saved items and checkout. **Take offline** returns 
 ```
 npm run typecheck                         # TypeScript
 npm run build && npm start                # production build on http://localhost:3000
-node scripts/e2e-flows.js                 # 13 flows in a real browser (set BASE= for another address)
-npm run db:test                           # the database rules (50 checks)
+node scripts/e2e-flows.js                 # 27 flows in a real browser (set BASE= for another address)
+npm run db:test                           # the database rules (57 checks)
 ```
+
+## Sign-up, adding products, and the AI key
+
+- **Start for Free** (`/shop/start`): a WhatsApp number (country code box, +91) or Google. A number that already has an account is sent to log in; a new one gets a code, then the store name, then **What do you sell?** (Physical or Digital, changeable later in Settings > Shop details), a "Setting up your shop" screen, and the dashboard. "Code not coming? Use Google instead" is on the code screen.
+- **One person, one shop**: Google sign-ups must add a verified number first; phone sign-ups are offered "Add Google" (or Later); Account shows both logins. Turn on "Allow manual linking" in Supabase. `supabase/scripts/list-duplicate-accounts.sql` lists people who already have two accounts (read only).
+- **Add product** reads photos through `POST /api/v1/products/ai-draft` (one AI call, 20 drafts a shop a day). Set `AI_API_KEY` and `AI_MODEL` on the host (see `.env.example`); without them the seller just types.

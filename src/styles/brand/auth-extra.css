@@ -26,3 +26,9 @@
 .legal .prose section{display:grid;gap:var(--s1)}
 .legal .prose ul{margin:0;padding-left:1.2em;display:grid;gap:var(--s1)}
 .legal .updated{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-65)}
+
+/* phone number: the country code sits in its own box in front of the number */
+.phone-row{display:flex;gap:var(--s1);align-items:stretch}
+.phone-row .affix{flex:1;min-width:0;padding-left:0}
+.phone-row .affix input{padding-left:18px}
+.cc-box{display:inline-flex;align-items:center;justify-content:center;min-width:64px;padding:0 var(--s2);border:1px solid var(--line);background:var(--card);border-radius:var(--pill);font-weight:600;color:var(--ink)}

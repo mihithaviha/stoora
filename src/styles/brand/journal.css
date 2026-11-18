@@ -47,7 +47,7 @@
 .jr-card{position:relative;display:flex;flex-direction:column;gap:var(--s2)}
 .jr-card[hidden]{display:none}
 .jr-card-img{aspect-ratio:3/2;border-radius:24px;overflow:hidden;background:var(--inner)}
-.jr-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease-out)}
+.jr-card-img img{width:100%;height:100%;object-fit:contain;transition:transform .7s var(--ease-out)}
 .jr-card:hover .jr-card-img img{transform:scale(1.04)}
 .jr-card .jr-meta{margin-top:4px}
 .jr-card h3{margin:0;font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.015em;text-wrap:balance}
@@ -88,7 +88,7 @@
 .jr-byline .who b{font-size:15px;color:var(--ink);font-weight:600}
 .jr-share{display:flex;gap:var(--s1);flex-wrap:wrap;margin-left:auto}
 .jr-cover{margin:var(--s4) 0 0;aspect-ratio:16/8;max-height:560px;border-radius:32px;overflow:hidden;background:var(--inner)}
-.jr-cover img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.jr-cover img{width:100%;height:100%;object-fit:contain}
 @media (max-width:979px){
   .jr-cover{aspect-ratio:16/9 !important;max-height:none !important;border-radius:20px !important}
   .jr-cover img{width:100% !important;height:100% !important;object-fit:contain !important}
@@ -121,7 +121,7 @@
 .jr-callout .ms{flex:none;margin-top:2px}
 .jr-callout p{margin:4px 0 0;color:var(--ink)}
 .jr-fig{margin:var(--s4) 0}
-.jr-fig img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:24px;background:var(--inner)}
+.jr-fig img{width:100%;height:auto;aspect-ratio:auto;object-fit:contain;border-radius:24px;background:var(--inner)}
 .jr-fig figcaption{margin-top:var(--s1);font-size:14px;line-height:1.5;color:var(--ink-65)}
 .jr-table{margin:var(--s3) 0 var(--s4);overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-2xl)}
 .jr-table table{width:100%;border-collapse:collapse;font-size:16px}
@@ -163,7 +163,7 @@
 /* a card: the photograph on top, then category, title, a short description and the way in */
 .jr-ocard-link{position:relative;display:flex;flex-direction:column;width:100%;height:100%;font-size:15px;border-radius:24px;overflow:hidden;background:#fff;border:1px solid var(--line-soft);box-shadow:0 18px 44px -26px rgba(23,28,60,.38);color:var(--ink-65);text-decoration:none}
 .jr-ocard-img{position:relative;flex:none;display:block;height:58%;background:var(--inner);overflow:hidden}
-.jr-ocard-img img{width:100%;height:100%;object-fit:cover}
+.jr-ocard-img img{width:100%;height:100%;object-fit:contain}
 .jr-ocard-body{flex:1;min-height:0;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:16px 20px 16px}
 .jr-ocard-body .jr-tag{font-size:.87em;flex:none}
 .jr-ocard-title{flex:none;margin:0;font-family:var(--font-display);font-weight:800;font-size:1.36em;line-height:1.2;letter-spacing:-.02em;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word}
@@ -222,7 +222,7 @@
 .jr-pick-in{display:grid;gap:var(--s5);align-items:center}
 @media (min-width:900px){.jr-pick-in{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--s6)}}
 .jr-pick-img{display:block;aspect-ratio:4/5;max-height:560px;border-radius:200px 200px 24px 24px;overflow:hidden;background:var(--muted);justify-self:center;width:min(100%,460px)}
-.jr-pick-img img{width:100%;height:100%;object-fit:cover;transition:transform .9s var(--ease-out)}
+.jr-pick-img img{width:100%;height:100%;object-fit:contain;transition:transform .9s var(--ease-out)}
 .jr-pick-in:hover .jr-pick-img img{transform:scale(1.03)}
 .jr-pick-copy{display:grid;gap:var(--s3);align-content:center;max-width:56ch}
 .jr-pick-copy h2{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(28px,3.6vw,44px);line-height:1.08;letter-spacing:-.03em;text-wrap:balance}
@@ -240,7 +240,9 @@
 .jr-close-circles{display:flex;justify-content:center}
 .jr-close-circles span{width:clamp(84px,14vw,132px);aspect-ratio:1;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow:0 0 0 1px var(--line);background:var(--muted)}
 .jr-close-circles span+span{margin-left:-22px}
-.jr-close-circles img{width:100%;height:100%;object-fit:cover}
+.jr-close-circles span{position:relative}
+.jr-close-circles span::before{content:"";position:absolute;inset:0;background:var(--photo) center/cover no-repeat;opacity:.85}
+.jr-close-circles img{position:relative;width:100%;height:100%;object-fit:contain}
 .jr-close-copy h2{margin:0 0 var(--s1);font-family:var(--font-display);font-weight:800;font-size:clamp(26px,3.2vw,38px);line-height:1.1;letter-spacing:-.03em;color:var(--ink)}
 .jr-close-copy p{margin:0;max-width:56ch;color:var(--ink-soft)}
 .jr-close-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s4);margin-top:var(--s3)}
@@ -250,3 +252,11 @@
 @media (prefers-reduced-motion:reduce){
   .jr-topic,.jr-ob,.jr-pick-img img,.jr-dots button span{transition:none}
 }
+
+/* ---------- Photos are always shown whole, never cropped ---------- */
+/* a tiny copy of the photo, scaled up, is the soft fill behind it when the frame is a different shape */
+.jr-pic{position:relative;display:block;width:100%;height:100%;overflow:hidden}
+.jr-pic::before{content:"";position:absolute;inset:0;background:var(--photo) center/cover no-repeat;opacity:.85}
+.jr-pic>img{position:relative;display:block}
+.jr-fig .jr-pic{height:auto;overflow:visible}  /* article pictures take their own shape: no frame, nothing to fill */
+.jr-fig .jr-pic::before{display:none}

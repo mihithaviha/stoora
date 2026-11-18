@@ -1,6 +1,7 @@
 'use client';
 // Checkout: contact, delivery address, payment method and a summary. The payment itself is simulated in demo mode.
 // API_TODO: POST /api/public/:shop/checkout then open the payment provider; the order is marked paid only when the provider confirms.
+import { PAUSED_LINE } from '@/lib/shopstate';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -24,7 +25,7 @@ export default function Checkout() {
 
   if (!bag.ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={3} height={120} /></div>;
   if (!bag.detailed.length && stage === 'form') return <div className="wrap"><EmptyState icon="shopping_bag" title="Nothing to check out" text="Your bag is empty. Add something first." action={<ButtonLink href={base} kind="primary">Back to the shop</ButtonLink>} /></div>;
-  if (!db.shop.open) return <div className="wrap"><StateScreen kind="empty" compact title={`${db.shop.name} isn’t taking orders`} text="The shop is paused for now. Your bag is saved, so you can come back and order later." actions={<ButtonLink href={`${base}/bag`}>Back to my bag</ButtonLink>} /></div>;
+  if (!db.shop.open) return <div className="wrap"><StateScreen kind="empty" compact title="Shop is paused" text={`${PAUSED_LINE} Your bag is saved, so you can come back and order later.`} actions={<ButtonLink href={`${base}/bag`}>Back to my bag</ButtonLink>} /></div>;
 
   const err: Record<string, string> = {};
   if (f.name.trim().length < 2) err.name = 'Tell us your name.';

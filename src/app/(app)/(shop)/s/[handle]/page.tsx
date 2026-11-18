@@ -4,9 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Chips, EmptyState, Icon, Segmented, Skeleton, Button, Badge } from '@/components/ui';
 import { ProductCard, QuickView, shopBase } from '@/components/shop/ShopChrome';
-import { Stars } from '@/components/bits';
 import { useStore } from '@/lib/store';
-import { SHOP_TAGLINE } from '@/lib/catalog';
 import { plural } from '@/lib/format';
 import type { Product } from '@/lib/types';
 import { ShopStore } from '@/components/storefront/ShopStore';
@@ -30,9 +28,8 @@ export default function Storefront() {
   return (
     <>
       <section className="shop-hero"><div className="wrap">
-        <span className="eyebrow">{db.shop.city} · Made by hand</span>
-        <h1>{db.shop.name}</h1><p className="lede">{SHOP_TAGLINE}</p>
-        <div className="row"><Stars value={4.8} count={77} /><Badge tone="ok" icon="local_shipping">Ships in 2 days</Badge><Badge tone="neutral" icon="undo">7-day returns</Badge></div>
+        {db.shop.city ? <span className="eyebrow">{db.shop.city}</span> : null}
+        <h1>{db.shop.name}</h1>{db.shop.tagline ? <p className="lede">{db.shop.tagline}</p> : null}
       </div></section>
       <div className="wrap">
         <div className="shop-tools">

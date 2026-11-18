@@ -12,10 +12,12 @@ export interface AskTools {
 const bestSeller = (db: Db) => [...db.products].filter((p) => p.status === 'Active').sort((a, b) => b.soldLast30Days - a.soldLast30Days)[0];
 const lowest = (db: Db) => db.products.filter((p) => p.status === 'Active' && p.stock > 0 && p.stock <= 3).sort((a, b) => (b.viewsYesterday ?? 0) - (a.viewsYesterday ?? 0))[0];
 
-/** A short product description from what the seller already entered (name, colour, category, sizes). */
+/** A short product description from what the seller already entered (name, colour, category, sizes). Never a price, never "One size". */
 export function describeProduct(p: Product): string {
-  const bits = [p.color ? `${p.color} ${p.name.toLowerCase()}` : p.name, p.sizes.length ? `Available in ${p.sizes.join(', ')}.` : 'One size.', p.category === 'Kurtas' ? 'Soft, breathable and easy to wear every day.' : 'A small piece that finishes an outfit.'];
-  return `${bits[0].charAt(0).toUpperCase()}${bits[0].slice(1)}. ${bits[1]} ${bits[2]} ${rs(p.price)}.`;
+  const what = p.color ? `${p.color} ${p.name.toLowerCase()}` : p.name;
+  const made = p.material ? ` Made of ${p.material.toLowerCase()}.` : '';
+  const sizes = p.sizes.length && !(p.sizes.length === 1 && /free\s*size/i.test(p.sizes[0])) ? ` Available in ${p.sizes.join(', ')}.` : p.sizes.some((z) => /free\s*size/i.test(z)) ? ' Comes in a free size.' : '';
+  return `${what.charAt(0).toUpperCase()}${what.slice(1)}.${made}${sizes}`;
 }
 
 export const SUGGESTIONS = ['How did I do this week?', 'Which orders should I ship first?', 'Write a post for my best seller'];

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 
-/** A Material Symbols icon. The icon font only ships the names the design uses (see fontLinks.ts). */
+/** A Material Symbols icon. The icon font only ships the names the design uses (see scripts/subset-icons.py). */
 export function Ic({ n, c = '', style }: { n: string; c?: string; style?: CSSProperties }) {
   return <span className={`ms ${c}`.trim()} aria-hidden="true" style={style}>{n}</span>;
 }

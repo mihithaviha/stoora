@@ -41,7 +41,7 @@ export default function MoneyPage() {
     <>
       <TopRow icon="wallet" title="Money">
         <button className="btn line sm" type="button" onClick={() => { downloadCsv('payments.csv', [['Buyer', 'For', 'Method', 'When', 'Amount', 'Status'], ...rows.map((r) => [r.who, r.ref, r.method, r.when, r.amount, r.ok ? 'Received' : 'Pending'])]); toast('Payments downloaded.', { icon: 'download' }); }}>Export</button>
-        <Link className="btn ink sm" href="/settings/payments">Payout settings</Link>
+        <Link className="btn ink sm" href="/settings/getting-paid">How I get paid</Link>
       </TopRow>
       <div className="dpad">
         <div className="box ctl"><div className="chips">{(Object.keys(LABEL) as Range[]).map((r) => <button key={r} className={`chip${range === r ? ' on' : ''}`} type="button" aria-pressed={range === r} onClick={() => setRange(r)}>{r === 'today' ? <DI n="cal" s={15} /> : null} {LABEL[r]}</button>)}</div></div>
@@ -57,7 +57,7 @@ export default function MoneyPage() {
         </div>
         <div className="box tbox" style={{ marginTop: 16 }}>
           <div className="tbar"><span className="box-t">Payments</span><span className="sp" /><label className="search"><DI n="search" s={16} /><span className="sr">Search payments</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search payments" style={{ border: 0, background: 'none', outline: 'none', flex: 1, minWidth: 0, fontSize: 14 }} /></label></div>
-          <table className="tbl">
+          <div className="tscroll" role="region" aria-label="Table. Scroll sideways to see more." tabIndex={0}><table className="tbl">
             <thead><tr><th>Buyer</th><th>For</th><th>Method</th><th>When</th><th className="r">Amount</th><th>Status</th><th /></tr></thead>
             <tbody>
               {rows.map((r) => (
@@ -69,7 +69,7 @@ export default function MoneyPage() {
               ))}
               {!rows.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 28 }}>No payments yet.</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
         {db.stats.pastPayouts.length ? (
           <div className="box" style={{ marginTop: 16 }}>
