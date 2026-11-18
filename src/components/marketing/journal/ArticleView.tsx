@@ -51,7 +51,6 @@ export function ArticleView({ article, origin, related }: { article: Article; or
           <h1>{article.title}</h1>
           <p className="lede">{article.excerpt}</p>
           <div className="jr-byline">
-            <span className="appicon" aria-hidden="true">S</span>
             <span className="who"><b>{AUTHOR}</b><span>Published {formatDate(article.published)}</span></span>
             <span className="jr-share">
               <a className="btn line sm" href={share} target="_blank" rel="noopener noreferrer"><Ic n="chat" c="xs" />Share on WhatsApp</a>

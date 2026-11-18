@@ -151,7 +151,7 @@ export function DashShell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}><TabWatcher onTab={setTab} /></Suspense>
       <div className={`dapp${settings ? ' set' : ''}${navOpen ? ' nav-open' : ''}`} onClickCapture={onLinkClick}>
         <nav className="dnav" id="nav" aria-label="Main">
-          <div className="nhead"><Link href="/dashboard" aria-label="Stoora home"><div className="smark">S</div><span className="l brand">Stoora</span></Link></div>
+          <div className="nhead"><Link href="/dashboard" aria-label="Stoora home"><span className="l brand">stoora.in</span></Link></div>
           <button className="nsearch" type="button" onClick={openSearch} title="Search"><DI n="search" s={16} /><span className="l sp">Search</span><kbd className="l">Ctrl K</kbd></button>
           {row('/dashboard', 'home', 'home', 'Home')}
           {row('/orders', 'orders', 'orders', 'Orders', toShip ? <span className="dcnt">{toShip}</span> : null)}

@@ -9,7 +9,6 @@ import type { Product } from '@/lib/types';
 export function Logo({ href = '/', light, label = 'Stoora home' }: { href?: string; light?: boolean; label?: string }) {
   return (
     <Link className="logo" href={href} aria-label={label}>
-      <span className="appicon" aria-hidden="true">S</span>
       <span className="wordmark" style={light ? { color: 'var(--on-ink)' } : undefined}>stoora<i>.in</i></span>
     </Link>
   );

@@ -71,7 +71,6 @@ p{margin:0}
 .page.narrow{max-width:820px}
 .wordmark{font-family:var(--font-logo);font-weight:900;letter-spacing:-.03em;font-size:22px;line-height:1;color:var(--ink);font-variation-settings:"opsz" 72}
 .wordmark i{font-style:normal;color:var(--primary)}
-.appicon{width:34px;height:34px;border-radius:10px;background:var(--gradient-warm);display:grid;place-items:center;color:#FFFFFF;font-family:var(--font-display);font-weight:800;font-size:19px;flex:none;letter-spacing:-.02em}
 .smark{width:30px;height:30px;border-radius:50%;background:var(--gradient-warm);display:grid;place-items:center;color:#FFFFFF;font-family:var(--font-display);font-weight:800;font-size:16px;flex:none}
 .smark.xs{width:22px;height:22px;font-size:12px}
 
