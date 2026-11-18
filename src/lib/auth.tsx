@@ -4,7 +4,7 @@
 //   demo  - no Supabase keys: a flag in this browser stands in for a login, so every screen can be tried.
 //
 // One person, one shop. A login can have two identities, a verified phone number and a Google account, and both open the SAME account:
-//   - Google first: the phone must be added and verified (a code) before the dashboard opens.      -> addPhone / confirmPhone
+//   - The WhatsApp number is added and verified (a code) during shop setup, and can be changed later in Account.   -> addPhone / confirmPhone
 //   - Phone first: Google is offered after login; "Later" is allowed and stays in the setup list.  -> linkGoogle
 // Identities are only ever joined by proving both (the code, and the Google sign-in), never because an email or number looks alike.
 // A phone number or Google account can belong to one Stoora account only; Supabase refuses a second one and we say so plainly.

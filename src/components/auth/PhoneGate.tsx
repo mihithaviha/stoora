@@ -1,16 +1,13 @@
 'use client';
 // Add a verified WhatsApp number to the signed-in account.
-//   <PhoneGate />  the full screen a Google sign-up sees first. It cannot be skipped, because the number is how the same person
-//                  logs in again with their phone, and Stoora needs it for orders and messages.
-//   <PhoneForm />  the same two steps (number, then code) for use inside a dialog, e.g. Account > "How you log in".
+//   <PhoneForm />  the two steps (number, then code), used in the shop setup wizard and in Account > WhatsApp number.
 // A number that already belongs to another Stoora account is refused with a plain message. Codes are checked by the login service.
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { Button, Card, Field, Icon, useToast } from '../ui';
-import { Logo, OtpInput, useCountdown } from '../bits';
+import { useEffect, useRef, useState } from 'react';
+import { Button, Field, Icon, useToast } from '../ui';
+import { OtpInput, useCountdown } from '../bits';
 import { DEMO_TAKEN_PHONE, useAuth } from '@/lib/auth';
 
-export function PhoneForm({ initial = '', onDone, submitLabel = 'Send code on WhatsApp' }: { initial?: string; onDone: () => void; submitLabel?: string }) {
+export function PhoneForm({ initial = '', onDone, submitLabel = 'Send code on WhatsApp' }: { initial?: string; onDone: (digits: string) => void; submitLabel?: string }) {
   const auth = useAuth(); const toast = useToast();
   const [stage, setStage] = useState<'enter' | 'code'>('enter');
   const [num, setNum] = useState(initial.replace(/\D/g, '').slice(-10)); const [code, setCode] = useState('');
@@ -32,8 +29,8 @@ export function PhoneForm({ initial = '', onDone, submitLabel = 'Send code on Wh
     const failed = await auth.confirmPhone(sentTo.current || digits, value);
     setBusy(false);
     if (failed) { setWrong(failed); setCode(''); return; }
-    toast('Phone number added. You can log in with it now.', { icon: 'verified' });
-    onDone();
+    toast('WhatsApp number added.', { icon: 'verified' });
+    onDone(sentTo.current || digits);
   };
   useEffect(() => { if (code.length === 6 && !wrong) verify(code); }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -62,26 +59,3 @@ export function PhoneForm({ initial = '', onDone, submitLabel = 'Send code on Wh
   );
 }
 
-function GateBody() {
-  const auth = useAuth(); const router = useRouter(); const sp = useSearchParams();
-  const first = (auth.user?.name || '').split(/\s+/)[0];
-  return (
-    <main id="main" style={{ minHeight: '100dvh', background: 'var(--surface)', display: 'grid', alignItems: 'center' }}>
-      <div className="wrap" style={{ maxWidth: 520, padding: 'var(--s4) 16px' }}>
-        <div style={{ marginBottom: 'var(--s3)' }}><Logo /></div>
-        <Card className="stack" aria-live="polite">
-          <div><h1 className="h1">Add your WhatsApp number</h1><p className="t-body">{first ? `Hi ${first}. ` : ''}Your number lets you log in with your phone as well as Google, and it is how buyers and Stoora reach you about orders. Both ways open the same shop.</p></div>
-          <PhoneForm initial={sp.get('phone') ?? ''} onDone={() => router.refresh()} />
-          <p className="cap" style={{ margin: 0 }}>This step can’t be skipped. <button className="link" type="button" onClick={async () => { await auth.signOut(); router.push('/signed-out'); }}>Log out instead</button></p>
-        </Card>
-      </div>
-    </main>
-  );
-}
-export function PhoneGate() { return <Suspense fallback={null}><GateBody /></Suspense>; }
-
-/** True when someone is signed in but has not yet proven a phone number. They see the PhoneGate until they do. */
-export function useNeedsPhone(): boolean {
-  const auth = useAuth();
-  return auth.ready && !!auth.user && !auth.user.hasPhone;
-}

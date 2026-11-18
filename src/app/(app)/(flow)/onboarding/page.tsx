@@ -7,6 +7,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { Button, ButtonLink, Card, Field, Icon, useToast } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { Logo, Stepper } from '@/components/bits';
+import { PhoneForm } from '@/components/auth/PhoneGate';
 import { useStore } from '@/lib/store';
 import { cleanHandle, rs, toNum } from '@/lib/format';
 import { useHandleCheck } from '@/lib/handle';
@@ -33,6 +34,8 @@ function Wizard() {
     const name = (auth.user?.name ?? '').trim().split(/\s+/).filter(Boolean);
     return { username: start > 0 ? 'Meera' : name[0] ?? '', surname: start > 0 ? 'Iyer' : name.slice(1).join(' '), email: start > 0 ? 'meera.studio@example.in' : auth.user?.email ?? '', phone: start > 0 ? '9876543210' : (auth.user?.phone ?? '').replace(/\D/g, '').slice(-10) };
   });
+  // the WhatsApp number is confirmed with a code before moving on; already-confirmed (e.g. coming back to this step) counts too
+  const [phoneConfirmed, setPhoneConfirmed] = useState(() => start > 0 || !!auth.user?.hasPhone);
   const [busy, setBusy] = useState(false);
   const [setupAt, setSetupAt] = useState(0);
   useEffect(() => { if (!busy) return; const t = setInterval(() => setSetupAt((n) => Math.min(n + 1, SETUP_LINES.length - 1)), 500); return () => clearInterval(t); }, [busy]);
@@ -46,8 +49,7 @@ function Wizard() {
       ...(shop.handle.length < 3 ? { handle: 'Use at least 3 letters or numbers.' } : handleState.status === 'taken' ? { handle: 'That link is taken. Pick another.' } : {}),
       ...(owner.username.trim() ? {} : { username: 'Enter your username.' }),
       ...(owner.surname.trim() ? {} : { surname: 'Enter your surname.' }),
-      ...(owner.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(owner.email.trim()) ? {} : { email: 'Enter a valid email address.' }),
-      ...(phoneDigits.length === 10 ? {} : { phone: 'Enter your 10-digit phone number.' }),
+      ...(phoneConfirmed ? {} : { phone: 'Confirm your WhatsApp number with the code first.' }),
     },
     1: {},
   };
@@ -91,21 +93,33 @@ function Wizard() {
 
   return (
     <div className="wizard">
-      <div className="wiz-top"><Logo /><Link className="link" href="/dashboard">Skip for now</Link></div>
+      <div className="wiz-top"><Logo /></div>
       <Stepper steps={STEPS} current={step} />
       <Card className="wiz-card" aria-live="polite">
         {step === 0 && <>
           <div><h1 className="h1">What’s your store name?</h1><p className="t-body">This is what buyers see at the top of your page.</p></div>
-          <Field id="ob-name" label="Shop name" required error={e('name')}><input id="ob-name" className={`input ${e('name') ? 'bad' : ''}`} value={shop.name} onChange={(x) => setS({ ...shop, name: x.target.value, handle: shop.handle && shop.handle !== cleanHandle(shop.name) ? shop.handle : cleanHandle(x.target.value) })} placeholder="e.g. Meera Studio" autoFocus /></Field>
           <div className="grid2">
             <Field id="ob-username" label="Username" required error={e('username')}><input id="ob-username" className={`input ${e('username') ? 'bad' : ''}`} autoComplete="username" value={owner.username} onChange={(x) => setOwner({ ...owner, username: x.target.value })} /></Field>
             <Field id="ob-surname" label="Surname" required error={e('surname')}><input id="ob-surname" className={`input ${e('surname') ? 'bad' : ''}`} autoComplete="family-name" value={owner.surname} onChange={(x) => setOwner({ ...owner, surname: x.target.value })} /></Field>
           </div>
-          <Field id="ob-handle" label="Link" required error={e('handle')} hint="Your public shop link."><div className={`affix ${e('handle') ? 'bad' : ''}`}><span aria-hidden="true">stoora.in/</span><input id="ob-handle" value={shop.handle} onChange={(x) => setS({ ...shop, handle: cleanHandle(x.target.value) })} aria-invalid={e('handle') ? true : undefined} /></div></Field>
-          {!e('handle') && handleState.status === 'free' ? <p className="cap" role="status" style={{ margin: '-8px 0 0', color: 'var(--positive-deep, var(--positive))' }}><Icon name="check_circle" size="xs" /> stoora.in/{shop.handle} is free</p> : null}
+          <Field id="ob-name" label="Shop name" required error={e('name')}><input id="ob-name" className={`input ${e('name') ? 'bad' : ''}`} value={shop.name} onChange={(x) => setS({ ...shop, name: x.target.value, handle: cleanHandle(x.target.value) })} placeholder="e.g. Meera Studio" autoFocus /></Field>
+          {!e('handle') && shop.handle && handleState.status === 'free' ? <p className="cap" role="status" style={{ margin: '-8px 0 0', color: 'var(--positive-deep, var(--positive))' }}><Icon name="check_circle" size="xs" /> stoora.in/{shop.handle} is free</p> : null}
           {handleState.status === 'taken' ? <p className="cap" role="alert" style={{ margin: '-8px 0 0', color: 'var(--negative-deep)' }}><Icon name="error" size="xs" /> stoora.in/{shop.handle} is taken{handleState.suggestion ? <>, try <button type="button" className="link" onClick={() => setS({ ...shop, handle: handleState.suggestion! })}>{handleState.suggestion}</button></> : '. Try another.'}</p> : null}
-          <Field id="ob-email" label="Email ID" required error={e('email')}><input id="ob-email" type="email" className={`input ${e('email') ? 'bad' : ''}`} autoComplete="email" inputMode="email" autoCapitalize="none" value={owner.email} onChange={(x) => setOwner({ ...owner, email: x.target.value })} placeholder="you@example.com" /></Field>
-          <Field id="ob-phone" label="Phone number" required error={e('phone')} hint="We may use this to reach you about your shop."><div className={`affix ${e('phone') ? 'bad' : ''}`}><span aria-hidden="true">+91</span><input id="ob-phone" type="tel" inputMode="numeric" autoComplete="tel-national" value={owner.phone} onChange={(x) => setOwner({ ...owner, phone: x.target.value.replace(/[^\d ]/g, '').slice(0, 11) })} placeholder="98765 43210" /></div></Field>
+          <div className="field">
+            {phoneConfirmed ? (
+              <>
+                <span className="flabel">Phone number</span>
+                <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                  <span style={{ color: 'var(--positive-deep, var(--positive))', display: 'inline-flex' }}><Icon name="check_circle" size="xs" /></span>
+                  <span className="t-ink">+91 {owner.phone}</span>
+                  <button type="button" className="link cap" onClick={() => setPhoneConfirmed(false)}>Change</button>
+                </div>
+              </>
+            ) : (
+              <PhoneForm initial={owner.phone} submitLabel="Send code on WhatsApp" onDone={(digits) => { setOwner({ ...owner, phone: digits }); setPhoneConfirmed(true); }} />
+            )}
+            {e('phone') ? <span className="err" role="alert"><Icon name="error" size="xs" />{e('phone')}</span> : null}
+          </div>
         </>}
         {step === 1 && <>
           <div><h1 className="h1">What do you sell?</h1><p className="t-body">Stoora is set up for physical products.</p></div>
