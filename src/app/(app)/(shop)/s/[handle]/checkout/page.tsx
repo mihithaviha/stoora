@@ -4,13 +4,14 @@
 import { PAUSED_LINE } from '@/lib/shopstate';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, ButtonLink, Card, EmptyState, Field, Icon, Skeleton } from '@/components/ui';
 import { BUYER_KEY, ProductArt, StateScreen } from '@/components/bits';
 import { shopBase } from '@/components/shop/ShopChrome';
 import { useBag } from '@/lib/bag';
 import { useStore } from '@/lib/store';
 import { rs } from '@/lib/format';
+import { trackPixel } from '@/lib/pixel';
 import { Select } from '@/components/Select';
 
 type Pay = 'upi' | 'card' | 'cod';
@@ -23,6 +24,13 @@ export default function Checkout() {
   const [f, setF] = useState({ name: demo ? 'Priya Sharma' : '', phone: demo ? '9876543210' : '', email: '', line: demo ? '12 Lake View Road, Indiranagar' : '', pin: demo ? '411001' : '', city: demo ? 'Pune' : '', state: 'Maharashtra', note: '' });
   const [pay, setPay] = useState<Pay>('upi'); const [tried, setTried] = useState(false); const [stage, setStage] = useState<'form' | 'paying'>('form');
   const [outcome, setOutcome] = useState<'success' | 'failed' | 'pending'>('success'); const [orderError, setOrderError] = useState('');
+
+  useEffect(() => {
+    if (bag.ready && bag.detailed.length) {
+      trackPixel('InitiateCheckout', { value: bag.total, currency: 'INR', num_items: bag.count, content_ids: bag.detailed.map((d) => d.product.id) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bag.ready]);
 
   if (!bag.ready) return <div className="wrap" style={{ padding: 'var(--s4) 16px' }}><Skeleton rows={3} height={120} /></div>;
   if (!bag.detailed.length && stage === 'form') return <div className="wrap"><EmptyState icon="shopping_bag" title="Nothing to check out" text="Your bag is empty. Add something first." action={<ButtonLink href={base} kind="primary" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Back to the shop</ButtonLink>} /></div>;

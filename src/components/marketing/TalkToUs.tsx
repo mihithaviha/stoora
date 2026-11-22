@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Ic } from './bits';
 import { TOPICS, saveSent } from '@/lib/enquiries';
+import { trackPixel } from '@/lib/pixel';
 import { Select } from '../Select';
 
 /** "Talk to us": a short form in a dialog. Enquiries are saved (the admin inbox is switched off for now). */
@@ -45,6 +46,7 @@ export function TalkToUs({ label = 'Talk to us' }: { label?: string }) {
         await new Promise((resolve) => setTimeout(resolve, 400));
         saveSent({ id: 'n' + Date.now(), ...form, when: 'Just now', status: 'New', from: 'Landing page' });
       }
+      trackPixel('Lead');
       setDone(true);
     } catch (error) {
       setFailure(`Couldn’t send: ${(error as Error).message}`);

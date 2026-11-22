@@ -8,6 +8,7 @@ import '../../styles/dash.css'; // what the app adds around them
 import '../../styles/storefront-editor.css';
 import { DashShell } from '@/components/dash/DashShell';
 import { FontPreloads } from '@/components/FontPreloads';
+import { MetaPixel } from '@/components/MetaPixel';
 import { Providers } from '@/components/Providers';
 import { SellerGate } from '@/components/SellerGate';
 
@@ -32,6 +33,7 @@ export default function SellerRootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: `(function(){var d=document.documentElement;d.classList.add('icons-wait');var done=function(){d.classList.remove('icons-wait')};setTimeout(done,3000);try{document.fonts.load('24px "Material Symbols Rounded"','home').then(done,done)}catch(e){done()}})();` }} />
       </head>
       <body>
+        <MetaPixel />
         <a className="sr" href="#main">Skip to content</a>
         <Suspense fallback={null}>
           <Providers>

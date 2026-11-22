@@ -6,6 +6,7 @@ import '../../styles/brand/landing.css';
 import '../../styles/brand/auth-extra.css';
 import '../../styles/fonts.css'; // the brand fonts and the icon font, all served from this site
 import { FontPreloads } from '@/components/FontPreloads';
+import { MetaPixel } from '@/components/MetaPixel';
 
 /**
  * The public site (home, sign-in, sign-up, Journal). It is its own root layout, so it carries the brand's
@@ -25,7 +26,10 @@ export default function MarketingRootLayout({ children }: { children: React.Reac
       <head>
         <FontPreloads logo />
       </head>
-      <body className="mode-public">{children}</body>
+      <body className="mode-public">
+          <MetaPixel />
+          {children}
+        </body>
     </html>
   );
 }
