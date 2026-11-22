@@ -12,6 +12,7 @@ import { useStore } from '@/lib/store';
 import { cleanHandle, rs, toNum } from '@/lib/format';
 import { useHandleCheck } from '@/lib/handle';
 import { PHYSICAL } from '@/lib/shopstate';
+import { trackPixel } from '@/lib/pixel';
 
 const STEPS = ['Your shop', 'What you sell'];
 const SELLS: [string, string, string, string][] = [
@@ -63,6 +64,7 @@ function Wizard() {
     const wait = 1500 - (Date.now() - shown); if (!err && wait > 0) await new Promise((r) => setTimeout(r, wait));
     setBusy(false);
     if (err) { setPubError(err); return; } // every answer is still here, so Try again loses nothing
+    trackPixel('CompleteRegistration');
     setStep(5); toast('Your shop is live.', { icon: 'celebration' });
   };
 

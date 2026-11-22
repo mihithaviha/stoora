@@ -1,12 +1,13 @@
 'use client';
 // Payment result screens: success, failed and pending. Pending checks again until the provider confirms.
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, ButtonLink, Card, Icon } from '@/components/ui';
 import { StateScreen } from '@/components/bits';
 import { shopBase } from '@/components/shop/ShopChrome';
 import { useStore } from '@/lib/store';
 import { rs } from '@/lib/format';
+import { trackPixel } from '@/lib/pixel';
 
 export default function PaymentResult() {
   const { handle, status } = useParams<{ handle: string; status: string }>(); const sp = useSearchParams(); const { db, updateOrder, mode } = useStore(); const base = shopBase(handle);
@@ -16,6 +17,14 @@ export default function PaymentResult() {
   const kind = pending ? 'pending' : status === 'success' ? 'success' : status === 'pending' ? 'success' : status === 'failed' ? 'failed' : null;
   useEffect(() => { if (!pending || mode === 'live') return; // live: only the payment provider can confirm, so keep waiting
     const t = setTimeout(() => { if (checks >= 2) { if (order && mode === 'demo') updateOrder(order.id, { paid: true }); setPending(false); } else setChecks(checks + 1); }, 2200); return () => clearTimeout(t); }, [pending, checks]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const firedFor = useRef<number | null>(null);
+  useEffect(() => {
+    if (kind === 'success' && order && firedFor.current !== order.id) {
+      firedFor.current = order.id;
+      trackPixel('Purchase', { value: order.total, currency: 'INR', content_ids: order.lines.map((l) => l.productId), num_items: order.lines.reduce((a, l) => a + l.qty, 0) });
+    }
+  }, [kind, order]);
 
   if (!kind) return <div className="wrap"><StateScreen kind="notfound" title="That page doesn’t exist" text="Check the link, or go back to the shop." actions={<ButtonLink href={base} kind="primary" style={{ background: 'var(--pr)', borderColor: 'var(--pr)' }}>Back to the shop</ButtonLink>} /></div>;
   const copy = {

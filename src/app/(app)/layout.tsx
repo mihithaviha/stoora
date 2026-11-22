@@ -8,6 +8,7 @@ import '../../styles/admin.css';
 import '../../styles/storefront.css';
 import '../../styles/storefront-editor.css';
 import { FontPreloads } from '@/components/FontPreloads';
+import { MetaPixel } from '@/components/MetaPixel';
 import { Providers } from '@/components/Providers';
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-IN">
       <head><FontPreloads data /></head>
       <body>
+        <MetaPixel />
         <a className="sr" href="#main">Skip to content</a>
         <Suspense fallback={null}><Providers>{children}</Providers></Suspense>
       </body>

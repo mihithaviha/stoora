@@ -3,6 +3,7 @@
 // API_TODO: POST /api/public/:shop/cart (prices, stock and delivery are always worked out on the server).
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { deliveryFor, deliveryRule } from './delivery';
+import { trackPixel } from './pixel';
 import { useStore } from './store';
 import type { Product } from './types';
 
@@ -34,10 +35,14 @@ export function BagProvider({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => { if (ready) try { localStorage.setItem(KEY, JSON.stringify({ lines, wish })); } catch { /* ignore */ } }, [lines, wish, ready]);
 
-  const add = useCallback((productId: string, size?: string, qty = 1) => setLines((l) => {
-    const i = l.findIndex((x) => x.productId === productId && x.size === size);
-    return i >= 0 ? l.map((x, n) => (n === i ? { ...x, qty: Math.min(10, x.qty + qty) } : x)) : [...l, { productId, size, qty }];
-  }), []);
+  const add = useCallback((productId: string, size?: string, qty = 1) => {
+    const product = db.products.find((p) => p.id === productId);
+    if (product) trackPixel('AddToCart', { content_ids: [productId], content_type: 'product', value: product.price * qty, currency: 'INR' });
+    setLines((l) => {
+      const i = l.findIndex((x) => x.productId === productId && x.size === size);
+      return i >= 0 ? l.map((x, n) => (n === i ? { ...x, qty: Math.min(10, x.qty + qty) } : x)) : [...l, { productId, size, qty }];
+    });
+  }, [db.products]);
   const setQty = useCallback((index: number, qty: number) => setLines((l) => l.map((x, n) => (n === index ? { ...x, qty: Math.max(1, Math.min(10, qty)) } : x))), []);
   const remove = useCallback((index: number) => setLines((l) => l.filter((_, n) => n !== index)), []);
   const clear = useCallback(() => setLines([]), []);
